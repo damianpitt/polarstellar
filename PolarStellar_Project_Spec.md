@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha repository skeleton; network and analysis features are planned\
+**Implementation status:** Pre-alpha account explorer; history, analysis, storage, and export are planned\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1523,19 +1523,22 @@ The project name is:
 
 # 40. Repository Baseline and Delivery Boundaries
 
-The initial repository contains packaging metadata, a Python entry point, a Qt Widgets
-application shell, explicit placeholder packages, and automated checks. The shell has
-navigation, an inactive search field, and a network selector. It makes no network requests.
-The selector records a UI choice only; it does not establish a connection.
+The repository now contains a working asynchronous account explorer, packaging metadata,
+a Python entry point, provider-independent account models, checksum validation, a Horizon
+adapter, and automated checks. Search accepts G-addresses and displays sequence number,
+home domain, exact balances, issuer or pool identity, trust limits, and authorization.
+Mainnet and Testnet use separate endpoints; each snapshot includes its network and source.
 
-All explorer, decoder, cache, graph, contract, and export behavior described above remains
-planned until implemented and verified. Package directories are boundaries for future
-work, not evidence that a provider or analysis engine exists.
+Lookups have HTTP timeouts, cancellation, loading and error states. Switching network,
+starting another search, or cancelling invalidates old results. The UI clears the previous
+snapshot before a new lookup. Failed requests are not automatically retried; users can
+retry explicitly. No local cache, history, graph, decoder, contract explorer, or export is
+implemented yet. Other navigation sections remain visibly disabled.
 
-Python 3.12 is the initial development baseline. PySide6 is the initial runtime dependency.
-Add httpx, qasync, the Stellar Python SDK (distribution name `stellar-sdk`), NetworkX,
-and charting dependencies when their first concrete feature is implemented. SQLite is
-available through Python's standard library. Commit the uv lockfile for reproducibility.
+Python 3.12 is the development baseline. Runtime dependencies are PySide6, qasync, httpx,
+and the Stellar Python SDK (`stellar-sdk`). SQLite and NetworkX integration remain planned.
+The uv lockfile is committed for reproducibility. `__init__.py` files are intentional Python
+package source; `__pycache__` and `.pyc` files are generated and excluded by `.gitignore`.
 
 # 41. Scope and Non-Goals
 

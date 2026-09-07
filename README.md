@@ -6,9 +6,17 @@ Open-source desktop network intelligence for Stellar and Soroban. PolarStellar i
 built to help inspect accounts, understand transaction operations, discover counterparties,
 and trace relationships in a local desktop workspace.
 
-**Status: repository skeleton / pre-alpha.** The current application is a Qt window with
-navigation, a search field, and a Mainnet/Testnet selector. Search is disabled until data
-providers are implemented. There is no live network access, graph analysis, or export yet.
+**Status: pre-alpha account explorer.** Paste a checksum-valid Stellar G-address to
+fetch account details, XLM and asset balances, and trustlines from Horizon. Mainnet and
+Testnet are separate. Lookups are asynchronous and cancellable; switching networks or
+starting another search discards stale results. Issuers, trust limits, and authorization
+status are shown alongside exact amounts.
+
+Only account lookup is implemented. Transaction history, decoding, graphs, contracts,
+local caching, and export remain planned. The other navigation sections are disabled.
+No private keys are required, and the application does not submit transactions.
+Lookups send the searched public address to the selected Horizon endpoint; no investigation
+data is saved locally in this phase.
 
 ## Product direction
 
@@ -18,10 +26,10 @@ providers are implemented. There is no live network access, graph analysis, or e
 - Soroban contract inspection and events.
 - Local SQLite caching and investigation state; CSV and JSON export.
 
-These are planned capabilities. See the [full project scope and specification](PolarStellar_Project_Spec.md)
+This list describes the broader product roadmap. See the [full project scope and specification](PolarStellar_Project_Spec.md)
 for architecture, release boundaries, acceptance criteria, and the roadmap.
 
-## Run the skeleton
+## Run PolarStellar
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then:
 
@@ -58,8 +66,11 @@ src/polarstellar/
   resources/  Styles and icons
 ```
 
-The UI will call a shared service layer rather than remote APIs directly. RPC, Horizon,
-and eventually Hubble will serve different data needs behind provider interfaces.
+The UI calls an account service, with checksum validation and a provider interface.
+The Horizon adapter normalizes responses into account snapshots with network and retrieval
+metadata. RPC and Hubble adapters remain planned.
+
+The account adapter follows the [official Horizon account endpoint](https://developers.stellar.org/docs/data/apis/horizon/api-reference/retrieve-an-account).
 
 PolarStellar is an open-source project, not affiliated with the Stellar Development Foundation.
 

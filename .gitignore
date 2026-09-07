@@ -32,6 +32,8 @@ dist/
 coverage.xml
 htmlcov/
 *.log
+*.trace
+*.har
 *.tmp
 *.temp
 *.bak
@@ -48,6 +50,9 @@ htmlcov/
 *.p12
 *.pfx
 credentials*.json
+service-account*.json
+*.jks
+*.keystore
 secrets.*
 .secrets/
 .ssh/
@@ -57,6 +62,7 @@ secrets.*
 # Local investigation state, exports, and database sidecars
 *.sqlite
 *.sqlite3
+*.sqlite-journal
 *.db
 *.sqlite-*
 *.sqlite3-*
