@@ -9,8 +9,6 @@
 
 **Idea status:** Locked\
 **Implementation status:** Pre-alpha repository skeleton; network and analysis features are planned\
-**Maintainer:** Damiano Pittau\
-**Development model:** Personal, maintainer-led, AI-assisted; external code contributions are not currently sought\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -709,7 +707,6 @@ polarstellar/
 ├── pyproject.toml
 ├── README.md
 ├── LICENSE
-├── CONTRIBUTING.md
 │
 ├── src/
 │   └── polarstellar/
@@ -1614,12 +1611,9 @@ The first functional milestone is complete when:
 The remaining V0.1 work adds the promised local cache, CSV/JSON exports, broader views,
 and release packaging. Passing this milestone alone does not imply the whole V0.1 is shipped.
 
-# 45. Stewardship and Release Practice
+# 45. Open Source and Release Practice
 
-Damiano Pittau owns the roadmap and reviews development performed with AI-assisted tooling.
-The repository is public for use, inspection, transparency, and independent forks. External
-collaborators and unsolicited code contributions are not currently being sought. The
-participation policy does not limit rights granted by the open-source license.
+PolarStellar is an open-source project, not affiliated with the Stellar Development Foundation.
 
 Documentation must distinguish implemented, experimental, and planned capabilities.
 Each release should describe the data coverage and known limitations of supported features.

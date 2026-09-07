@@ -1,29 +1,81 @@
-# Python and build artifacts
+# Only these root-level project files and directories are intended for publication.
+# Add an explicit exception here when introducing another public project file.
+/*
+!/.gitignore
+!/.python-version
+!/README.md
+!/LICENSE
+!/PolarStellar_Project_Spec.md
+!/pyproject.toml
+!/uv.lock
+!/src/
+!/tests/
+!/.github/
+
+# Python environments, caches, and generated artifacts (at any depth)
 __pycache__/
 *.py[cod]
 .venv/
+venv/
+env/
 *.egg-info/
+.eggs/
 build/
 dist/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.tox/
+.nox/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
-# Local configuration and investigation data
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.swp
+*.swo
+*~
+
+# Credentials and machine-specific settings
 .env
 .env.*
-!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets.*
+.secrets/
+.ssh/
+.aws/
+.config/
+
+# Local investigation state, exports, and database sidecars
 *.sqlite
 *.sqlite3
 *.db
-*.db-shm
-*.db-wal
-*.sqlite3-shm
-*.sqlite3-wal
+*.sqlite-*
+*.sqlite3-*
+*.db-*
 local-data/
 exports/
-# Editors and OS
+investigations/
+private/
+notes/
+
+# Local assistant/editor context and operating-system metadata
+.agents/
+.codex/
+.claude/
+AGENTS.md
+CLAUDE.md
 .DS_Store
+._*
+Thumbs.db
+Desktop.ini
 .idea/
 .vscode/

@@ -61,15 +61,7 @@ src/polarstellar/
 The UI will call a shared service layer rather than remote APIs directly. RPC, Horizon,
 and eventually Hubble will serve different data needs behind provider interfaces.
 
-## Project stewardship
-
-PolarStellar is a personal, maintainer-led project developed by Damiano Pittau with
-AI-assisted tooling. The source is public for transparency, learning, use, and independent
-forks. This project is **not recruiting collaborators or accepting unsolicited code
-contributions** at this stage. Roadmap and implementation decisions remain with the maintainer.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the participation policy.
-
-PolarStellar is an independent project and is not affiliated with the Stellar Development Foundation.
+PolarStellar is an open-source project, not affiliated with the Stellar Development Foundation.
 
 ## License
 
