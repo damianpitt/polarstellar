@@ -34,6 +34,8 @@ uv run polarstellar
 
 Python 3.12 is the development baseline. Linux is the primary target; macOS and Windows
 are architectural targets from day one. Native installers are not available yet.
+On Ubuntu 24.04, Qt also requires system graphics libraries; install `libegl1`
+if startup reports a missing `libEGL.so.1`.
 
 ```sh
 uv run polarstellar --version
