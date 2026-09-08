@@ -12,15 +12,19 @@ from PySide6.QtWidgets import (
     QListWidget,
     QMainWindow,
     QPushButton,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from polarstellar import __version__
+from polarstellar.stellar.activity import ActivityKind
 from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.service import AccountService, validate_account
+from polarstellar.ui.activity_view import ActivityView
 
 
 class MainWindow(QMainWindow):
@@ -30,7 +34,7 @@ class MainWindow(QMainWindow):
         self.task = None
         self.tasks = set()
         self.generation = 0
-        self.setWindowTitle("PolarStellar — Navigate the Stellar network")
+        self.setWindowTitle(f"PolarStellar {__version__} — Navigate the Stellar network")
         self.resize(1180, 760)
         self.setMinimumSize(800, 520)
         root = QWidget()
@@ -38,7 +42,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(20)
         header = QHBoxLayout()
-        brand = QLabel("✦  POLARSTELLAR")
+        brand = QLabel(f"✦  POLARSTELLAR  {__version__}")
         brand.setStyleSheet("font-size: 22px; font-weight: 600;")
         header.addWidget(brand)
         header.addStretch()
@@ -64,7 +68,9 @@ class MainWindow(QMainWindow):
         self.cancel.clicked.connect(self.cancel_search)
         content = QHBoxLayout()
         navigation = QListWidget()
-        navigation.addItems(["Overview", "Activity", "Assets", "Operations", "Graph", "Contracts"])
+        navigation.addItems(
+            ["Overview", "Transactions", "Operations", "Payments", "Assets", "Graph", "Contracts"]
+        )
         navigation.setFixedWidth(180)
         navigation.setCurrentRow(0)
         content.addWidget(navigation)
@@ -81,12 +87,18 @@ class MainWindow(QMainWindow):
         )
         self.balances.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.balances.horizontalHeader().setStretchLastSection(True)
-        pane.addWidget(self.balances)
+        self.pages = QStackedWidget()
+        self.pages.addWidget(self.balances)
+        self.activity_views = [ActivityView(service, kind) for kind in ActivityKind]
+        for view in self.activity_views:
+            self.pages.addWidget(view)
+        pane.addWidget(self.pages)
+        navigation.currentRowChanged.connect(self.select_page)
         content.addLayout(pane, 1)
         layout.addLayout(content, 1)
         self.setCentralWidget(root)
         self.statusBar().showMessage("Mainnet selected • Ready")
-        for index in range(1, navigation.count()):
+        for index in range(4, navigation.count()):
             item = navigation.item(index)
             item.setText(item.text() + " (planned)")
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
@@ -103,7 +115,17 @@ class MainWindow(QMainWindow):
             QStatusBar { color: #a7b3cc; }
         """)
 
+    def select_page(self, index):
+        if index < self.pages.count():
+            self.pages.setCurrentIndex(index)
+            if index > 0:
+                view = self.activity_views[index - 1]
+                if not view.loaded:
+                    view.start()
+
     def invalidate(self) -> None:
+        for view in self.activity_views:
+            view.reset()
         self.generation += 1
         if self.task is not None:
             self.task.cancel()
@@ -168,6 +190,9 @@ class MainWindow(QMainWindow):
             self.balances.resizeColumnsToContents()
             if not account.balances:
                 self.message.setText(self.message.text() + "\nNo balances returned.")
+            for view in self.activity_views:
+                view.reset((address, network))
+            self.select_page(self.pages.currentIndex())
             self.statusBar().showMessage(f"{network.value} • Account loaded")
         except asyncio.CancelledError:
             return

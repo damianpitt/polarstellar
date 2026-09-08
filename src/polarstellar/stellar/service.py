@@ -2,6 +2,7 @@
 
 from stellar_sdk import StrKey
 
+from polarstellar.stellar.activity import ActivityKind, ActivityPage
 from polarstellar.stellar.models import Account, Network
 from polarstellar.stellar.providers import AccountError, AccountProvider
 
@@ -25,3 +26,12 @@ class AccountService:
                 "The provider returned an account for a different search or network."
             )
         return account
+
+    async def activity(
+        self, value: str, network: Network, kind: ActivityKind, cursor: str | None = None
+    ) -> ActivityPage:
+        address = validate_account(value)
+        page = await self.provider.get_activity(address, network, kind, cursor)
+        if (page.address, page.network, page.kind) != (address, network, kind):
+            raise AccountError("Activity does not match this account and network.")
+        return page

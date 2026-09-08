@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 
 import httpx
 
+from polarstellar.stellar.activity import PAGE_SIZE, ActivityKind, ActivityPage, parse_page
 from polarstellar.stellar.models import Account, Balance, Network
 from polarstellar.stellar.providers import AccountError
 
@@ -57,10 +58,33 @@ class HorizonProvider:
         self.transport = transport
 
     async def get_account(self, address: str, network: Network) -> Account:
+        data = await self._get(address, network)
+        try:
+            return parse_account(data, address, network, ENDPOINTS[network])
+        except (ValueError, KeyError, TypeError, InvalidOperation) as exc:
+            raise AccountError("Horizon returned incomplete or unsupported account data.") from exc
+
+    async def get_activity(
+        self, address: str, network: Network, kind: ActivityKind, cursor: str | None = None
+    ) -> ActivityPage:
+        params = {"order": "desc", "limit": str(PAGE_SIZE), "include_failed": "true"}
+        if cursor is not None:
+            if not cursor.isascii() or not cursor.isdecimal():
+                raise AccountError("Invalid activity cursor. Start a new search.")
+            params["cursor"] = cursor
+        data = await self._get(address, network, "/" + kind.value, params)
+        try:
+            return parse_page(data, address, network, kind, ENDPOINTS[network], cursor)
+        except (ValueError, KeyError, TypeError) as exc:
+            raise AccountError("Horizon returned incomplete or invalid activity data.") from exc
+
+    async def _get(
+        self, address: str, network: Network, suffix: str = "", params: dict | None = None
+    ) -> dict:
         source = ENDPOINTS[network]
         try:
             async with httpx.AsyncClient(transport=self.transport, timeout=15.0) as client:
-                response = await client.get(f"{source}/accounts/{address}")
+                response = await client.get(f"{source}/accounts/{address}{suffix}", params=params)
                 if response.status_code == 404:
                     raise AccountError(
                         f"Account not found on {network.value}. It may not be funded."
@@ -68,7 +92,7 @@ class HorizonProvider:
                 if response.status_code == 429:
                     raise AccountError("Horizon is rate limiting requests. Please try again later.")
                 response.raise_for_status()
-                return parse_account(response.json(), address, network, source)
+                return response.json()
         except httpx.TimeoutException as exc:
             raise AccountError("The request timed out. Please try again.") from exc
         except httpx.HTTPStatusError as exc:

@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha account explorer; history, analysis, storage, and export are planned\
+**Implementation status:** Pre-alpha 0.0.2 account explorer with paginated activity; decoding, analysis, storage, and export are planned\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1532,8 +1532,13 @@ Mainnet and Testnet use separate endpoints; each snapshot includes its network a
 Lookups have HTTP timeouts, cancellation, loading and error states. Switching network,
 starting another search, or cancelling invalidates old results. The UI clears the previous
 snapshot before a new lookup. Failed requests are not automatically retried; users can
-retry explicitly. No local cache, history, graph, decoder, contract explorer, or export is
-implemented yet. Other navigation sections remain visibly disabled.
+retry explicitly. Transactions, operations, and payments are available through independent 20-record,
+newest-first pages with Load more, retry, and stale-result rejection. Each page records
+its network, source, and retrieval time; coverage is limited to available Horizon history.
+No local cache, graph, decoder, contract explorer, or export is implemented yet.
+Assets, Graph, and Contracts navigation remain disabled. See CHANGELOG.md for versioned
+feature history. Update its Unreleased section with each implemented feature or fix and
+keep package metadata and the lockfile aligned whenever the version changes.
 
 Python 3.12 is the development baseline. Runtime dependencies are PySide6, qasync, httpx,
 and the Stellar Python SDK (`stellar-sdk`). SQLite and NetworkX integration remain planned.

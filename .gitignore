@@ -4,6 +4,7 @@
 !/.gitignore
 !/.python-version
 !/README.md
+!/CHANGELOG.md
 !/LICENSE
 !/PolarStellar_Project_Spec.md
 !/pyproject.toml
