@@ -28,6 +28,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 - Application version in the window title and header; version consistency test.
 - This changelog, included in the repository allowlist.
 
+### Fixed
+
+- Explicit UTF-8 reading in version/changelog verification for Windows compatibility.
+
 ### Scope
 
 - Activity lists use Horizon's available history and request failed records too.

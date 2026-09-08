@@ -169,9 +169,9 @@ def test_ui_reset_rejects_late_page():
 
 def test_version_and_changelog_agree():
     root = Path(__file__).resolve().parents[1]
-    metadata = tomllib.loads((root / "pyproject.toml").read_text())
+    metadata = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     assert metadata["project"]["version"] == __version__
-    assert f"## [{__version__}]" in (root / "CHANGELOG.md").read_text()
+    assert f"## [{__version__}]" in (root / "CHANGELOG.md").read_text(encoding="utf-8")
 
 
 def test_create_account_and_merge_payment_fields():
