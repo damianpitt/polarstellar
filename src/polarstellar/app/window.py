@@ -25,12 +25,14 @@ from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.service import AccountService, validate_account
 from polarstellar.ui.activity_view import ActivityView
+from polarstellar.ui.transaction_view import TransactionDialog
 
 
 class MainWindow(QMainWindow):
     def __init__(self, service: AccountService) -> None:
         super().__init__()
         self.service = service
+        self.dialogs = set()
         self.task = None
         self.tasks = set()
         self.generation = 0
@@ -53,11 +55,11 @@ class MainWindow(QMainWindow):
         header.addWidget(self.network)
         layout.addLayout(header)
         self.search = QLineEdit()
-        self.search.setPlaceholderText("Paste a Stellar G-address")
+        self.search.setPlaceholderText("Paste a Stellar G-address or transaction hash")
         self.search.setAccessibleName("Investigation search")
         search_row = QHBoxLayout()
         search_row.addWidget(self.search)
-        self.submit = QPushButton("Inspect account")
+        self.submit = QPushButton("Inspect")
         self.cancel = QPushButton("Cancel")
         self.cancel.setEnabled(False)
         search_row.addWidget(self.submit)
@@ -92,6 +94,7 @@ class MainWindow(QMainWindow):
         self.activity_views = [ActivityView(service, kind) for kind in ActivityKind]
         for view in self.activity_views:
             self.pages.addWidget(view)
+            view.transaction_requested.connect(self.open_transaction)
         pane.addWidget(self.pages)
         navigation.currentRowChanged.connect(self.select_page)
         content.addLayout(pane, 1)
@@ -123,7 +126,19 @@ class MainWindow(QMainWindow):
                 if not view.loaded:
                     view.start()
 
+    def open_transaction(self, hash_value):
+        dialog = TransactionDialog(
+            self.service, hash_value, Network(self.network.currentText()), self
+        )
+        self.dialogs.add(dialog)
+        dialog.finished.connect(lambda: self.dialogs.discard(dialog))
+        dialog.finished.connect(dialog.deleteLater)
+        dialog.show()
+        dialog.start()
+
     def invalidate(self) -> None:
+        for dialog in tuple(self.dialogs):
+            dialog.reject()
         for view in self.activity_views:
             view.reset()
         self.generation += 1
@@ -146,6 +161,12 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"{network} selected • Ready")
 
     def start_search(self) -> None:
+        value = self.search.text().strip()
+        if len(value) == 64:
+            self.invalidate()
+            self.message.setText("Transaction inspection • " + self.network.currentText())
+            self.open_transaction(value)
+            return
         self.invalidate()
         network = Network(self.network.currentText())
         try:

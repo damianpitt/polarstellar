@@ -2,7 +2,7 @@
 
 import asyncio
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QLabel,
@@ -18,6 +18,8 @@ from polarstellar.stellar.providers import AccountError
 
 
 class ActivityView(QWidget):
+    transaction_requested = Signal(str)
+
     def __init__(self, service, kind: ActivityKind):
         super().__init__()
         self.service = service
@@ -40,10 +42,26 @@ class ActivityView(QWidget):
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         layout.addWidget(self.table)
+        self.table.cellDoubleClicked.connect(self.open_row)
+        self.open_transaction = QPushButton("Open selected transaction")
+        self.open_transaction.setEnabled(False)
+        self.open_transaction.clicked.connect(lambda: self.open_row(self.table.currentRow(), 0))
+        self.table.itemSelectionChanged.connect(
+            lambda: self.open_transaction.setEnabled(self.table.currentRow() >= 0)
+        )
+        layout.addWidget(self.open_transaction)
         self.more = QPushButton("Load activity")
         self.more.setEnabled(False)
         self.more.clicked.connect(self.start)
         layout.addWidget(self.more)
+
+    def open_row(self, row, _column):
+        if self.context is None or row < 0:
+            return
+        column = 1 if self.kind == ActivityKind.TRANSACTIONS else self.table.columnCount() - 1
+        item = self.table.item(row, column)
+        if item is not None:
+            self.transaction_requested.emit(item.text())
 
     def reset(self, context=None):
         self.generation += 1

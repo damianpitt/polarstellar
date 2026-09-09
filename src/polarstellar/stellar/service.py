@@ -5,6 +5,7 @@ from stellar_sdk import StrKey
 from polarstellar.stellar.activity import ActivityKind, ActivityPage
 from polarstellar.stellar.models import Account, Network
 from polarstellar.stellar.providers import AccountError, AccountProvider
+from polarstellar.stellar.transaction import TransactionDetail, validate_hash
 
 
 def validate_account(value: str) -> str:
@@ -35,3 +36,10 @@ class AccountService:
         if (page.address, page.network, page.kind) != (address, network, kind):
             raise AccountError("Activity does not match this account and network.")
         return page
+
+    async def transaction(self, value: str, network: Network) -> TransactionDetail:
+        hash_value = validate_hash(value)
+        detail = await self.provider.get_transaction(hash_value, network)
+        if detail.hash != hash_value or detail.network != network:
+            raise AccountError("Transaction does not match this search and network.")
+        return detail

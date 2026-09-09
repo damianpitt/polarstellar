@@ -8,6 +8,7 @@ import httpx
 from polarstellar.stellar.activity import PAGE_SIZE, ActivityKind, ActivityPage, parse_page
 from polarstellar.stellar.models import Account, Balance, Network
 from polarstellar.stellar.providers import AccountError
+from polarstellar.stellar.transaction import TransactionDetail, parse_transaction
 
 ENDPOINTS = {
     Network.MAINNET: "https://horizon.stellar.org",
@@ -81,14 +82,58 @@ class HorizonProvider:
     async def _get(
         self, address: str, network: Network, suffix: str = "", params: dict | None = None
     ) -> dict:
+        return await self._request(
+            f"/accounts/{address}{suffix}",
+            network,
+            params,
+            f"Account not found on {network.value}. It may not be funded.",
+        )
+
+    async def get_transaction(self, hash_value: str, network: Network) -> TransactionDetail:
+        path = f"/transactions/{hash_value}"
+        missing = f"Transaction not found in available {network.value} Horizon history."
+        data = await self._request(path, network, None, missing)
+        try:
+            # Validate the header before accepting or fetching its operations.
+            header = parse_transaction(data, hash_value, network, [], ENDPOINTS[network])
+            rows = []
+            warning = ""
+            cursor = None
+            while len(rows) < header.operation_count:
+                params = {"order": "asc", "limit": "200", "include_failed": "true"}
+                if cursor is not None:
+                    params["cursor"] = cursor
+                try:
+                    page = await self._request(
+                        path + "/operations",
+                        network,
+                        params,
+                        "Transaction operations are unavailable in Horizon.",
+                    )
+                except AccountError as exc:
+                    warning = str(exc) + " Operation details are incomplete; retry to fetch again."
+                    break
+                batch = page["_embedded"]["records"]
+                if not isinstance(batch, list) or len(batch) > 200:
+                    raise ValueError("Invalid operation page")
+                if not batch:
+                    break
+                rows.extend(batch)
+                parse_transaction(data, hash_value, network, rows, ENDPOINTS[network])
+                cursor = batch[-1]["paging_token"]
+            return parse_transaction(data, hash_value, network, rows, ENDPOINTS[network], warning)
+        except (KeyError, TypeError, ValueError, InvalidOperation) as exc:
+            raise AccountError("Horizon returned invalid transaction or operation data.") from exc
+
+    async def _request(
+        self, path: str, network: Network, params: dict | None, missing: str
+    ) -> dict:
         source = ENDPOINTS[network]
         try:
             async with httpx.AsyncClient(transport=self.transport, timeout=15.0) as client:
-                response = await client.get(f"{source}/accounts/{address}{suffix}", params=params)
+                response = await client.get(f"{source}{path}", params=params)
                 if response.status_code == 404:
-                    raise AccountError(
-                        f"Account not found on {network.value}. It may not be funded."
-                    )
+                    raise AccountError(missing)
                 if response.status_code == 429:
                     raise AccountError("Horizon is rate limiting requests. Please try again later.")
                 response.raise_for_status()

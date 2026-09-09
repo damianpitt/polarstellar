@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.2 account explorer with paginated activity; decoding, analysis, storage, and export are planned\
+**Implementation status:** Pre-alpha 0.0.3 account explorer with paginated activity and transaction inspection; analysis, storage, and export are planned\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1535,7 +1535,12 @@ snapshot before a new lookup. Failed requests are not automatically retried; use
 retry explicitly. Transactions, operations, and payments are available through independent 20-record,
 newest-first pages with Load more, retry, and stale-result rejection. Each page records
 its network, source, and retrieval time; coverage is limited to available Horizon history.
-No local cache, graph, decoder, contract explorer, or export is implemented yet.
+Transaction details can be opened from any activity row or by hash search. Details include
+status, ledger, fee payer, exact fees, memo, and operations in execution order. Common
+Horizon operation fields have readable explanations, with raw JSON retained. Failed
+instructions are marked not applied; missing operations remain visibly partial. Closing,
+reloading, or changing investigation context invalidates outstanding detail requests.
+General XDR decoding, local cache, graphs, contract exploration, and export remain planned.
 Assets, Graph, and Contracts navigation remain disabled. See CHANGELOG.md for versioned
 feature history. Update its Unreleased section with each implemented feature or fix and
 keep package metadata and the lockfile aligned whenever the version changes.

@@ -6,7 +6,7 @@ Open-source desktop network intelligence for Stellar and Soroban. PolarStellar i
 built to help inspect accounts, understand transaction operations, discover counterparties,
 and trace relationships in a local desktop workspace.
 
-**Version: 0.0.2 — pre-alpha.** See [CHANGELOG.md](CHANGELOG.md) for feature history. Paste a checksum-valid Stellar G-address to
+**Version: 0.0.3 — pre-alpha.** See [CHANGELOG.md](CHANGELOG.md) for feature history. Paste a checksum-valid Stellar G-address to
 fetch account details, XLM and asset balances, and trustlines from Horizon. Mainnet and
 Testnet are separate. Lookups are asynchronous and cancellable; switching networks or
 starting another search discards stale results. Issuers, trust limits, and authorization
@@ -17,7 +17,11 @@ Open a section to fetch its first 20 records, then choose **Load more** for olde
 Each section keeps its own position. Failed page loads can be retried without losing rows.
 Results are newest first and limited to Horizon's available history; failed records are labeled.
 Payment amounts are preserved as exact strings; path payments show the destination amount.
-Transaction decoding, graphs, contracts, local caching, and export remain planned.
+Select a row and choose **Open selected transaction**, or double-click it, to see status,
+ledger, charged fee, and ordered operations. You can also paste a 64-character transaction
+hash directly into search. Common operations have readable explanations; unsupported types
+retain raw data. Failed instructions and incomplete operation lists are labeled explicitly.
+General XDR/Soroban decoding, graphs, contracts, local caching, and export remain planned.
 No private keys are required, and the application does not submit transactions.
 Lookups send the searched public address to the selected Horizon endpoint; no investigation
 data is saved locally in this phase.

@@ -10,6 +10,33 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.3] - 2026-09-09
+
+### Added
+
+- Transaction inspection from selected rows in Transactions, Operations, or Payments,
+  with a button or double-click. Activity lists retain their loaded pages.
+- Direct transaction-hash search with hexadecimal validation and Mainnet/Testnet separation.
+- Non-modal transaction inspector showing status, ledger, time, memo, source account,
+  fee payer, exact charged fees in XLM and stroops, and ordered operations.
+- Readable explanations for payments, path payments, account creation/merge, trustline
+  changes, sell/buy/passive offers, and recognized account-option changes.
+- Operation-specific source accounts, raw Horizon transaction/operation data, and explicit
+  unsupported/malformed-operation explanations.
+- Failed-transaction instructions marked as not applied; incomplete operations explicitly
+  labeled while keeping available transaction metadata visible.
+- Reload, cancellation when closing the inspector, and stale-response protection when
+  changing the account/network or searching again.
+- Tests for ordered multi-page operations, failed transactions, partial data, wrong
+  transaction identities, decimal precision, decoder fallback, and dialog lifecycle.
+
+### Validation and scope
+
+- Confirmed the previous Windows failure was the already-fixed UTF-8 changelog test;
+  the subsequent 0.0.2 checks passed on all three operating systems.
+- Decoding uses Horizon's parsed fields. General XDR decoding, Soroban execution decoding,
+  complete historical coverage, and tracing remain planned.
+
 ## [0.0.2] - 2026-09-09
 
 ### Added
