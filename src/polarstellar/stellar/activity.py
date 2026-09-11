@@ -5,7 +5,9 @@ from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from enum import Enum
 
-from polarstellar.stellar.models import Network
+from stellar_sdk import StrKey
+
+from polarstellar.stellar.models import Network, Transfer
 
 PAGE_SIZE = 20
 
@@ -21,6 +23,8 @@ class ActivityRecord:
     identifier: str
     cursor: str
     values: tuple[str, ...]
+    transfer: Transfer | None = None
+    exclusion: str = "Not a payment record"
 
 
 @dataclass(frozen=True)
@@ -81,6 +85,8 @@ def parse_page(
     records = []
     previous = int(cursor) if cursor is not None else None
     for row in rows:
+        transfer = None
+        exclusion = "Not a payment record"
         token = field(row, "paging_token")
         if not token.isascii() or not token.isdecimal():
             raise ValueError("Invalid paging token")
@@ -150,7 +156,30 @@ def parse_page(
                     asset,
                     transaction,
                 )
-        records.append(ActivityRecord(identifier, token, values))
+                if not success:
+                    exclusion = "Failed transaction"
+                elif operation not in ("payment", "create_account"):
+                    exclusion = "Path payment / merge / unsupported operation"
+                elif not (
+                    StrKey.is_valid_ed25519_public_key(sender)
+                    and StrKey.is_valid_ed25519_public_key(recipient)
+                ):
+                    exclusion = "Unsupported account identifier"
+                elif asset == "—" or amount == "—":
+                    exclusion = "Missing asset or amount"
+                else:
+                    transfer = Transfer(
+                        network,
+                        sender,
+                        recipient,
+                        asset,
+                        Decimal(amount),
+                        identifier,
+                        transaction,
+                        created,
+                    )
+                    exclusion = ""
+        records.append(ActivityRecord(identifier, token, values, transfer, exclusion))
     return ActivityPage(
         address,
         network,

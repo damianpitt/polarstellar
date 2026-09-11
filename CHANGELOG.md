@@ -10,6 +10,32 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.4] - 2026-09-11
+
+### Added
+
+- Graph section with one-hop counterparty analysis from the Payments list's fetched records.
+- Exact incoming/outgoing totals grouped by counterparty and full asset identity, with
+  operation counts and transaction evidence. Different issuers are never combined.
+- Successful direct payments and account-creation funding included; failed transactions,
+  self-transfers, path payments, merges, unsupported identifiers, and unrelated records
+  excluded explicitly. Repeated operation IDs do not double-count.
+- NetworkX directed relationship model and native Qt graph rendering, with arrows,
+  draggable nodes, zoom, pan, fit, hover summaries, and right-click address copying.
+- Asset/direction filters and a counterparty table ranked by operation count. The graph
+  shows up to 30 filtered counterparties; the table retains all fetched relationships.
+- Double-click a node or counterparty row to investigate that account. Select a table row
+  to see supporting operations; double-click evidence to open its transaction.
+- Graph and Payments share pagination, loading/retry states, source and retrieval metadata.
+  Switching accounts/networks clears analysis and rejects stale requests.
+
+### Scope
+
+- Totals cover loaded records only and are not lifetime balances. End of available results
+  means the end of Horizon's available history, not a guarantee of complete ledger history.
+- This is a one-hop graph. Branch expansion, path-payment routing reconstruction, persistent
+  investigations, labels, and saved graphs remain planned.
+
 ## [0.0.3] - 2026-09-09
 
 ### Added

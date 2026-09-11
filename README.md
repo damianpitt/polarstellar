@@ -6,7 +6,7 @@ Open-source desktop network intelligence for Stellar and Soroban. PolarStellar i
 built to help inspect accounts, understand transaction operations, discover counterparties,
 and trace relationships in a local desktop workspace.
 
-**Version: 0.0.3 — pre-alpha.** See [CHANGELOG.md](CHANGELOG.md) for feature history. Paste a checksum-valid Stellar G-address to
+**Version: 0.0.4 — pre-alpha.** See [CHANGELOG.md](CHANGELOG.md) for feature history. Paste a checksum-valid Stellar G-address to
 fetch account details, XLM and asset balances, and trustlines from Horizon. Mainnet and
 Testnet are separate. Lookups are asynchronous and cancellable; switching networks or
 starting another search discards stale results. Issuers, trust limits, and authorization
@@ -21,7 +21,14 @@ Select a row and choose **Open selected transaction**, or double-click it, to se
 ledger, charged fee, and ordered operations. You can also paste a 64-character transaction
 hash directly into search. Common operations have readable explanations; unsupported types
 retain raw data. Failed instructions and incomplete operation lists are labeled explicitly.
-General XDR/Soroban decoding, graphs, contracts, local caching, and export remain planned.
+Open **Graph** to see direct counterparties derived from loaded Payments records.
+Use asset/direction filters, inspect exact totals and supporting transaction evidence,
+and choose **Load more** to extend coverage. Drag nodes, scroll to zoom, right-click to
+copy an address, or double-click a node/table row to investigate that account.
+The graph shows up to 30 counterparties; the table retains all fetched relationships.
+Only successful direct payments and account funding contribute to totals. Path payments,
+merges, failed transactions, and self-transfers are excluded and counted in the coverage notice.
+General XDR/Soroban decoding, multi-hop tracing, contracts, local caching, and export remain planned.
 No private keys are required, and the application does not submit transactions.
 Lookups send the searched public address to the selected Horizon endpoint; no investigation
 data is saved locally in this phase.

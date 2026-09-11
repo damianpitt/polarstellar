@@ -25,6 +25,7 @@ from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.service import AccountService, validate_account
 from polarstellar.ui.activity_view import ActivityView
+from polarstellar.ui.graph_view import GraphView
 from polarstellar.ui.transaction_view import TransactionDialog
 
 
@@ -71,7 +72,7 @@ class MainWindow(QMainWindow):
         content = QHBoxLayout()
         navigation = QListWidget()
         navigation.addItems(
-            ["Overview", "Transactions", "Operations", "Payments", "Assets", "Graph", "Contracts"]
+            ["Overview", "Transactions", "Operations", "Payments", "Graph", "Assets", "Contracts"]
         )
         navigation.setFixedWidth(180)
         navigation.setCurrentRow(0)
@@ -95,13 +96,17 @@ class MainWindow(QMainWindow):
         for view in self.activity_views:
             self.pages.addWidget(view)
             view.transaction_requested.connect(self.open_transaction)
+        self.graph = GraphView(self.activity_views[2])
+        self.graph.account_requested.connect(self.investigate_counterparty)
+        self.graph.transaction_requested.connect(self.open_transaction)
+        self.pages.addWidget(self.graph)
         pane.addWidget(self.pages)
         navigation.currentRowChanged.connect(self.select_page)
         content.addLayout(pane, 1)
         layout.addLayout(content, 1)
         self.setCentralWidget(root)
         self.statusBar().showMessage("Mainnet selected • Ready")
-        for index in range(4, navigation.count()):
+        for index in range(5, navigation.count()):
             item = navigation.item(index)
             item.setText(item.text() + " (planned)")
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
@@ -121,10 +126,19 @@ class MainWindow(QMainWindow):
     def select_page(self, index):
         if index < self.pages.count():
             self.pages.setCurrentIndex(index)
-            if index > 0:
+            if index == 4:
+                view = self.activity_views[2]
+                if not view.loaded:
+                    view.start()
+                self.graph.fit()
+            elif index > 0:
                 view = self.activity_views[index - 1]
                 if not view.loaded:
                     view.start()
+
+    def investigate_counterparty(self, address):
+        self.search.setText(address)
+        self.start_search()
 
     def open_transaction(self, hash_value):
         dialog = TransactionDialog(

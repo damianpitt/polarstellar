@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.3 account explorer with paginated activity and transaction inspection; analysis, storage, and export are planned\
+**Implementation status:** Pre-alpha 0.0.4 with account/activity inspection and one-hop counterparty graph; storage and export are planned\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1540,13 +1540,19 @@ status, ledger, fee payer, exact fees, memo, and operations in execution order. 
 Horizon operation fields have readable explanations, with raw JSON retained. Failed
 instructions are marked not applied; missing operations remain visibly partial. Closing,
 reloading, or changing investigation context invalidates outstanding detail requests.
-General XDR decoding, local cache, graphs, contract exploration, and export remain planned.
-Assets, Graph, and Contracts navigation remain disabled. See CHANGELOG.md for versioned
+One-hop counterparty analysis and graph rendering use the loaded Payments records.
+Successful direct payments and account funding produce per-asset directional totals with
+operation evidence. Path payments, merges, failures, self-transfers, and unsupported parties
+are excluded explicitly. The graph renders up to 30 counterparties; the table contains all
+fetched relationships. Filters, zoom, pan, node dragging, address copying, and account/transaction
+navigation are available. General XDR decoding, local cache, multi-hop expansion, contract
+exploration, and export remain planned.
+Assets and Contracts navigation remain disabled. See CHANGELOG.md for versioned
 feature history. Update its Unreleased section with each implemented feature or fix and
 keep package metadata and the lockfile aligned whenever the version changes.
 
 Python 3.12 is the development baseline. Runtime dependencies are PySide6, qasync, httpx,
-and the Stellar Python SDK (`stellar-sdk`). SQLite and NetworkX integration remain planned.
+and the Stellar Python SDK (`stellar-sdk`). NetworkX powers the relationship model; SQLite integration remains planned.
 The uv lockfile is committed for reproducibility. `__init__.py` files are intentional Python
 package source; `__pycache__` and `.pyc` files are generated and excluded by `.gitignore`.
 

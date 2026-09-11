@@ -29,3 +29,15 @@ class Account:
     balances: tuple[Balance, ...]
     source: str
     fetched_at: datetime
+
+
+@dataclass(frozen=True)
+class Transfer:
+    network: Network
+    sender: str
+    recipient: str
+    asset: str
+    amount: Decimal
+    operation: str
+    transaction: str
+    created: str

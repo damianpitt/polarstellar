@@ -19,6 +19,7 @@ from polarstellar.stellar.providers import AccountError
 
 class ActivityView(QWidget):
     transaction_requested = Signal(str)
+    changed = Signal()
 
     def __init__(self, service, kind: ActivityKind):
         super().__init__()
@@ -32,6 +33,8 @@ class ActivityView(QWidget):
         self.loaded = False
         self.done = False
         self.identifiers = set()
+        self.records = []
+        self.last_page = None
         layout = QVBoxLayout(self)
         self.summary = QLabel("Inspect an account to view activity.")
         self.summary.setWordWrap(True)
@@ -73,6 +76,8 @@ class ActivityView(QWidget):
         self.loaded = False
         self.done = False
         self.identifiers.clear()
+        self.records.clear()
+        self.last_page = None
         self.table.setRowCount(0)
         self.summary.setText(
             "Newest first • Horizon coverage may be limited."
@@ -81,6 +86,7 @@ class ActivityView(QWidget):
         )
         self.more.setText("Load activity")
         self.more.setEnabled(context is not None)
+        self.changed.emit()
 
     def start(self):
         if self.context is None or self.task is not None or self.done:
@@ -92,6 +98,7 @@ class ActivityView(QWidget):
         self.task = asyncio.create_task(self.load(self.context, self.generation))
         self.tasks.add(self.task)
         self.task.add_done_callback(self.tasks.discard)
+        self.changed.emit()
 
     async def load(self, context, generation):
         try:
@@ -102,12 +109,14 @@ class ActivityView(QWidget):
                 if record.identifier in self.identifiers:
                     continue
                 self.identifiers.add(record.identifier)
+                self.records.append(record)
                 row = self.table.rowCount()
                 self.table.insertRow(row)
                 for column, value in enumerate(record.values):
                     item = QTableWidgetItem(value)
                     item.setToolTip(value)
                     self.table.setItem(row, column, item)
+            self.last_page = page
             self.cursor = page.next_cursor
             self.loaded = True
             self.done = page.next_cursor is None
@@ -132,3 +141,4 @@ class ActivityView(QWidget):
             if generation == self.generation:
                 self.task = None
                 self.more.setEnabled(not self.done and self.context is not None)
+                self.changed.emit()
