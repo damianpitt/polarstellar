@@ -27,7 +27,10 @@ from polarstellar.analysis.counterparties import analyze
 
 
 class Canvas(QGraphicsView):
+    """A pannable relationship canvas with bounded mouse-wheel zoom."""
+
     def wheelEvent(self, event):
+        """Zoom within a bounded scale so the graph cannot become unusably small or large."""
         factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
         if 0.1 <= self.transform().m11() * factor <= 5:
             self.scale(factor, factor)
@@ -35,7 +38,10 @@ class Canvas(QGraphicsView):
 
 
 class Node(QGraphicsEllipseItem):
+    """A movable account node that can open an investigation or copy its address."""
+
     def __init__(self, address, activate, central=False):
+        """Build this view and connect user actions to its data-loading controls."""
         super().__init__(-24, -24, 48, 48)
         self.address = address
         self.activate = activate
@@ -49,23 +55,29 @@ class Node(QGraphicsEllipseItem):
         self.setToolTip(address + "\nDouble-click: investigate • Right-click: copy address")
 
     def itemChange(self, change, value):
+        """Move connected arrows whenever a draggable account node changes position."""
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             for edge in self.edges:
                 edge.update()
         return super().itemChange(change, value)
 
     def mouseDoubleClickEvent(self, event):
+        """Defer account navigation until the current graphics event has finished."""
         address, activate = self.address, self.activate
         QTimer.singleShot(0, lambda: activate(address))
         event.accept()
 
     def contextMenuEvent(self, event):
+        """Copy this node’s full address to the clipboard."""
         QApplication.clipboard().setText(self.address)
         event.accept()
 
 
 class Edge:
+    """A directed relationship arrow that follows its source and target nodes."""
+
     def __init__(self, scene, source, target, tooltip):
+        """Build this view and connect user actions to its data-loading controls."""
         self.source, self.target = source, target
         self.line = scene.addLine(0, 0, 0, 0, QPen(QColor("#6983ab"), 2))
         self.arrow = scene.addPolygon(QPolygonF(), QPen(QColor("#6983ab")), QColor("#6983ab"))
@@ -77,6 +89,7 @@ class Edge:
         self.update()
 
     def update(self):
+        """Recompute the line and arrowhead after either endpoint moves."""
         a, b = self.source.pos(), self.target.pos()
         dx, dy = b.x() - a.x(), b.y() - a.y()
         length = math.hypot(dx, dy) or 1
@@ -92,10 +105,13 @@ class Edge:
 
 
 class GraphView(QWidget):
+    """Counterparty evidence and a one-hop graph derived from fetched payment records."""
+
     account_requested = Signal(str)
     transaction_requested = Signal(str)
 
     def __init__(self, payments):
+        """Build this view and connect user actions to its data-loading controls."""
         super().__init__()
         self.payments = payments
         self.relationships = []
@@ -158,6 +174,7 @@ class GraphView(QWidget):
         self.refresh()
 
     def refresh(self):
+        """Rebuild analysis from the Payments view while preserving the selected asset when possible."""
         self.context = self.payments.context
         self.load.setEnabled(
             self.context is not None and not self.payments.done and self.payments.task is None
@@ -176,6 +193,7 @@ class GraphView(QWidget):
         self.render()
 
     def fit(self):
+        """Fit all currently drawn graph items within the visible canvas."""
         if self.scene.items():
             self.canvas.fitInView(
                 self.scene.itemsBoundingRect().adjusted(-40, -40, 40, 40),
@@ -183,6 +201,7 @@ class GraphView(QWidget):
             )
 
     def render(self, *_):
+        """Apply filters and render a bounded graph alongside the complete counterparty table."""
         self.edges.clear()
         self.scene.clear()
         self.evidence.clear()
@@ -225,7 +244,7 @@ class GraphView(QWidget):
         )
         page = self.payments.last_page
         provenance = (
-            f"Source: {page.source} • Retrieved {page.fetched_at:%Y-%m-%d %H:%M:%S} UTC"
+            f"{page.cache_status} • Source: {page.source} • Retrieved {page.fetched_at:%Y-%m-%d %H:%M:%S} UTC"
             if page
             else "No payments fetched yet."
         )
@@ -246,7 +265,9 @@ class GraphView(QWidget):
                 angle = 2 * math.pi * (index - 1) / len(visible)
                 radius = max(230, len(visible) * 18)
                 node.setPos(radius * math.cos(angle), radius * math.sin(angle))
-            label = self.scene.addSimpleText("Account" if index == 0 else address[:3] + "…" + address[-3:])
+            label = self.scene.addSimpleText(
+                "Account" if index == 0 else address[:3] + "…" + address[-3:]
+            )
             label.setBrush(QColor("#e5e9f2"))
             label.setFont(QFont("", 9))
             label.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
@@ -265,11 +286,13 @@ class GraphView(QWidget):
         self.fit()
 
     def open_counterparty(self, row, _column):
+        """Defer investigation of the selected counterparty until the table event completes."""
         if 0 <= row < len(self.relationships):
             address = self.relationships[row].counterparty
             QTimer.singleShot(0, lambda: self.account_requested.emit(address))
 
     def show_evidence(self):
+        """List the operations supporting the selected relationship for transaction inspection."""
         self.evidence.clear()
         self.evidence.hide()
         row = self.table.currentRow()

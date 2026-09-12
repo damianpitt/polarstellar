@@ -18,10 +18,13 @@ from polarstellar.stellar.providers import AccountError
 
 
 class ActivityView(QWidget):
+    """A paginated activity table with retry and transaction navigation."""
+
     transaction_requested = Signal(str)
     changed = Signal()
 
     def __init__(self, service, kind: ActivityKind):
+        """Build this view and connect user actions to its data-loading controls."""
         super().__init__()
         self.service = service
         self.kind = kind
@@ -59,6 +62,7 @@ class ActivityView(QWidget):
         layout.addWidget(self.more)
 
     def open_row(self, row, _column):
+        """Read the selected row’s transaction reference and request its inspection."""
         if self.context is None or row < 0:
             return
         column = 1 if self.kind == ActivityKind.TRANSACTIONS else self.table.columnCount() - 1
@@ -67,6 +71,7 @@ class ActivityView(QWidget):
             self.transaction_requested.emit(item.text())
 
     def reset(self, context=None):
+        """Clear the previous investigation and cancel requests tied to that context."""
         self.generation += 1
         for task in self.tasks:
             task.cancel()
@@ -89,6 +94,7 @@ class ActivityView(QWidget):
         self.changed.emit()
 
     def start(self):
+        """Start one asynchronous request and prevent duplicate concurrent loads."""
         if self.context is None or self.task is not None or self.done:
             return
         self.more.setEnabled(False)
@@ -101,6 +107,7 @@ class ActivityView(QWidget):
         self.changed.emit()
 
     async def load(self, context, generation):
+        """Load the requested snapshot, reject stale responses, and display its provenance."""
         try:
             page = await self.service.activity(*context, self.kind, self.cursor)
             if generation != self.generation:
@@ -127,7 +134,7 @@ class ActivityView(QWidget):
             self.summary.setText(
                 f"{self.table.rowCount()} {self.kind.value} loaded • {context[1].value} • Newest first. "
                 f"{boundary}\nHorizon coverage may be limited; failed records are labeled. "
-                f"Source: {page.source} • Retrieved {page.fetched_at:%Y-%m-%d %H:%M:%S} UTC"
+                f"{page.cache_status} • Source: {page.source} • Retrieved {page.fetched_at:%Y-%m-%d %H:%M:%S} UTC"
             )
             self.more.setText("No more results" if self.done else "Load more")
         except asyncio.CancelledError:

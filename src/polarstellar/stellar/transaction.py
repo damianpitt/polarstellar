@@ -19,6 +19,8 @@ def validate_hash(value: str) -> str:
 
 @dataclass(frozen=True)
 class OperationDetail:
+    """A readable operation explanation alongside its original Horizon fields."""
+
     identifier: str
     kind: str
     source: str
@@ -28,6 +30,8 @@ class OperationDetail:
 
 @dataclass(frozen=True)
 class TransactionDetail:
+    """Transaction metadata and ordered operations, including completeness and cache status."""
+
     hash: str
     network: Network
     successful: bool
@@ -43,6 +47,7 @@ class TransactionDetail:
     source: str
     fetched_at: datetime
     raw: str
+    cache_status: str = "Live data"
 
 
 def text(row: dict, name: str) -> str:

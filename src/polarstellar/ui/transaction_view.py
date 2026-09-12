@@ -17,6 +17,7 @@ from polarstellar.stellar.providers import AccountError
 
 class TransactionDialog(QDialog):
     def __init__(self, service, hash_value, network, parent=None):
+        """Build this view and connect user actions to its data-loading controls."""
         super().__init__(parent)
         self.service = service
         self.hash_value = hash_value
@@ -46,12 +47,14 @@ class TransactionDialog(QDialog):
         self.finished.connect(self.invalidate)
 
     def invalidate(self, *_):
+        """Cancel work from the previous context so late results cannot overwrite the current view."""
         self.generation += 1
         for task in self.tasks:
             task.cancel()
         self.task = None
 
     def start(self):
+        """Start one asynchronous request and prevent duplicate concurrent loads."""
         self.invalidate()
         self.retry.setEnabled(False)
         self.details.setPlainText(
@@ -63,6 +66,7 @@ class TransactionDialog(QDialog):
         self.task.add_done_callback(self.tasks.discard)
 
     async def load(self, generation):
+        """Load the requested snapshot, reject stale responses, and display its provenance."""
         try:
             tx = await self.service.transaction(self.hash_value, self.network)
             if generation != self.generation:
@@ -77,7 +81,7 @@ class TransactionDialog(QDialog):
                 f"Fee payer: {tx.fee_account}",
                 f"Memo ({tx.memo})",
                 f"Operations: {len(tx.operations)} of {tx.operation_count}",
-                f"Source: {tx.source} • Retrieved {tx.fetched_at:%Y-%m-%d %H:%M:%S} UTC",
+                f"{tx.cache_status} • Source: {tx.source} • Retrieved {tx.fetched_at:%Y-%m-%d %H:%M:%S} UTC",
             ]
             if tx.warning:
                 lines.extend(["", "PARTIAL DATA: " + tx.warning])

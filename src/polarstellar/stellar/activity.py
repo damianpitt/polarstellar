@@ -13,6 +13,8 @@ PAGE_SIZE = 20
 
 
 class ActivityKind(str, Enum):
+    """The three independently paginated account activity resources."""
+
     TRANSACTIONS = "transactions"
     OPERATIONS = "operations"
     PAYMENTS = "payments"
@@ -20,6 +22,8 @@ class ActivityKind(str, Enum):
 
 @dataclass(frozen=True)
 class ActivityRecord:
+    """A display record with optional normalized transfer evidence."""
+
     identifier: str
     cursor: str
     values: tuple[str, ...]
@@ -29,6 +33,8 @@ class ActivityRecord:
 
 @dataclass(frozen=True)
 class ActivityPage:
+    """One page of activity, retaining network, cursor, provenance, and cache status."""
+
     address: str
     network: Network
     kind: ActivityKind
@@ -36,6 +42,7 @@ class ActivityPage:
     next_cursor: str | None
     source: str
     fetched_at: datetime
+    cache_status: str = "Live data"
 
 
 HEADERS = {

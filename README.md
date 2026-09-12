@@ -6,7 +6,7 @@ Open-source desktop network intelligence for Stellar and Soroban. PolarStellar i
 built to help inspect accounts, understand transaction operations, discover counterparties,
 and trace relationships in a local desktop workspace.
 
-**Version: 0.0.4 — pre-alpha.** See [CHANGELOG.md](CHANGELOG.md) for feature history. Paste a checksum-valid Stellar G-address to
+**Version: 0.0.5 — pre-alpha.** See [CHANGELOG.md](CHANGELOG.md) for feature history. Paste a checksum-valid Stellar G-address to
 fetch account details, XLM and asset balances, and trustlines from Horizon. Mainnet and
 Testnet are separate. Lookups are asynchronous and cancellable; switching networks or
 starting another search discards stale results. Issuers, trust limits, and authorization
@@ -28,10 +28,14 @@ copy an address, or double-click a node/table row to investigate that account.
 The graph shows up to 30 counterparties; the table retains all fetched relationships.
 Only successful direct payments and account funding contribute to totals. Path payments,
 merges, failed transactions, and self-transfers are excluded and counted in the coverage notice.
-General XDR/Soroban decoding, multi-hop tracing, contracts, local caching, and export remain planned.
+General XDR/Soroban decoding, multi-hop tracing, contracts, saved investigations, and export remain planned.
 No private keys are required, and the application does not submit transactions.
-Lookups send the searched public address to the selected Horizon endpoint; no investigation
-data is saved locally in this phase.
+Live lookups send the searched public identifier to the selected Horizon endpoint.
+**Use local cache** optionally saves fetched snapshots on this computer. It starts off each
+session; accounts/activity are reused for 60 seconds and complete transactions for 24 hours.
+Cached results keep their original retrieval time. Uncheck caching and search again for
+live data, or select **Clear cache** to delete saved snapshots. Hover the cache status for
+the file location. The cache is unencrypted and does not save graph layouts or annotations.
 
 ## Product direction
 

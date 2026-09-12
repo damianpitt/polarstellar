@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.4 with account/activity inspection and one-hop counterparty graph; storage and export are planned\
+**Implementation status:** Pre-alpha 0.0.5 with account/activity inspection, one-hop graph, and optional SQLite cache; export is planned\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1545,14 +1545,19 @@ Successful direct payments and account funding produce per-asset directional tot
 operation evidence. Path payments, merges, failures, self-transfers, and unsupported parties
 are excluded explicitly. The graph renders up to 30 counterparties; the table contains all
 fetched relationships. Filters, zoom, pan, node dragging, address copying, and account/transaction
-navigation are available. General XDR decoding, local cache, multi-hop expansion, contract
-exploration, and export remain planned.
+navigation are available. Optional SQLite caching now stores account and activity snapshots for 60 seconds and complete
+transaction details for 24 hours. The cache starts disabled, keeps network/query/cursor keys
+separate, and preserves original retrieval times. Clear cache removes stored rows and compacts
+the database; disabling it alone does not delete saved data. SQLite work runs outside the UI
+thread, and invalidation prevents pending requests from repopulating cleared storage.
+General XDR decoding, saved investigations, multi-hop expansion, contract exploration, and
+export remain planned.
 Assets and Contracts navigation remain disabled. See CHANGELOG.md for versioned
 feature history. Update its Unreleased section with each implemented feature or fix and
 keep package metadata and the lockfile aligned whenever the version changes.
 
 Python 3.12 is the development baseline. Runtime dependencies are PySide6, qasync, httpx,
-and the Stellar Python SDK (`stellar-sdk`). NetworkX powers the relationship model; SQLite integration remains planned.
+and the Stellar Python SDK (`stellar-sdk`). NetworkX powers the relationship model; SQLite provides an optional, expiring response cache.
 The uv lockfile is committed for reproducibility. `__init__.py` files are intentional Python
 package source; `__pycache__` and `.pyc` files are generated and excluded by `.gitignore`.
 

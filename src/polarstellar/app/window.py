@@ -25,13 +25,18 @@ from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.service import AccountService, validate_account
 from polarstellar.ui.activity_view import ActivityView
+from polarstellar.ui.cache_controls import CacheControls
 from polarstellar.ui.graph_view import GraphView
 from polarstellar.ui.transaction_view import TransactionDialog
 
 
 class MainWindow(QMainWindow):
+    """The main explorer window, coordinating search, network changes, and local cache controls."""
+
     def __init__(self, service: AccountService) -> None:
+        """Build this view and connect user actions to its data-loading controls."""
         super().__init__()
+        """Build the explorer and keep pending requests separate from displayed results."""
         self.service = service
         self.dialogs = set()
         self.task = None
@@ -55,6 +60,10 @@ class MainWindow(QMainWindow):
         self.network.setAccessibleName("Network")
         header.addWidget(self.network)
         layout.addLayout(header)
+        # Test providers remain usable without persistence; the application injects caching explicitly.
+        if hasattr(service.provider, "set_enabled"):
+            self.cache_controls = CacheControls(service.provider, self.invalidate, self.tasks)
+            layout.addWidget(self.cache_controls)
         self.search = QLineEdit()
         self.search.setPlaceholderText("Paste a Stellar G-address or transaction hash")
         self.search.setAccessibleName("Investigation search")
@@ -124,6 +133,7 @@ class MainWindow(QMainWindow):
         """)
 
     def select_page(self, index):
+        """Show a navigation section and lazily load its first page when needed."""
         if index < self.pages.count():
             self.pages.setCurrentIndex(index)
             if index == 4:
@@ -137,10 +147,12 @@ class MainWindow(QMainWindow):
                     view.start()
 
     def investigate_counterparty(self, address):
+        """Start a new investigation for the account selected in the graph."""
         self.search.setText(address)
         self.start_search()
 
     def open_transaction(self, hash_value):
+        """Open a separate transaction inspector using the currently selected network."""
         dialog = TransactionDialog(
             self.service, hash_value, Network(self.network.currentText()), self
         )
@@ -151,6 +163,7 @@ class MainWindow(QMainWindow):
         dialog.start()
 
     def invalidate(self) -> None:
+        """Cancel work from the previous context so late results cannot overwrite the current view."""
         for dialog in tuple(self.dialogs):
             dialog.reject()
         for view in self.activity_views:
@@ -161,13 +174,17 @@ class MainWindow(QMainWindow):
         self.task = None
         self.cancel.setEnabled(False)
         self.balances.setRowCount(0)
+        self.message.setText("Ready for a new investigation.")
+        self.statusBar().showMessage(f"{self.network.currentText()} selected • Ready")
 
     def cancel_search(self) -> None:
+        """Stop the active lookup and clear its displayed investigation state."""
         self.invalidate()
         self.message.setText("Search cancelled. You can start another lookup.")
         self.statusBar().showMessage(f"{self.network.currentText()} selected • Cancelled")
 
     def show_network(self, network: str) -> None:
+        """Clear previous-network results and prepare the selected network for a new search."""
         self.invalidate()
         self.message.setText(
             f"{network} selected. Inspect the address to fetch this network's data."
@@ -175,6 +192,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"{network} selected • Ready")
 
     def start_search(self) -> None:
+        """Validate the entered identifier and start an account or transaction investigation."""
         value = self.search.text().strip()
         if len(value) == 64:
             self.invalidate()
@@ -198,6 +216,7 @@ class MainWindow(QMainWindow):
         self.task.add_done_callback(self.tasks.discard)
 
     async def load_account(self, address: str, network: Network, generation: int) -> None:
+        """Display account balances only if this request still belongs to the active search."""
         try:
             account = await self.service.lookup(address, network)
             if generation != self.generation:
@@ -205,7 +224,7 @@ class MainWindow(QMainWindow):
             self.message.setText(
                 f"{account.address}\n{network.value} • Sequence {account.sequence}\n"
                 f"Home domain: {account.home_domain or 'Not set'}\n"
-                f"Source: {account.source} • Retrieved {account.fetched_at:%Y-%m-%d %H:%M:%S} UTC"
+                f"{account.cache_status} • Source: {account.source} • Retrieved {account.fetched_at:%Y-%m-%d %H:%M:%S} UTC"
             )
             self.balances.setRowCount(len(account.balances))
             for row, balance in enumerate(account.balances):
@@ -245,6 +264,7 @@ class MainWindow(QMainWindow):
                 self.task = None
 
     def closeEvent(self, event) -> None:
+        """Cancel outstanding requests before allowing the window to close."""
         self.invalidate()
         for task in self.tasks:
             task.cancel()

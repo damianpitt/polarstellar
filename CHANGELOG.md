@@ -10,6 +10,62 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.5] - 2026-09-13
+
+### Added — optional local SQLite cache
+
+- Added **Use local cache** above the investigation workspace. It starts off each time
+  the application opens, so normal searches do not create a database until enabled.
+- Enabled caching stores fetched account snapshots, individually keyed activity pages,
+  and complete transaction details in a platform-specific Qt cache directory outside
+  the repository. Hover the cache status to see the database path.
+- Accounts and activity pages expire after 60 seconds. Complete transaction details
+  expire after 24 hours. Expired records are fetched remotely; they are not silently
+  returned as an offline fallback. Partial transaction details and failed requests are
+  not cached, allowing subsequent requests to retry missing operations.
+- Cache keys include provider identity, representation revision, resource type, network,
+  identifier, activity kind, and pagination cursor. Identical addresses on Mainnet and
+  Testnet cannot reuse each other's snapshots.
+- Cached results display **Local cache** and retain their original source and retrieval
+  timestamp. Live results and storage failures are labeled separately. Money is serialized
+  as exact decimal text rather than floating-point numbers; structured transfer evidence
+  and transaction-operation ordering are preserved across a restart.
+
+### User controls and behavior
+
+- Uncheck **Use local cache** and investigate again to force live requests. Changing this
+  control clears the displayed investigation and invalidates requests from the previous mode.
+  Disabling caching leaves existing disk snapshots intact until they expire or are cleared.
+- **Clear cache** deletes stored rows, compacts the SQLite database, and clears the current
+  investigation. It remains available while caching is off. Failures are reported rather
+  than claiming data was removed. Clearing an unused cache does not create a database.
+- Disk operations run outside the Qt event loop. Cancellation and deletion are coordinated
+  so a pending request or an already-started write cannot refill a just-cleared cache.
+- Corrupt, unavailable, or incompatible cache storage falls back to live fetching. Unknown
+  schema versions are preserved rather than overwritten. Resource and network identities
+  are checked before cached snapshots are used or newly fetched snapshots are stored.
+
+### Storage scope and privacy
+
+- Schema version 1 stores JSON snapshots only; it does not deserialize executable Python
+  objects. Cache decoding accepts only known domain containers and validates field types.
+- Retention is bounded to 250 snapshots and at most 2 MB per payload. Old entries are pruned
+  during writes; expired entries are removed when read. This is a disposable response cache,
+  not a complete historical index, saved-investigation system, or automatic watchlist.
+- Local snapshots contain searched public ledger data and are not encrypted. System backups
+  or filesystem snapshots may retain prior copies independently of the application.
+- The existing ignore rules exclude SQLite files and sidecars. No database or local project
+  instruction file is included in the public repository.
+
+### Documentation and validation
+
+- Added plain-English docstrings and comments explaining persistence, expiry, exact-value
+  serialization, cancellation, clearing, and the affected UI lifecycle code.
+- Added isolated tests for disabled-cache behavior, restart reuse, expiry, network/cursor
+  separation, transaction completeness, corrupt storage, schema protection, bounded retention,
+  typed serialization, late writes during deletion, and the visible cache controls.
+- Updated the README, project specification, package metadata, and lockfile to 0.0.5.
+
 ## [0.0.4] - 2026-09-11
 
 ### Added
