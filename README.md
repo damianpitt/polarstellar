@@ -1,98 +1,266 @@
 # PolarStellar
 
-**Navigate the Stellar network.**
+### Navigate the Stellar network.
 
-Open-source desktop network intelligence for Stellar and Soroban. PolarStellar is being
-built to help inspect accounts, understand transaction operations, discover counterparties,
-and trace relationships in a local desktop workspace.
+An open-source desktop investigation toolkit for Stellar, with Soroban support on the roadmap.
+Explore accounts, inspect transactions, and understand relationships between counterparties
+from a local desktop workspace.
 
-**Version: 0.0.5 — pre-alpha.** See [CHANGELOG.md](CHANGELOG.md) for feature history. Paste a checksum-valid Stellar G-address to
-fetch account details, XLM and asset balances, and trustlines from Horizon. Mainnet and
-Testnet are separate. Lookups are asynchronous and cancellable; switching networks or
-starting another search discards stale results. Issuers, trust limits, and authorization
-status are shown alongside exact amounts.
+**Current version: 0.0.5 · Pre-alpha**
 
-Transactions, Operations, and Payments show recent activity after inspecting an account.
-Open a section to fetch its first 20 records, then choose **Load more** for older records.
-Each section keeps its own position. Failed page loads can be retried without losing rows.
-Results are newest first and limited to Horizon's available history; failed records are labeled.
-Payment amounts are preserved as exact strings; path payments show the destination amount.
-Select a row and choose **Open selected transaction**, or double-click it, to see status,
-ledger, charged fee, and ordered operations. You can also paste a 64-character transaction
-hash directly into search. Common operations have readable explanations; unsupported types
-retain raw data. Failed instructions and incomplete operation lists are labeled explicitly.
-Open **Graph** to see direct counterparties derived from loaded Payments records.
-Use asset/direction filters, inspect exact totals and supporting transaction evidence,
-and choose **Load more** to extend coverage. Drag nodes, scroll to zoom, right-click to
-copy an address, or double-click a node/table row to investigate that account.
-The graph shows up to 30 counterparties; the table retains all fetched relationships.
-Only successful direct payments and account funding contribute to totals. Path payments,
-merges, failed transactions, and self-transfers are excluded and counted in the coverage notice.
-General XDR/Soroban decoding, multi-hop tracing, contracts, saved investigations, and export remain planned.
-No private keys are required, and the application does not submit transactions.
-Live lookups send the searched public identifier to the selected Horizon endpoint.
-**Use local cache** optionally saves fetched snapshots on this computer. It starts off each
-session; accounts/activity are reused for 60 seconds and complete transactions for 24 hours.
-Cached results keep their original retrieval time. Uncheck caching and search again for
-live data, or select **Clear cache** to delete saved snapshots. Hover the cache status for
-the file location. The cache is unencrypted and does not save graph layouts or annotations.
+**Linux-first · Cross-platform Python / Qt application**
 
-## Product direction
+[Getting started](#getting-started) · [Features](#features) · [First investigation](#your-first-investigation) · [Roadmap](#roadmap) · [Changelog](CHANGELOG.md)
 
-- Account balances, trustlines, signers, and activity.
-- Human-readable transaction decoding with operations as first-class objects.
-- Counterparty discovery and interactive relationship graphs.
-- Soroban contract inspection and events.
-- Local SQLite caching and investigation state; CSV and JSON export.
+---
 
-This list describes the broader product roadmap. See the [full project scope and specification](PolarStellar_Project_Spec.md)
-for architecture, release boundaries, acceptance criteria, and the roadmap.
+## About the project
 
-## Run PolarStellar
+PolarStellar brings account information, transaction explanations, and relationship analysis
+into one desktop tool. Its focus is helping you understand what happened on the network
+and which records support that interpretation.
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then:
+The name combines **Polestar**, a reference point for navigation, with **Stellar**.
+That navigation theme guides the product: start with an account or transaction, inspect
+its activity, and follow the evidence to connected accounts.
+
+The application is useful for exploring payment activity, checking asset and trustline
+information, investigating transaction instructions, and examining direct counterparties.
+It is read-only: no private keys are required, and it does not sign or submit transactions.
+
+PolarStellar is an open-source project, **not affiliated with the Stellar Development Foundation**.
+
+## At a glance
+
+| Area | Available in 0.0.5 |
+| --- | --- |
+| Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
+| Recent activity | Transactions, operations, and payments with independent pagination |
+| Transaction inspection | Status, ledger, fees, memo, ordered operations, and raw Horizon data |
+| Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
+| Relationship graph | Interactive one-hop graph with asset and direction filters |
+| Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
+| Networks | Separate Mainnet and Testnet investigations |
+
+> **Pre-alpha:** native installers are not available yet. Contract exploration, exports,
+> and several advanced investigation features remain planned.
+
+## Getting started
+
+### Requirements
+
+- Git to clone the repository.
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) to manage Python and dependencies.
+- A desktop environment capable of running Qt applications.
+- Internet access for live Stellar lookups.
+
+Python **3.12** is the development baseline. The repository includes a Python version file
+and a dependency lockfile for reproducible setup.
+
+### Install and launch
 
 ```sh
 git clone https://github.com/damianpitt/polarstellar.git
 cd polarstellar
-uv sync
+uv sync --locked
 uv run polarstellar
 ```
 
-Python 3.12 is the development baseline. Linux is the primary target; macOS and Windows
-are architectural targets from day one. Native installers are not available yet.
-On Ubuntu 24.04, Qt also requires system graphics libraries; install `libegl1`
-if startup reports a missing `libEGL.so.1`.
+Check the installed application version:
 
 ```sh
 uv run polarstellar --version
-uv run ruff check .
-uv run pytest
 ```
 
-Setup references: [uv workflow documentation](https://docs.astral.sh/uv/guides/integration/github/)
-and [Qt for Python getting started](https://doc.qt.io/qtforpython-6/gettingstarted.html).
+### Platform notes
 
-## Structure
+Linux is the primary target. Automated checks also run on macOS and Windows; these checks
+cover code, tests, and Python package builds, rather than native installer validation.
+
+On Ubuntu 24.04, if startup reports a missing `libEGL.so.1`, install the Qt graphics dependency:
+
+```sh
+sudo apt-get install libegl1
+```
+
+## Your first investigation
+
+1. **Select Mainnet or Testnet.** Choose the network containing the account you want to inspect.
+2. **Paste a Stellar G-address and select Inspect.** Review its balances and trustlines.
+3. **Open Transactions, Operations, or Payments.** Each section starts with 20 records, newest first.
+4. **Select Load more.** Fetch older records without losing the rows already displayed.
+5. **Open a transaction.** Double-click a row or use **Open selected transaction** to inspect it.
+6. **Open Graph.** Review direct counterparties, filter by asset or direction, and inspect the evidence.
+
+You can also paste a **64-character transaction hash** directly into search to open its details.
+
+## Features
+
+### Account overview
+
+Inspect an account's sequence number, home domain, XLM balance, and issued-asset balances.
+Trustline information includes the asset issuer, trust limit, and authorization status.
+
+Addresses are checksum-validated before requests are sent. Amounts retain their exact
+values, and issued assets remain distinguished by both their code and issuer.
+
+### Recent activity
+
+Transactions, Operations, and Payments each maintain their own pagination position.
+A failed page request can be retried without discarding existing rows.
+
+Loading is asynchronous and cancellable. Starting another search or changing networks
+invalidates old requests so late responses cannot overwrite the current investigation.
+
+### Transaction inspection
+
+The transaction inspector displays:
+
+- Success or failure, ledger, and creation time.
+- Source account, fee payer, and charged fee in XLM and stroops.
+- Memo and operations in execution order.
+- Each operation's source account and readable explanation where supported.
+- Raw Horizon transaction and operation data for closer inspection.
+
+Readable explanations cover common payments, path payments, account creation and merging,
+trustline changes, offers, and recognized account-option changes.
+
+Failed instructions are marked as **not applied**. Unsupported operation types retain raw
+data, and incomplete operation lists are labeled explicitly.
+
+### Counterparty analysis and graph
+
+The Graph section derives relationships from the Payments records loaded for the current
+account. It groups exact incoming and outgoing totals by counterparty and asset.
+
+Select a counterparty row to see its supporting operations. Double-click an evidence item
+to open the corresponding transaction.
+
+| Action | Result |
+| --- | --- |
+| Filter by asset or direction | Focus the graph and counterparty table |
+| Drag a node | Reposition it and its connected arrows |
+| Scroll over the graph | Zoom in or out |
+| Drag the background | Pan the view |
+| Select Fit graph | Bring the displayed graph into view |
+| Right-click a node | Copy its full address |
+| Double-click a node or counterparty row | Start an investigation of that account |
+
+The graph shows up to **30 filtered counterparties**, ranked by operation count. The table
+retains all fetched relationships. Graph and Payments share the same **Load more** state.
+
+### Optional local cache
+
+Enable **Use local cache** to reuse recently fetched snapshots. Caching starts **off** each session.
+
+| Snapshot | Reuse period |
+| --- | --- |
+| Account details | 60 seconds |
+| Individual activity pages | 60 seconds |
+| Complete transaction details | 24 hours |
+
+Cached results retain their original source and retrieval time and display a **Local cache**
+label. Expired snapshots are fetched again; incomplete transaction details are not cached.
+
+- **Force live data:** uncheck caching and investigate again.
+- **Delete saved snapshots:** select **Clear cache**.
+- **Find the database:** hover the cache status to see its location.
+
+Disabling caching does not delete existing snapshots. The cache is stored outside the
+repository in the platform's cache directory, is unencrypted, and does not save graph
+layouts, annotations, or complete investigations.
+
+## Understanding the results
+
+### History and coverage
+
+Results reflect **loaded records within Horizon's available history**. Reaching the end
+of available results does not guarantee that you have the account's complete ledger history.
+Counterparty totals are not lifetime totals or current balances.
+
+### What contributes to counterparty totals
+
+Only **successful direct payments and account-creation funding** contribute to totals.
+Path payments, account merges, failed transactions, self-transfers, unsupported identifiers,
+and unrelated records are excluded and accounted for in the coverage information.
+
+Path payments can appear in the Payments list, where the displayed amount is the destination
+amount. Their routing is not reconstructed into direct-flow totals.
+
+### Interpretation and privacy
+
+A relationship shows observed activity between addresses; it does not establish common
+ownership or identify a real-world entity.
+
+Live requests disclose the searched public identifier to the selected Horizon endpoint.
+With caching enabled, fetched ledger snapshots are also retained on your computer.
+System backups may retain prior copies independently of the application's clear-cache action.
+
+## Architecture
+
+PolarStellar separates acquisition, interpretation, analysis, persistence, and presentation
+so the desktop interface does not call remote APIs directly.
+
+| Component | Responsibility |
+| --- | --- |
+| Python | Application and analysis logic |
+| PySide6 / Qt Widgets | Desktop interface, tables, and graph rendering |
+| qasync | Asynchronous work integrated with the Qt event loop |
+| httpx | HTTP access to Horizon |
+| Stellar Python SDK | Stellar identifier validation |
+| NetworkX | Directed counterparty relationship model |
+| SQLite | Optional, expiring local snapshot cache |
+| uv | Dependency management and reproducible environments |
+
+**Horizon is the implemented data provider.** Stellar RPC for current ledger and Soroban
+access, and Hubble for deeper historical analysis, remain planned integrations.
+
+### Repository layout
 
 ```text
 src/polarstellar/
-  app/        Application startup and window
-  stellar/    Future providers, domain models, and decoding
-  analysis/   Future counterparty, flow, and graph analysis
-  storage/    Future SQLite persistence and cache
-  ui/         Desktop widgets and presentation
-  resources/  Styles and icons
+  app/        Application startup and main window
+  stellar/    Provider interfaces, Horizon access, models, and decoding
+  analysis/   Counterparty aggregation and relationship modeling
+  storage/    SQLite snapshots, serialization, and caching provider
+  ui/         Activity tables, transaction inspector, graph, and cache controls
+  resources/  Package reserved for visual resources
+
+tests/        Automated tests for data handling and desktop behavior
 ```
 
-The UI calls an account service, with checksum validation and a provider interface.
-The Horizon adapter normalizes responses into account snapshots with network and retrieval
-metadata. RPC and Hubble adapters remain planned.
+`__init__.py` files are intentional Python package source. Generated bytecode, environments,
+SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
-The account adapter follows the [official Horizon account endpoint](https://developers.stellar.org/docs/data/apis/horizon/api-reference/retrieve-an-account).
+## Roadmap
 
-PolarStellar is an open-source project, not affiliated with the Stellar Development Foundation.
+The next areas of work include:
+
+- CSV and JSON export with source and coverage metadata.
+- Expanded asset inspection and filtering.
+- Saved investigations, local notes, labels, and watchlists.
+- Graph expansion and deeper flow tracing.
+- Soroban contract inspection and event exploration through Stellar RPC.
+- Optional historical analytics through Hubble.
+- Native packaging and release validation for Linux, macOS, and Windows.
+
+These are **planned capabilities**, not features available in 0.0.5. The detailed release
+boundaries and acceptance criteria are maintained in the project specification.
+
+## Documentation and checks
+
+- [Full project specification](PolarStellar_Project_Spec.md) — vision, architecture, scope, and roadmap.
+- [Changelog](CHANGELOG.md) — versioned features, fixes, limitations, and validation notes.
+- [GitHub Actions](https://github.com/damianpitt/polarstellar/actions) — automated platform checks.
+
+Run the local checks:
+
+```sh
+uv run ruff check .
+uv run pytest
+uv build
+```
 
 ## License
 
-[MIT](LICENSE) © 2026 Damiano Pittau.
+[MIT License](LICENSE) © 2026 Damiano Pittau.

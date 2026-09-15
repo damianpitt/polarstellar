@@ -10,6 +10,18 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+### Documentation — 2026-09-15
+
+- Reorganized the README into clearly separated sections with shorter paragraphs,
+  descriptive headings, navigation links, and comparison tables to improve GitHub readability.
+- Added project background, a current-feature overview, requirements, installation steps,
+  a first-investigation walkthrough, graph controls, and cache usage instructions.
+- Separated implemented behavior from the future roadmap and explained history coverage,
+  counterparty exclusions, privacy, architecture, and platform-check limitations.
+- Corrected outdated repository descriptions that still labeled implemented analysis,
+  provider, and storage modules as future work.
+- Documentation-only update; application version remains 0.0.5.
+
 ## [0.0.5] - 2026-09-13
 
 ### Added — optional local SQLite cache
