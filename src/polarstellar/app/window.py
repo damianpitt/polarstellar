@@ -24,8 +24,10 @@ from polarstellar.stellar.activity import ActivityKind
 from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.service import AccountService, validate_account
+from polarstellar.storage.export import account_document
 from polarstellar.ui.activity_view import ActivityView
 from polarstellar.ui.cache_controls import CacheControls
+from polarstellar.ui.export_controls import ExportControls
 from polarstellar.ui.graph_view import GraphView
 from polarstellar.ui.transaction_view import TransactionDialog
 
@@ -38,6 +40,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         """Build the explorer and keep pending requests separate from displayed results."""
         self.service = service
+        self.account = None
         self.dialogs = set()
         self.task = None
         self.tasks = set()
@@ -100,7 +103,12 @@ class MainWindow(QMainWindow):
         self.balances.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.balances.horizontalHeader().setStretchLastSection(True)
         self.pages = QStackedWidget()
-        self.pages.addWidget(self.balances)
+        overview = QWidget()
+        overview_layout = QVBoxLayout(overview)
+        overview_layout.addWidget(self.balances)
+        self.export = ExportControls(lambda: account_document(self.account))
+        overview_layout.addWidget(self.export)
+        self.pages.addWidget(overview)
         self.activity_views = [ActivityView(service, kind) for kind in ActivityKind]
         for view in self.activity_views:
             self.pages.addWidget(view)
@@ -173,6 +181,8 @@ class MainWindow(QMainWindow):
             self.task.cancel()
         self.task = None
         self.cancel.setEnabled(False)
+        self.account = None
+        self.export.setEnabled(False)
         self.balances.setRowCount(0)
         self.message.setText("Ready for a new investigation.")
         self.statusBar().showMessage(f"{self.network.currentText()} selected • Ready")
@@ -221,6 +231,8 @@ class MainWindow(QMainWindow):
             account = await self.service.lookup(address, network)
             if generation != self.generation:
                 return
+            self.account = account
+            self.export.setEnabled(True)
             self.message.setText(
                 f"{account.address}\n{network.value} • Sequence {account.sequence}\n"
                 f"Home domain: {account.home_domain or 'Not set'}\n"

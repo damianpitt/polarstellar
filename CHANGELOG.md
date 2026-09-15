@@ -10,6 +10,53 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.6] - 2026-09-15
+
+### Added — local CSV and JSON exports
+
+- Added Export CSV and Export JSON controls to Overview, Transactions, Operations,
+  Payments, Graph, and transaction inspectors. Controls become available after a
+  successful load, including empty responses, and clear when the investigation resets.
+- Overview exports balances and trustline details with account metadata. Activity
+  exports include all loaded rows and stable identifiers. Exporting makes no new
+  network requests; use Load more first to extend the saved coverage.
+- Graph exports honor the current asset and direction filters and include every
+  matching table relationship, exact totals, and supporting transfer evidence. The
+  canvas's 30-counterparty limit does not restrict export. Exclusion counts describe
+  all loaded payment records, including those outside the selected filters.
+- Transaction exports retain metadata, exact fees, ordered available operations,
+  readable explanations, raw Horizon evidence, and warnings about incomplete data.
+- Introduced export schema version 1 with software version, export timestamp, network,
+  data source, original retrieval times, cache labels, and coverage descriptions.
+  Activity exports preserve individual page provenance when cached and live results
+  are mixed, plus the loaded time range, next cursor, and end-of-available-results flag.
+  These are snapshots of loaded Horizon data, not claims of complete lifetime history.
+
+### Accuracy, privacy, and file handling
+
+- JSON stores monetary amounts as exact strings. CSV repeats metadata columns and
+  stores nested provenance/evidence as JSON cells; empty results keep a metadata row.
+  Both formats are UTF-8. Import amounts and identifiers as text in spreadsheets to
+  avoid automatic rounding or conversion.
+- CSV prefixes formula-like cells with an apostrophe. JSON retains original text.
+  CSV quoting preserves commas, quotes, line breaks, and non-ASCII content.
+- Save dialogs support cancellation and destination selection. Writes use temporary
+  files beside the destination and atomic replacement, preserving existing contents
+  when replacement fails and cleaning temporary files. Save failures are reported.
+- Exports are unencrypted local files, created only on request, independently of
+  optional caching. Clearing the cache does not remove exported investigations.
+- No new runtime dependencies. Updated README and specification to distinguish
+  implemented exports from the remaining roadmap.
+
+### Validation
+
+- Added automated export checks for precision, Unicode/CSV quoting, spreadsheet
+  formula protection, empty results, mixed page provenance, graph filters/evidence,
+  network reset, partial transactions, cancellation, successful saves, and failed writes.
+- Local validation: all 65 tests and Ruff checks passed; source distribution and wheel
+  builds succeeded; the lockfile check and CLI version check passed. Cross-platform
+  GitHub checks remain pending at the time of this source update.
+
 ### Documentation — 2026-09-15
 
 - Reorganized the README into clearly separated sections with shorter paragraphs,

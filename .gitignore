@@ -70,6 +70,8 @@ secrets.*
 *.db-*
 local-data/
 exports/
+polarstellar-*.csv
+polarstellar-*.json
 investigations/
 private/
 notes/

@@ -24,6 +24,8 @@ from PySide6.QtWidgets import (
 )
 
 from polarstellar.analysis.counterparties import analyze
+from polarstellar.storage.export import graph_document
+from polarstellar.ui.export_controls import ExportControls
 
 
 class Canvas(QGraphicsView):
@@ -139,6 +141,8 @@ class GraphView(QWidget):
         for widget in (self.asset, self.direction, self.load, fit):
             controls.addWidget(widget)
         layout.addLayout(controls)
+        self.export = ExportControls(lambda: graph_document(self))
+        layout.addWidget(self.export)
         split = QSplitter(Qt.Orientation.Vertical)
         self.scene = QGraphicsScene(self)
         self.canvas = Canvas(self.scene)
@@ -176,6 +180,7 @@ class GraphView(QWidget):
     def refresh(self):
         """Rebuild analysis from the Payments view while preserving the selected asset when possible."""
         self.context = self.payments.context
+        self.export.setEnabled(self.payments.loaded and self.context is not None)
         self.load.setEnabled(
             self.context is not None and not self.payments.done and self.payments.task is None
         )

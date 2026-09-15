@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with Soroban support o
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.5 · Pre-alpha**
+**Current version: 0.0.6 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.5 |
+| Area | Available in 0.0.6 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -40,9 +40,10 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
 | Relationship graph | Interactive one-hop graph with asset and direction filters |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
+| Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
 
-> **Pre-alpha:** native installers are not available yet. Contract exploration, exports,
+> **Pre-alpha:** native installers are not available yet. Contract exploration
 > and several advanced investigation features remain planned.
 
 ## Getting started
@@ -170,6 +171,37 @@ Disabling caching does not delete existing snapshots. The cache is stored outsid
 repository in the platform's cache directory, is unencrypted, and does not save graph
 layouts, annotations, or complete investigations.
 
+### CSV and JSON export
+
+Choose **Export CSV** or **Export JSON** in Overview, Transactions, Operations,
+Payments, Graph, or an open transaction inspector. Choose a destination in the save
+dialog. Exports use the data already loaded and make no additional network requests.
+Use **Load more** first when you need older records.
+
+| View | Export contents |
+| --- | --- |
+| Overview | Balances, trust limits, authorization, and account metadata |
+| Activity lists | All loaded rows, stable identifiers, and individual page provenance |
+| Graph | All filtered table relationships, exact totals, and supporting transfers |
+| Transaction inspector | Metadata, ordered available operations, explanations, raw Horizon evidence, and partial-data warnings |
+
+Graph exports respect asset/direction filters and include the full table beyond the
+canvas's 30-counterparty limit. Exclusion counts cover all loaded Payments records.
+Files retain network, source, original retrieval times, cache labels, export time,
+software version, and coverage limitations. Activity exports include the loaded time
+range and pagination boundary; the end of available results is not proof of complete
+lifetime history.
+
+JSON uses schema version 1 and represents monetary values as strings. CSV repeats
+metadata columns on every row, with nested page provenance and evidence encoded as
+JSON cells. Empty results retain a metadata row. Import amounts and identifiers as
+**text** in spreadsheets to avoid automatic rounding or conversion. CSV prefixes
+formula-like cells with an apostrophe; JSON preserves original text. Both use UTF-8.
+
+Exports are unencrypted local files and may contain addresses, memos, and investigation
+evidence. Saving is explicit and independent of caching. Clearing the cache does not
+delete exports. Files are replaced only after a complete write; errors are reported.
+
 ## Understanding the results
 
 ### History and coverage
@@ -236,7 +268,6 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 The next areas of work include:
 
-- CSV and JSON export with source and coverage metadata.
 - Expanded asset inspection and filtering.
 - Saved investigations, local notes, labels, and watchlists.
 - Graph expansion and deeper flow tracing.
@@ -244,7 +275,7 @@ The next areas of work include:
 - Optional historical analytics through Hubble.
 - Native packaging and release validation for Linux, macOS, and Windows.
 
-These are **planned capabilities**, not features available in 0.0.5. The detailed release
+These are **planned capabilities**, not features available in 0.0.6. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

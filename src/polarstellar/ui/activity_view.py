@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (
 
 from polarstellar.stellar.activity import HEADERS, ActivityKind
 from polarstellar.stellar.providers import AccountError
+from polarstellar.storage.export import activity_document
+from polarstellar.ui.export_controls import ExportControls
 
 
 class ActivityView(QWidget):
@@ -38,6 +40,7 @@ class ActivityView(QWidget):
         self.identifiers = set()
         self.records = []
         self.last_page = None
+        self.export_pages = []
         layout = QVBoxLayout(self)
         self.summary = QLabel("Inspect an account to view activity.")
         self.summary.setWordWrap(True)
@@ -60,6 +63,8 @@ class ActivityView(QWidget):
         self.more.setEnabled(False)
         self.more.clicked.connect(self.start)
         layout.addWidget(self.more)
+        self.export = ExportControls(lambda: activity_document(self))
+        layout.addWidget(self.export)
 
     def open_row(self, row, _column):
         """Read the selected row’s transaction reference and request its inspection."""
@@ -82,6 +87,8 @@ class ActivityView(QWidget):
         self.done = False
         self.identifiers.clear()
         self.records.clear()
+        self.export_pages.clear()
+        self.export.setEnabled(False)
         self.last_page = None
         self.table.setRowCount(0)
         self.summary.setText(
@@ -124,6 +131,9 @@ class ActivityView(QWidget):
                     item.setToolTip(value)
                     self.table.setItem(row, column, item)
             self.last_page = page
+            # Keep each page age: loaded rows can mix cached and live snapshots.
+            self.export_pages.append(page)
+            self.export.setEnabled(True)
             self.cursor = page.next_cursor
             self.loaded = True
             self.done = page.next_cursor is None

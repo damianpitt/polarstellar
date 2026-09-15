@@ -13,13 +13,18 @@ from PySide6.QtWidgets import (
 )
 
 from polarstellar.stellar.providers import AccountError
+from polarstellar.storage.export import transaction_document
+from polarstellar.ui.export_controls import ExportControls
 
 
 class TransactionDialog(QDialog):
+    """Inspect and export a single transaction with its available operation evidence."""
+
     def __init__(self, service, hash_value, network, parent=None):
         """Build this view and connect user actions to its data-loading controls."""
         super().__init__(parent)
         self.service = service
+        self.transaction = None
         self.hash_value = hash_value
         self.network = network
         self.generation = 0
@@ -44,10 +49,14 @@ class TransactionDialog(QDialog):
         actions.addWidget(self.retry)
         actions.addWidget(close)
         layout.addLayout(actions)
+        self.export = ExportControls(lambda: transaction_document(self.transaction))
+        layout.addWidget(self.export)
         self.finished.connect(self.invalidate)
 
     def invalidate(self, *_):
         """Cancel work from the previous context so late results cannot overwrite the current view."""
+        self.transaction = None
+        self.export.setEnabled(False)
         self.generation += 1
         for task in self.tasks:
             task.cancel()
@@ -71,6 +80,8 @@ class TransactionDialog(QDialog):
             tx = await self.service.transaction(self.hash_value, self.network)
             if generation != self.generation:
                 return
+            self.transaction = tx
+            self.export.setEnabled(True)
             status = "SUCCESS" if tx.successful else "FAILED — operation changes were not applied."
             lines = [
                 tx.hash,

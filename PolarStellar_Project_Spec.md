@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.5 with account/activity inspection, one-hop graph, and optional SQLite cache; export is planned\
+**Implementation status:** Pre-alpha 0.0.6 with account/activity inspection, one-hop graph, optional SQLite cache, and CSV/JSON export\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1550,8 +1550,18 @@ transaction details for 24 hours. The cache starts disabled, keeps network/query
 separate, and preserves original retrieval times. Clear cache removes stored rows and compacts
 the database; disabling it alone does not delete saved data. SQLite work runs outside the UI
 thread, and invalidation prevents pending requests from repopulating cleared storage.
-General XDR decoding, saved investigations, multi-hop expansion, contract exploration, and
-export remain planned.
+CSV/JSON export is available in Overview, each activity view, Graph, and transaction details.
+Exports capture loaded records without additional requests. Graph exports honor filters and
+include all table relationships with supporting transfers, without the canvas node cap.
+Schema version 1 records network, source, per-page retrieval/cache provenance, loaded time
+range, pagination boundary, coverage, software version, and export time. Transaction exports
+retain raw evidence and partial-operation warnings. Monetary values use exact strings in JSON;
+CSV contains metadata columns and JSON-encoded nested evidence. Spreadsheet formula-like
+cells receive an apostrophe prefix; consumers should import amounts and identifiers as text.
+Empty results preserve metadata. UTF-8 files are saved locally and atomically replaced only
+after writing succeeds. Exports are unencrypted and independent of cache clearing.
+General XDR decoding, saved investigations, multi-hop expansion, and contract exploration
+remain planned.
 Assets and Contracts navigation remain disabled. See CHANGELOG.md for versioned
 feature history. Update its Unreleased section with each implemented feature or fix and
 keep package metadata and the lockfile aligned whenever the version changes.
@@ -1632,7 +1642,7 @@ The first functional milestone is complete when:
 9. Relevant parsing and service tests pass using deterministic fixtures without public API
    dependence; a separate manual live check confirms the chosen endpoints.
 
-The remaining V0.1 work adds the promised local cache, CSV/JSON exports, broader views,
+The remaining V0.1 work adds broader views,
 and release packaging. Passing this milestone alone does not imply the whole V0.1 is shipped.
 
 # 45. Open Source and Release Practice
