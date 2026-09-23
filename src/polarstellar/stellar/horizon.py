@@ -6,6 +6,7 @@ from decimal import Decimal, InvalidOperation
 import httpx
 
 from polarstellar.stellar.activity import PAGE_SIZE, ActivityKind, ActivityPage, parse_page
+from polarstellar.stellar.assets import AssetDetail, parse_asset, validate_asset
 from polarstellar.stellar.models import Account, Balance, Network
 from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.transaction import TransactionDetail, parse_transaction
@@ -57,6 +58,44 @@ def parse_account(data: dict, address: str, network: Network, source: str) -> Ac
 class HorizonProvider:
     def __init__(self, transport: httpx.AsyncBaseTransport | None = None):
         self.transport = transport
+
+    async def get_asset(self, code: str, issuer: str, network: Network) -> AssetDetail:
+        """Fetch one exact issued asset; native XLM has no issuer or /assets statistics."""
+        code, issuer = validate_asset(code, issuer)
+        if not issuer:
+            return AssetDetail(
+                code,
+                "",
+                network,
+                "native",
+                {},
+                {},
+                "Stellar native asset definition",
+                datetime.now(UTC),
+                "Native XLM has no issuer or issuer authorization "
+                "flags. Supply statistics are not provided by this view.",
+                "Local definition; no network request",
+            )
+        data = await self._request(
+            "/assets",
+            network,
+            {"asset_code": code, "asset_issuer": issuer, "limit": "2"},
+            "Asset statistics are unavailable.",
+        )
+        try:
+            rows = data["_embedded"]["records"]
+            if not isinstance(rows, list):
+                raise TypeError("Invalid asset response")
+            if not rows:
+                raise AccountError(
+                    f"Asset not found in {network.value} Horizon statistics. "
+                    "Check the code, issuer, and network."
+                )
+            if len(rows) != 1:
+                raise ValueError("Ambiguous asset response")
+            return parse_asset(rows[0], code, issuer, network, ENDPOINTS[network])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise AccountError("Horizon returned invalid asset statistics.") from exc
 
     async def get_account(self, address: str, network: Network) -> Account:
         data = await self._get(address, network)

@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.6 with account/activity inspection, one-hop graph, optional SQLite cache, and CSV/JSON export\
+**Implementation status:** Pre-alpha 0.0.7 with account/activity inspection, one-hop graph, optional SQLite cache, CSV/JSON export, and asset inspection\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1562,7 +1562,17 @@ Empty results preserve metadata. UTF-8 files are saved locally and atomically re
 after writing succeeds. Exports are unencrypted and independent of cache clearing.
 General XDR decoding, saved investigations, multi-hop expansion, and contract exploration
 remain planned.
-Assets and Contracts navigation remain disabled. See CHANGELOG.md for versioned
+Assets navigation is enabled in 0.0.7. Issued assets are identified by case-sensitive code,
+issuer G-address, and network. Users can search directly or navigate from balances and
+Payments (destination asset for path payments). Horizon statistics preserve exact amounts
+and distinguish unknown fields from zero. Authorization-state balances and holding-location
+statistics are shown separately without a circulating-supply claim. Issuer flags include
+approval, revocation, immutability, and clawback when provided. Issuer navigation opens the
+account and its account-wide activity, not an asset-filtered activity feed. Native XLM has a
+local definition with no issuer/flags or supply lookup. Pool shares and standalone contract
+tokens are unsupported. Asset lookups are live, bypass the existing cache, support cancellation
+and stale-result rejection, and export statistics/flags/provenance to CSV or JSON.
+Contracts navigation remains disabled. See CHANGELOG.md for versioned
 feature history. Update its Unreleased section with each implemented feature or fix and
 keep package metadata and the lockfile aligned whenever the version changes.
 

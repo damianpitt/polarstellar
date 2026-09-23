@@ -10,6 +10,54 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.7] - 2026-09-24
+
+### Added — asset and issuer inspection
+
+- Enabled Assets navigation with direct code/issuer search. Overview offers Inspect
+  selected asset and balance double-click navigation. Payments offers Inspect selected
+  payment asset while preserving transaction double-click behavior; path payments use
+  the destination asset recorded in the payment row.
+- Issued assets retain case-sensitive code, full checksum-valid issuer, and network.
+  Assets sharing a code remain distinct. Invalid identifiers are rejected before I/O;
+  mismatched identities, ambiguous responses, and malformed statistics are rejected.
+- Displayed Horizon account counts and exact balances by authorization state, plus
+  claimable-balance, liquidity-pool, and contract counts/amounts where available.
+  Missing fields remain unknown; no circulating-supply estimate or valuation is inferred.
+- Displayed issuer approval, revocation, immutable authorization, and clawback flags
+  with plain-English labels. Flags are not an endorsement or proof of issuer trust.
+- Added Inspect issuer account and activity, opening the existing account explorer.
+  Transactions, Operations, and Payments then show the issuer's account-wide activity,
+  not a feed filtered to the selected asset.
+- Added native XLM inspection with no issuer and no network request. Native supply
+  statistics are not included; an issued asset named XLM remains distinct. Liquidity
+  pool shares and standalone contract tokens are outside this view's scope.
+- Added CSV/JSON asset export through schema version 1, preserving exact statistics,
+  unknown fields, flags, identity, retrieval time, source, and coverage. Native exports
+  retain their definition/provenance metadata even without statistic rows.
+
+### Reliability, privacy, and compatibility
+
+- Added cancellable asset loading, retry through Inspect asset, stale-response rejection,
+  and reset on network/account/cache-context changes. Exports and issuer navigation
+  remain disabled until a successful response. Navigation uses the displayed snapshot,
+  not unsubmitted edits to the issuer field.
+- Issued asset lookups use the selected network's Horizon /assets endpoint and send the
+  code and public issuer. Asset statistics load live even with caching enabled; existing
+  cache formats and account/activity behavior are unchanged. Issuer websites and TOML
+  files are not fetched. No new runtime dependencies.
+- Updated README and specification with usage, field limitations, export behavior,
+  and implemented status. Existing platform support and pre-alpha limitations apply.
+
+### Validation
+
+- Added tests for same-code/different-issuer identity, precise amounts, unknown values,
+  malformed data, validation before requests, network routing, cache bypass, native XLM,
+  stale responses, errors/retry, issuer/balance/payment navigation, and asset exports.
+- Local validation: all 81 tests and Ruff checks passed; source distribution and wheel
+  builds succeeded; dependency lockfile and CLI version checks passed. GitHub platform
+  checks remain pending at the time of this source update.
+
 ## [0.0.6] - 2026-09-15
 
 ### Added — local CSV and JSON exports

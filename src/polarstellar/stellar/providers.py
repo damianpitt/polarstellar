@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
+    from polarstellar.stellar.assets import AssetDetail
     from polarstellar.stellar.transaction import TransactionDetail
 
 from polarstellar.stellar.activity import ActivityKind, ActivityPage
@@ -21,3 +22,7 @@ class AccountProvider(Protocol):
     ) -> ActivityPage: ...
 
     async def get_transaction(self, hash_value: str, network: Network) -> "TransactionDetail": ...
+
+    async def get_asset(self, code: str, issuer: str, network: Network) -> "AssetDetail":
+        """Return statistics for an exact code/issuer pair on the selected network."""
+        ...

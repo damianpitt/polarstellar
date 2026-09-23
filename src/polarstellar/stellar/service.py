@@ -3,6 +3,7 @@
 from stellar_sdk import StrKey
 
 from polarstellar.stellar.activity import ActivityKind, ActivityPage
+from polarstellar.stellar.assets import AssetDetail, validate_asset
 from polarstellar.stellar.models import Account, Network
 from polarstellar.stellar.providers import AccountError, AccountProvider
 from polarstellar.stellar.transaction import TransactionDetail, validate_hash
@@ -42,4 +43,12 @@ class AccountService:
         detail = await self.provider.get_transaction(hash_value, network)
         if detail.hash != hash_value or detail.network != network:
             raise AccountError("Transaction does not match this search and network.")
+        return detail
+
+    async def asset(self, code: str, issuer: str, network: Network) -> AssetDetail:
+        """Reject invalid input before I/O and ensure returned identity includes the issuer."""
+        code, issuer = validate_asset(code, issuer)
+        detail = await self.provider.get_asset(code, issuer, network)
+        if (detail.code, detail.issuer, detail.network) != (code, issuer, network):
+            raise AccountError("Asset does not match this code, issuer, and network.")
         return detail

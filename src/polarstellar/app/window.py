@@ -26,6 +26,7 @@ from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.service import AccountService, validate_account
 from polarstellar.storage.export import account_document
 from polarstellar.ui.activity_view import ActivityView
+from polarstellar.ui.asset_view import AssetView
 from polarstellar.ui.cache_controls import CacheControls
 from polarstellar.ui.export_controls import ExportControls
 from polarstellar.ui.graph_view import GraphView
@@ -83,6 +84,7 @@ class MainWindow(QMainWindow):
         self.cancel.clicked.connect(self.cancel_search)
         content = QHBoxLayout()
         navigation = QListWidget()
+        self.navigation = navigation
         navigation.addItems(
             ["Overview", "Transactions", "Operations", "Payments", "Graph", "Assets", "Contracts"]
         )
@@ -106,6 +108,12 @@ class MainWindow(QMainWindow):
         overview = QWidget()
         overview_layout = QVBoxLayout(overview)
         overview_layout.addWidget(self.balances)
+        self.open_balance_asset = QPushButton("Inspect selected asset")
+        self.open_balance_asset.setEnabled(False)
+        self.open_balance_asset.clicked.connect(self.inspect_balance_asset)
+        self.balances.itemSelectionChanged.connect(self.update_balance_asset_button)
+        self.balances.cellDoubleClicked.connect(lambda *_: self.inspect_balance_asset())
+        overview_layout.addWidget(self.open_balance_asset)
         self.export = ExportControls(lambda: account_document(self.account))
         overview_layout.addWidget(self.export)
         self.pages.addWidget(overview)
@@ -117,13 +125,17 @@ class MainWindow(QMainWindow):
         self.graph.account_requested.connect(self.investigate_counterparty)
         self.graph.transaction_requested.connect(self.open_transaction)
         self.pages.addWidget(self.graph)
+        self.assets = AssetView(service, lambda: Network(self.network.currentText()))
+        self.assets.issuer_requested.connect(self.investigate_issuer)
+        self.activity_views[2].asset_requested.connect(self.open_asset)
+        self.pages.addWidget(self.assets)
         pane.addWidget(self.pages)
         navigation.currentRowChanged.connect(self.select_page)
         content.addLayout(pane, 1)
         layout.addLayout(content, 1)
         self.setCentralWidget(root)
         self.statusBar().showMessage("Mainnet selected • Ready")
-        for index in range(5, navigation.count()):
+        for index in range(6, navigation.count()):
             item = navigation.item(index)
             item.setText(item.text() + " (planned)")
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
@@ -149,10 +161,37 @@ class MainWindow(QMainWindow):
                 if not view.loaded:
                     view.start()
                 self.graph.fit()
-            elif index > 0:
+            elif 0 < index < 4:
                 view = self.activity_views[index - 1]
                 if not view.loaded:
                     view.start()
+
+    def update_balance_asset_button(self):
+        """Enable issued/native asset inspection while excluding liquidity-pool shares."""
+        row = self.balances.currentRow()
+        valid = self.account is not None and 0 <= row < len(self.account.balances)
+        self.open_balance_asset.setEnabled(
+            valid and self.account.balances[row].asset != "Pool shares"
+        )
+
+    def inspect_balance_asset(self):
+        """Open the selected balance using its full issuer identity, not only its code."""
+        row = self.balances.currentRow()
+        if self.account is None or not 0 <= row < len(self.account.balances):
+            return
+        balance = self.account.balances[row]
+        if balance.asset != "Pool shares":
+            self.open_asset(balance.asset, "" if balance.identity == "Native" else balance.identity)
+
+    def open_asset(self, code, issuer):
+        """Switch to Assets and inspect the selected code/issuer on the current network."""
+        self.navigation.setCurrentRow(5)
+        self.assets.open_asset(code, issuer)
+
+    def investigate_issuer(self, address):
+        """Load the issuer account; activity sections then show that account's full history."""
+        self.navigation.setCurrentRow(0)
+        self.investigate_counterparty(address)
 
     def investigate_counterparty(self, address):
         """Start a new investigation for the account selected in the graph."""
@@ -172,6 +211,8 @@ class MainWindow(QMainWindow):
 
     def invalidate(self) -> None:
         """Cancel work from the previous context so late results cannot overwrite the current view."""
+        self.assets.reset()
+        self.open_balance_asset.setEnabled(False)
         for dialog in tuple(self.dialogs):
             dialog.reject()
         for view in self.activity_views:

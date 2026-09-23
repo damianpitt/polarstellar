@@ -25,6 +25,10 @@ class CachedProvider:
         self.lock = asyncio.Lock()
         self.error = ""
 
+    async def get_asset(self, code, issuer, network):
+        """Fetch asset statistics live; the existing snapshot cache does not store this resource."""
+        return await self.provider.get_asset(code, issuer, network)
+
     def set_enabled(self, enabled: bool):
         """Invalidate pending cache writes when the user changes the caching preference."""
         self.epoch += 1

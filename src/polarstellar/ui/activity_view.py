@@ -23,6 +23,7 @@ class ActivityView(QWidget):
     """A paginated activity table with retry and transaction navigation."""
 
     transaction_requested = Signal(str)
+    asset_requested = Signal(str, str)
     changed = Signal()
 
     def __init__(self, service, kind: ActivityKind):
@@ -65,6 +66,34 @@ class ActivityView(QWidget):
         layout.addWidget(self.more)
         self.export = ExportControls(lambda: activity_document(self))
         layout.addWidget(self.export)
+        self.open_asset_button = QPushButton("Inspect selected payment asset")
+        self.open_asset_button.setVisible(kind == ActivityKind.PAYMENTS)
+        self.open_asset_button.setEnabled(False)
+        self.open_asset_button.clicked.connect(self.open_asset)
+        self.table.itemSelectionChanged.connect(self.update_asset_button)
+        layout.addWidget(self.open_asset_button)
+
+    def selected_asset(self):
+        """Read the destination asset from a payment row, including unsupported-transfer records."""
+        row = self.table.currentRow()
+        if self.kind != ActivityKind.PAYMENTS or not 0 <= row < len(self.records):
+            return None
+        identity = self.records[row].values[7]
+        if identity == "XLM":
+            return "XLM", ""
+        if ":" in identity:
+            return tuple(identity.split(":", 1))
+        return None
+
+    def update_asset_button(self):
+        """Disable navigation when the selected payment has no identifiable asset."""
+        self.open_asset_button.setEnabled(self.selected_asset() is not None)
+
+    def open_asset(self):
+        """Request asset inspection without changing the existing transaction double-click action."""
+        identity = self.selected_asset()
+        if identity is not None:
+            self.asset_requested.emit(*identity)
 
     def open_row(self, row, _column):
         """Read the selected row’s transaction reference and request its inspection."""

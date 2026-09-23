@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with Soroban support o
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.6 · Pre-alpha**
+**Current version: 0.0.7 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.6 |
+| Area | Available in 0.0.7 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -40,6 +40,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
 | Relationship graph | Interactive one-hop graph with asset and direction filters |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
+| Assets | Issued asset statistics, authorization flags, issuer navigation, and native XLM details |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
 
@@ -171,15 +172,45 @@ Disabling caching does not delete existing snapshots. The cache is stored outsid
 repository in the platform's cache directory, is unencrypted, and does not save graph
 layouts, annotations, or complete investigations.
 
+### Asset inspection
+
+Open **Assets** to enter a case-sensitive asset code and issuer G-address. From
+Overview, select a balance and choose **Inspect selected asset** (or double-click
+it). From Payments, select a row and choose **Inspect selected payment asset**.
+Path-payment rows open the destination asset. Pool shares are not supported here.
+
+The view keeps **code, issuer, and network** together: matching codes from different
+issuers are different assets. Statistics show balances and account counts by
+trustline authorization state, plus amounts/counts for claimable balances,
+liquidity pools, and contracts when Horizon supplies them. Missing fields are
+**unknown**, not zero. These figures are not a circulating-supply estimate or valuation.
+
+Issuer flags show required approval, revocation, immutability, and clawback settings
+when available. They do not establish issuer trustworthiness. Choose **Inspect issuer
+account and activity** to open the issuer account, then use Transactions, Operations,
+or Payments for its account-wide activity; that activity is not filtered to one asset.
+
+For native XLM, enter **XLM** with an empty issuer. Its view explains that it has no
+issuer or issuer flags; native supply statistics are not included. XLM with an issuer
+is treated as an issued asset, distinct from native XLM. Standalone contract tokens
+remain outside this feature's scope.
+
+Asset statistics load live even when local caching is enabled. Cancel, retry, and
+network changes discard stale results. CSV and JSON exports retain the asset's exact
+statistics, identity, issuer flags, source, retrieval time, and coverage notes. No issuer
+website or metadata file is fetched. Field definitions follow the
+[Horizon asset reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/assets/object).
+
 ### CSV and JSON export
 
 Choose **Export CSV** or **Export JSON** in Overview, Transactions, Operations,
-Payments, Graph, or an open transaction inspector. Choose a destination in the save
+Payments, Graph, Assets, or an open transaction inspector. Choose a destination in the save
 dialog. Exports use the data already loaded and make no additional network requests.
 Use **Load more** first when you need older records.
 
 | View | Export contents |
 | --- | --- |
+| Assets | Exact statistics, issuer flags, identity, and coverage |
 | Overview | Balances, trust limits, authorization, and account metadata |
 | Activity lists | All loaded rows, stable identifiers, and individual page provenance |
 | Graph | All filtered table relationships, exact totals, and supporting transfers |
@@ -275,7 +306,7 @@ The next areas of work include:
 - Optional historical analytics through Hubble.
 - Native packaging and release validation for Linux, macOS, and Windows.
 
-These are **planned capabilities**, not features available in 0.0.6. The detailed release
+These are **planned capabilities**, not features available in 0.0.7. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks
