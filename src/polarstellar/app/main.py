@@ -22,6 +22,7 @@ def main() -> int:
     from polarstellar.stellar.horizon import HorizonProvider
     from polarstellar.stellar.service import AccountService
     from polarstellar.storage.database import SnapshotCache
+    from polarstellar.storage.investigations import InvestigationStore
     from polarstellar.storage.provider import CachedProvider
 
     app = QApplication(sys.argv)
@@ -32,7 +33,13 @@ def main() -> int:
     # Qt chooses the user's platform-specific cache directory, never the source checkout.
     location = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation))
     provider = CachedProvider(HorizonProvider(), SnapshotCache(location / "snapshots.sqlite3"))
-    window = MainWindow(AccountService(provider))
+    # Durable evidence belongs in application data, separate from disposable cache files.
+    data_location = Path(
+        QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)
+    )
+    window = MainWindow(
+        AccountService(provider), InvestigationStore(data_location / "investigations.sqlite3")
+    )
     window.show()
     with loop:
         loop.run_forever()

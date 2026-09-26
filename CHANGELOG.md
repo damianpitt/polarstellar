@@ -10,6 +10,49 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.8] - 2026-09-27
+
+### Added — saved investigations with local notes and labels
+
+- Added Investigations navigation with named local workspaces, reopening, renaming,
+  explicitly saved notes and comma-separated labels, and confirmed deletion.
+- Added Save resource to selected investigation for accounts and assets, plus a save
+  action inside transaction inspectors. Account snapshots include already-loaded
+  activity and graph evidence without fetching additional records. Every saved resource
+  retains its network, identity, exact values, source, retrieval time, and coverage.
+- Added an offline, read-only JSON evidence viewer. Multiple saves retain separate
+  snapshots; this version does not restore interactive graph layouts or explorer state.
+- Added explicit live refresh bypassing the optional cache. New evidence is appended,
+  preserving original snapshots. Account refresh fetches the current account only;
+  newer activity/graph evidence must be loaded and saved from the explorer separately.
+- Added CSV/JSON investigation exports. Names, notes, and labels are excluded by default
+  and included only when the annotation checkbox is selected. Only saved annotations
+  are exported, clearly separated from network evidence.
+
+### Storage, privacy, and reliability
+
+- Added independent SQLite investigation storage under the system application-data
+  directory, with schema version 1, atomic writes, a 20 MB per-investigation limit,
+  and refusal to overwrite unknown future schema versions. Storage is unencrypted.
+- Clearing cache does not remove investigations; deleting investigations does not remove
+  exported files. The library notice tooltip exposes the local database location.
+- Refresh keeps its original investigation identity even if users select another case.
+  It preserves intervening saved annotations, never recreates deleted investigations,
+  and retains existing evidence when network or storage operations fail.
+- Unsaved annotations are protected when switching investigations or closing the app;
+  adding evidence or refreshing does not erase unfinished annotation edits.
+- No new runtime dependencies. Updated README and scope documentation with workflow,
+  offline-viewer limitations, refresh coverage, and privacy/export behavior.
+
+### Validation
+
+- Added storage restart, future-schema refusal, deletion, offline reopening, annotation
+  export, explorer capture, refresh failure, deletion-race, and cross-investigation
+  refresh tests, plus asset/transaction capture and refresh coverage.
+- Local validation: all 87 tests and Ruff checks passed; source distribution and wheel
+  builds, lockfile validation, and CLI version checks succeeded. GitHub platform checks
+  remain pending at the time of this source update.
+
 ## [0.0.7] - 2026-09-24
 
 ### Added — asset and issuer inspection

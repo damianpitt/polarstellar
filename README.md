@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with Soroban support o
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.7 · Pre-alpha**
+**Current version: 0.0.8 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.7 |
+| Area | Available in 0.0.8 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -41,6 +41,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Relationship graph | Interactive one-hop graph with asset and direction filters |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
 | Assets | Issued asset statistics, authorization flags, issuer navigation, and native XLM details |
+| Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
 
@@ -201,6 +202,36 @@ statistics, identity, issuer flags, source, retrieval time, and coverage notes. 
 website or metadata file is fetched. Field definitions follow the
 [Horizon asset reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/assets/object).
 
+### Saved investigations, notes, and labels
+
+Open **Investigations**, enter a name, and choose **Create new**. Select that
+investigation, inspect an account or asset, and choose **Save resource to selected
+investigation**. Transaction inspectors have their own **Save to selected investigation**
+button. An account save captures its balances and any already-loaded activity and graph
+evidence; it does not fetch additional pages. Each resource retains its network.
+
+Reopen an investigation from the local list and select an evidence entry to read its
+saved JSON, including exact values, coverage, and original retrieval times, offline.
+This snapshot viewer does not reconstruct the interactive graph layout. Multiple saves
+retain separate evidence entries. Add notes and comma-separated labels, then choose
+**Save name / notes / labels**; these are local interpretations, separate from network facts.
+
+**Refresh selected resource from network** bypasses the response cache and appends
+new evidence while keeping the original. An account refresh retrieves its current
+account snapshot only; return to the explorer to fetch and save newer activity or graph
+evidence. A failed refresh keeps saved evidence intact. Switching networks in the explorer
+does not change the network stored with a saved resource.
+
+CSV/JSON exports omit investigation names, notes, and labels by default. Select
+**Include saved name, notes, and labels in export** to include committed annotations.
+Unsaved edits are not exported. **Delete investigation** requires confirmation.
+
+Investigations use a separate, unencrypted SQLite file in the operating system's
+application-data folder; hover over the library notice to see its location. Clearing the
+response cache does not delete investigations, and deleting an investigation does not
+remove previously exported files. Schema version 1 refuses unknown future versions.
+Each investigation is limited to 20 MB. Watchlists and encrypted storage remain planned.
+
 ### CSV and JSON export
 
 Choose **Export CSV** or **Export JSON** in Overview, Transactions, Operations,
@@ -300,13 +331,13 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 The next areas of work include:
 
 - Expanded asset inspection and filtering.
-- Saved investigations, local notes, labels, and watchlists.
+- Watchlists and expanded investigation organization.
 - Graph expansion and deeper flow tracing.
 - Soroban contract inspection and event exploration through Stellar RPC.
 - Optional historical analytics through Hubble.
 - Native packaging and release validation for Linux, macOS, and Windows.
 
-These are **planned capabilities**, not features available in 0.0.7. The detailed release
+These are **planned capabilities**, not features available in 0.0.8. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

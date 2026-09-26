@@ -24,19 +24,25 @@ from polarstellar.stellar.activity import ActivityKind
 from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.service import AccountService, validate_account
-from polarstellar.storage.export import account_document
+from polarstellar.storage.export import (
+    account_document,
+    activity_document,
+    graph_document,
+    transaction_document,
+)
 from polarstellar.ui.activity_view import ActivityView
 from polarstellar.ui.asset_view import AssetView
 from polarstellar.ui.cache_controls import CacheControls
 from polarstellar.ui.export_controls import ExportControls
 from polarstellar.ui.graph_view import GraphView
+from polarstellar.ui.investigations_view import InvestigationsView
 from polarstellar.ui.transaction_view import TransactionDialog
 
 
 class MainWindow(QMainWindow):
     """The main explorer window, coordinating search, network changes, and local cache controls."""
 
-    def __init__(self, service: AccountService) -> None:
+    def __init__(self, service: AccountService, investigation_store=None) -> None:
         """Build this view and connect user actions to its data-loading controls."""
         super().__init__()
         """Build the explorer and keep pending requests separate from displayed results."""
@@ -86,7 +92,16 @@ class MainWindow(QMainWindow):
         navigation = QListWidget()
         self.navigation = navigation
         navigation.addItems(
-            ["Overview", "Transactions", "Operations", "Payments", "Graph", "Assets", "Contracts"]
+            [
+                "Overview",
+                "Transactions",
+                "Operations",
+                "Payments",
+                "Graph",
+                "Assets",
+                "Contracts",
+                "Investigations",
+            ]
         )
         navigation.setFixedWidth(180)
         navigation.setCurrentRow(0)
@@ -129,13 +144,22 @@ class MainWindow(QMainWindow):
         self.assets.issuer_requested.connect(self.investigate_issuer)
         self.activity_views[2].asset_requested.connect(self.open_asset)
         self.pages.addWidget(self.assets)
+        self.pages.addWidget(QWidget())  # Reserve Contracts' existing navigation index.
+        self.investigations = None
+        if investigation_store is not None:
+            self.investigations = InvestigationsView(investigation_store, service.provider)
+            self.pages.addWidget(self.investigations)
+        save_resource = QPushButton("Save resource to selected investigation")
+        save_resource.clicked.connect(self.save_resource)
+        save_resource.setEnabled(self.investigations is not None)
+        pane.addWidget(save_resource)
         pane.addWidget(self.pages)
         navigation.currentRowChanged.connect(self.select_page)
         content.addLayout(pane, 1)
         layout.addLayout(content, 1)
         self.setCentralWidget(root)
         self.statusBar().showMessage("Mainnet selected • Ready")
-        for index in range(6, navigation.count()):
+        for index in [6] if self.investigations is not None else [6, 7]:
             item = navigation.item(index)
             item.setText(item.text() + " (planned)")
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
@@ -151,6 +175,51 @@ class MainWindow(QMainWindow):
             QListWidget::item:selected { background: #34446a; }
             QStatusBar { color: #a7b3cc; }
         """)
+
+    def save_transaction(self, dialog):
+        """Capture the loaded transaction, including partial evidence and its network."""
+        tx = dialog.transaction
+        if tx is not None:
+            self.investigations.add_evidence(
+                {
+                    "kind": "transaction",
+                    "identifier": tx.hash,
+                    "network": tx.network.value,
+                    "evidence": [transaction_document(tx)],
+                }
+            )
+
+    def save_resource(self):
+        """Save the displayed asset or account with currently loaded activity and graph evidence."""
+        if self.investigations is None:
+            return
+        if self.pages.currentIndex() == 5 and self.assets.snapshot is not None:
+            asset = self.assets.snapshot
+            entry = {
+                "kind": "asset",
+                "identifier": asset.code + ":" + asset.issuer,
+                "code": asset.code,
+                "issuer": asset.issuer,
+                "network": asset.network.value,
+                "evidence": [self.assets.export_document()],
+            }
+        elif self.pages.currentIndex() < 5 and self.account is not None:
+            evidence = [account_document(self.account)]
+            evidence.extend(activity_document(view) for view in self.activity_views if view.loaded)
+            if self.activity_views[2].loaded:
+                evidence.append(graph_document(self.graph))
+            entry = {
+                "kind": "account",
+                "identifier": self.account.address,
+                "network": self.account.network.value,
+                "evidence": evidence,
+            }
+        else:
+            self.investigations.error(
+                "Load an account or asset first; save transactions from their inspector."
+            )
+            return
+        self.investigations.add_evidence(entry)
 
     def select_page(self, index):
         """Show a navigation section and lazily load its first page when needed."""
@@ -206,6 +275,10 @@ class MainWindow(QMainWindow):
         self.dialogs.add(dialog)
         dialog.finished.connect(lambda: self.dialogs.discard(dialog))
         dialog.finished.connect(dialog.deleteLater)
+        if self.investigations is not None:
+            save = QPushButton("Save to selected investigation")
+            save.clicked.connect(lambda: self.save_transaction(dialog))
+            dialog.layout().addWidget(save)
         dialog.show()
         dialog.start()
 
@@ -318,7 +391,12 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:
         """Cancel outstanding requests before allowing the window to close."""
+        if self.investigations is not None and not self.investigations.allow_close():
+            event.ignore()
+            return
         self.invalidate()
+        if self.investigations is not None and self.investigations.task is not None:
+            self.investigations.task.cancel()
         for task in self.tasks:
             task.cancel()
         super().closeEvent(event)

@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.7 with account/activity inspection, one-hop graph, optional SQLite cache, CSV/JSON export, and asset inspection\
+**Implementation status:** Pre-alpha 0.0.8 with account/activity inspection, one-hop graph, optional SQLite cache, CSV/JSON export, asset inspection, and saved investigations\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1560,9 +1560,9 @@ CSV contains metadata columns and JSON-encoded nested evidence. Spreadsheet form
 cells receive an apostrophe prefix; consumers should import amounts and identifiers as text.
 Empty results preserve metadata. UTF-8 files are saved locally and atomically replaced only
 after writing succeeds. Exports are unencrypted and independent of cache clearing.
-General XDR decoding, saved investigations, multi-hop expansion, and contract exploration
+General XDR decoding, multi-hop expansion, and contract exploration
 remain planned.
-Assets navigation is enabled in 0.0.7. Issued assets are identified by case-sensitive code,
+Assets navigation was enabled in 0.0.7. Issued assets are identified by case-sensitive code,
 issuer G-address, and network. Users can search directly or navigate from balances and
 Payments (destination asset for path payments). Horizon statistics preserve exact amounts
 and distinguish unknown fields from zero. Authorization-state balances and holding-location
@@ -1667,3 +1667,16 @@ on their corresponding systems and test them before describing a platform as sup
 
 The public specification is the canonical scope document. Update it when scope changes;
 keep personal investigation data and private working notes outside version control.
+
+
+## V0.0.8 implemented slice — saved investigations
+
+Named investigations persist in a separate schema-versioned application-data SQLite database.
+Accounts, transactions, and assets retain network identity and portable evidence snapshots;
+account saves include already-loaded activity/graph evidence. Reopening is offline through a
+read-only JSON evidence viewer. Graph layouts are not restored. Local names, notes, and labels
+are explicitly saved and distinguished from source facts; annotations are opt-in in exports.
+Live refresh bypasses cache, appends a new resource snapshot, and retains old evidence. Account
+refresh does not fetch activity automatically. Deletion is confirmed; exported files and cache
+are independent. Storage is unencrypted, capped at 20 MB per investigation, and refuses future
+schema versions. Watchlists and deeper flow tracing remain future slices.
