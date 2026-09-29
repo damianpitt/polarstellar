@@ -149,6 +149,8 @@ class MainWindow(QMainWindow):
         if investigation_store is not None:
             self.investigations = InvestigationsView(investigation_store, service.provider)
             self.pages.addWidget(self.investigations)
+            self.graph.can_save_trace = True
+            self.graph.trace_save_requested.connect(self.save_trace)
         save_resource = QPushButton("Save resource to selected investigation")
         save_resource.clicked.connect(self.save_resource)
         save_resource.setEnabled(self.investigations is not None)
@@ -175,6 +177,18 @@ class MainWindow(QMainWindow):
             QListWidget::item:selected { background: #34446a; }
             QStatusBar { color: #a7b3cc; }
         """)
+
+    def save_trace(self, snapshot):
+        """Persist the entire expanded graph, including filters, evidence, routes and page coverage."""
+        if self.investigations is not None:
+            self.investigations.add_evidence(
+                {
+                    "kind": "expanded_graph",
+                    "identifier": snapshot["metadata"]["root"],
+                    "network": snapshot["metadata"]["network"],
+                    "evidence": [snapshot],
+                }
+            )
 
     def save_transaction(self, dialog):
         """Capture the loaded transaction, including partial evidence and its network."""

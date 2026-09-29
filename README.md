@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with Soroban support o
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.8 · Pre-alpha**
+**Current version: 0.0.9 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,13 +32,13 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.8 |
+| Area | Available in 0.0.9 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
 | Transaction inspection | Status, ledger, fees, memo, ordered operations, and raw Horizon data |
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
-| Relationship graph | Interactive one-hop graph with asset and direction filters |
+| Relationship graph | Direct counterparties plus bounded multi-hop expansion and same-asset routes |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
 | Assets | Issued asset statistics, authorization flags, issuer navigation, and native XLM details |
 | Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
@@ -151,6 +151,46 @@ to open the corresponding transaction.
 
 The graph shows up to **30 filtered counterparties**, ranked by operation count. The table
 retains all fetched relationships. Graph and Payments share the same **Load more** state.
+
+### Graph expansion and observed routes
+
+In **Graph**, load Payments and choose **Explore multiple hops**. The expanded window
+starts from up to the first five loaded root pages. Select a discovered account and
+choose **Expand / load next 20** to fetch one page. Repeated clicks load older records
+for that account; other accounts keep their own cursors. There is no automatic crawl.
+Double-click a graph node to select it for expansion, drag to reposition nodes, scroll
+to zoom, or use **Fit graph**. Failed requests can be retried; Cancel retains loaded data.
+
+Expansion is limited to **three hops**, **ten fetched accounts**, and **five pages
+(100 records) per account**. Depth is the shortest undirected discovery distance from
+the root; directed routes are a separate query. The canvas shows up to **40 nodes**,
+while the edge table and exports keep all filtered evidence. The account selector also
+includes discovered nodes outside the canvas limit.
+
+Choose an asset (including its issuer), a target, and **From root** or **To root** to
+list up to 100 simple directed routes, each at most three edges. Routes never revisit
+an account or cross asset identities. Direction affects routes; the edge table shows
+all connections for the selected asset. Select an edge for its supporting operations;
+double-click evidence to open the transaction inspector.
+
+These are **observed connections**, not proof that the same funds flowed through a
+route, that transfers occurred in chronological order, or that accounts share an owner.
+Amounts are never summed across hops. Only successful direct payments and account
+funding contribute. Overlapping pages are deduplicated by operation ID; conflicting
+observations are excluded. No route in loaded evidence does not prove no connection.
+
+The coverage panel records each fetched account's loaded time range, source, retrieval
+times, cache labels, and pagination/limit status. Unfetched accounts and excluded
+operations are identified in exports. End-of-results is not proof of lifetime coverage.
+Normal cache settings apply to expansion requests; more public addresses are sent to
+the selected Horizon endpoint only when you choose to expand them.
+
+Export CSV/JSON from the expanded window, or choose **Save expanded graph to selected
+investigation**. Saved snapshots include filtered edges, exact evidence, route query,
+limits, and per-account provenance. They reopen in the offline evidence viewer and
+are not refreshed by the single-resource refresh button. Build a new trace to capture
+newer graph evidence. Closing the trace discards its unsaved expansion; changing the
+root investigation or network closes it and rejects outstanding results.
 
 ### Optional local cache
 
@@ -332,12 +372,12 @@ The next areas of work include:
 
 - Expanded asset inspection and filtering.
 - Watchlists and expanded investigation organization.
-- Graph expansion and deeper flow tracing.
+- Advanced tracing controls and broader operation coverage.
 - Soroban contract inspection and event exploration through Stellar RPC.
 - Optional historical analytics through Hubble.
 - Native packaging and release validation for Linux, macOS, and Windows.
 
-These are **planned capabilities**, not features available in 0.0.8. The detailed release
+These are **planned capabilities**, not features available in 0.0.9. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

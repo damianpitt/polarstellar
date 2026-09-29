@@ -111,11 +111,15 @@ class GraphView(QWidget):
 
     account_requested = Signal(str)
     transaction_requested = Signal(str)
+    trace_save_requested = Signal(object)
 
     def __init__(self, payments):
         """Build this view and connect user actions to its data-loading controls."""
         super().__init__()
         self.payments = payments
+        self.trace_dialog = None
+        self.payment_generation = payments.generation
+        self.can_save_trace = False
         self.relationships = []
         self.edges = []
         self.context = None
@@ -143,6 +147,9 @@ class GraphView(QWidget):
         layout.addLayout(controls)
         self.export = ExportControls(lambda: graph_document(self))
         layout.addWidget(self.export)
+        self.explore = QPushButton("Explore multiple hops")
+        self.explore.clicked.connect(self.open_trace)
+        layout.addWidget(self.explore)
         split = QSplitter(Qt.Orientation.Vertical)
         self.scene = QGraphicsScene(self)
         self.canvas = Canvas(self.scene)
@@ -177,8 +184,49 @@ class GraphView(QWidget):
         payments.changed.connect(self.refresh)
         self.refresh()
 
+    def open_trace(self):
+        """Open a bounded trace seeded from current root payments, reusing an existing window."""
+        if not self.payments.loaded or self.payments.context is None:
+            return
+        if self.trace_dialog is not None:
+            self.trace_dialog.show()
+            self.trace_dialog.raise_()
+            return
+        # Import lazily because the expanded view reuses the direct graph's canvas primitives.
+        from polarstellar.ui.trace_view import TraceDialog
+
+        dialog = TraceDialog(self.payments, self)
+        self.trace_dialog = dialog
+        dialog.save.setEnabled(self.can_save_trace)
+        dialog.save_requested.connect(self.trace_save_requested.emit)
+        dialog.transaction_requested.connect(self.transaction_requested.emit)
+        dialog.finished.connect(self.trace_closed)
+        dialog.show()
+
+    def trace_closed(self, *_):
+        """Release a closed trace only after its cancellation-resistant tasks have settled."""
+        dialog = self.trace_dialog
+        self.trace_dialog = None
+        if dialog is not None:
+            # Qt widgets remain available to an outstanding coroutine's finalizer.
+            if dialog.tasks:
+                for task in tuple(dialog.tasks):
+                    task.add_done_callback(lambda _task, view=dialog: self.dispose_trace(view))
+            else:
+                dialog.deleteLater()
+
+    def dispose_trace(self, dialog):
+        """Delete a retired dialog once every network task has completed cancellation."""
+        if all(task.done() for task in dialog.tasks):
+            dialog.deleteLater()
+
     def refresh(self):
         """Rebuild analysis from the Payments view while preserving the selected asset when possible."""
+        if self.payment_generation != self.payments.generation:
+            self.payment_generation = self.payments.generation
+            if self.trace_dialog is not None:
+                self.trace_dialog.reject()
+        self.explore.setEnabled(self.payments.loaded and self.payments.context is not None)
         self.context = self.payments.context
         self.export.setEnabled(self.payments.loaded and self.context is not None)
         self.load.setEnabled(

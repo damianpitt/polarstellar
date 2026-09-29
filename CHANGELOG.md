@@ -10,6 +10,57 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.9] - 2026-09-29
+
+### Added — bounded graph expansion and observed routes
+
+- Added Explore multiple hops to Graph after root payments load. A separate window
+  preserves the root investigation while discovered accounts can be selected for
+  expansion, including by double-clicking a canvas node. Each click fetches one page
+  of up to 20 records; accounts keep independent cursors and no automatic crawl occurs.
+- Added explicit limits of three discovery hops, ten fetched accounts, and five pages
+  per account. Root seeding uses at most five loaded pages and reports truncation.
+  The canvas shows at most forty nodes; selectors, the edge table, and exports retain
+  the broader discovered/filtered data. Added node dragging, zoom, pan, and Fit graph.
+- Added directed per-asset edge tables with exact totals and operation-level evidence.
+  Select an edge to see its transfers; double-click evidence to inspect its transaction.
+  Repeated operations fetched from different accounts are counted once. Conflicting
+  observations and unsupported, failed, self, or mismatched transfers are excluded.
+- Added asset-specific directed routes from the root or to the root through a selected
+  target, bounded to three edges and one hundred simple routes without repeated nodes.
+  Asset identity includes issuer. Direction filters route queries, not the edge table.
+  Paths represent observed connections, not same-fund continuity, chronological flow,
+  ownership, or complete history. No amounts are summed across hops.
+
+### Evidence, coverage, and persistence
+
+- Added per-account source, retrieval/cache status, loaded time range, pagination and
+  limit status, plus unique-operation exclusions and unfetched-account export metadata.
+  End-of-available-results does not establish complete lifetime coverage. Existing cache
+  settings apply; expanding an account sends that public address to the selected Horizon.
+- Added expanded-graph CSV/JSON export using the existing export envelope with a new
+  expanded_graph kind. Snapshots include filtered connections and evidence, route query,
+  discovered unfetched accounts, page provenance, and explicit bounds/truncation flags.
+- Added Save expanded graph to selected investigation. Saved graph evidence reopens
+  offline and cannot be refreshed through the single-resource refresh action; build and
+  save a new trace for newer evidence. Interactive graph layout restoration is not added.
+- Closing the expansion window discards unsaved exploration. It is seeded independently
+  of subsequent root pagination. Network/account reset closes it and rejects stale results.
+
+### Reliability and validation
+
+- Expansion failures retain prior evidence and cursors for retry. Cancellation uses a
+  generation guard in addition to cancelling network work; retired windows remain alive
+  until cancellation-resistant tasks settle. No new runtime dependencies.
+- Added tests for deduplication/precision, cycles and asset isolation, depth/page/account
+  bounds, invalid page identity/cursors, conflicts/exclusions, provenance exports, retry,
+  per-account pagination, transaction evidence navigation, stale results after network
+  changes, asset filters, seed truncation, and saved offline expanded graphs.
+- Local validation: all 97 tests and Ruff checks passed; source distribution and wheel
+  builds, lockfile validation, and CLI version checks succeeded. A rendered headless Qt
+  preview was inspected and initial graph fitting corrected. Remote platform checks
+  remain pending at the time of this source update.
+
 ## [0.0.8] - 2026-09-27
 
 ### Added — saved investigations with local notes and labels

@@ -211,7 +211,17 @@ class InvestigationsView(QWidget):
     def show_entry(self, row):
         """Render the full saved JSON evidence and original timestamps without executing content."""
         valid = self.current is not None and 0 <= row < len(self.current["entries"])
-        self.refresh_button.setEnabled(valid and self.task is None)
+        refreshable = valid and self.current["entries"][row]["kind"] in (
+            "account",
+            "transaction",
+            "asset",
+        )
+        self.refresh_button.setEnabled(refreshable and self.task is None)
+        self.refresh_button.setToolTip(
+            "Saved expanded graphs remain offline evidence; open Graph to build a new trace."
+            if valid and not refreshable
+            else "Fetch a new resource snapshot while keeping old evidence."
+        )
         self.evidence.setPlainText(
             json.dumps(self.current["entries"][row], ensure_ascii=False, indent=2)
             if valid
@@ -253,6 +263,8 @@ class InvestigationsView(QWidget):
         if self.task is not None or self.current is None or row < 0:
             return
         entry = copy.deepcopy(self.current["entries"][row])
+        if entry["kind"] not in ("account", "transaction", "asset"):
+            return
         self.task = asyncio.create_task(self.refresh(self.current["id"], entry))
         self.refresh_button.setEnabled(False)
 

@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.8 with account/activity inspection, one-hop graph, optional SQLite cache, CSV/JSON export, asset inspection, and saved investigations\
+**Implementation status:** Pre-alpha 0.0.9 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection, and saved investigations\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1560,7 +1560,7 @@ CSV contains metadata columns and JSON-encoded nested evidence. Spreadsheet form
 cells receive an apostrophe prefix; consumers should import amounts and identifiers as text.
 Empty results preserve metadata. UTF-8 files are saved locally and atomically replaced only
 after writing succeeds. Exports are unencrypted and independent of cache clearing.
-General XDR decoding, multi-hop expansion, and contract exploration
+General XDR decoding and contract exploration
 remain planned.
 Assets navigation was enabled in 0.0.7. Issued assets are identified by case-sensitive code,
 issuer G-address, and network. Users can search directly or navigate from balances and
@@ -1679,4 +1679,23 @@ are explicitly saved and distinguished from source facts; annotations are opt-in
 Live refresh bypasses cache, appends a new resource snapshot, and retains old evidence. Account
 refresh does not fetch activity automatically. Deletion is confirmed; exported files and cache
 are independent. Storage is unencrypted, capped at 20 MB per investigation, and refuses future
-schema versions. Watchlists and deeper flow tracing remain future slices.
+schema versions. Watchlists and advanced tracing remain future slices.
+
+
+## V0.0.9 implemented slice — bounded graph expansion
+
+Graph > Explore multiple hops opens an independent trace seeded with up to five loaded
+root payment pages. Expansion is explicit: one 20-record page per action with per-account
+cursors, retry, cancellation and stale-result rejection. Limits are three undirected discovery
+hops, ten fetched accounts and five pages per account; the canvas displays forty nodes while
+the table/export retain all filtered edges. The selector includes undisplayed discovered nodes.
+Operations are deduplicated across accounts; conflicting, failed, unsupported, self-transfer,
+and mismatched observations are excluded. Exact per-asset directed edge totals retain evidence.
+Same-asset simple directed route queries support from-root/to-root direction, a target, at most
+three edges and one hundred routes. They do not claim chronology, common ownership, continuity
+of the same funds, or complete history, and do not aggregate money across hops.
+CSV/JSON exports and saved expanded-graph evidence include filters, routes, limits, sources,
+original retrieval/cache timestamps, per-account pagination/time coverage and unfetched accounts.
+Saved graph evidence is offline and not eligible for single-resource refresh. Trace state is
+independent of later root pagination; reopening a closed trace starts a new snapshot. Network
+or investigation reset closes active traces. Existing caching applies; no new providers/dependencies.
