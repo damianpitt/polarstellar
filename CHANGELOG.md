@@ -10,6 +10,64 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.10] - 2026-09-30
+
+### Added — read-only Soroban contract inspection
+
+- Enabled Contracts navigation and C-address search from the main search bar. IDs
+  are checksum-validated before requests; 64-character transaction hashes retain
+  their existing routing. Contract inspection follows the selected network.
+- Added a dedicated Stellar RPC provider using public Gateway Mainnet and SDF Testnet
+  endpoints, with getNetwork passphrase verification for each lookup/event page. Its
+  method allowlist contains only getNetwork, getHealth, getLedgerEntries and getEvents.
+- Added readable instance details and a raw-evidence tab: executable type, WASM hash
+  when available, last-modified/live-until ledgers, known instance storage, source and
+  retrieval time. Instance identity is checked against the requested ledger key.
+  An absent live instance remains explicitly uncertain, including possible archival.
+
+### Added — retained contract-event exploration
+
+- Added explicit event loading in ascending order, 20 records per page, capped at
+  50 pages. The default query covers the latest 1,000 retained ledgers; users may enter
+  another start ledger before inspection. Invalid/expired starts are rejected visibly.
+- Captured a fixed end ledger and followed opaque RPC cursors without illegal ledger
+  parameters on continuation requests. Newer events beyond the captured end are excluded.
+  Deduplicated event IDs and rejected conflicting duplicates, cursor cycles, foreign
+  contract events, and backwards ledger order. Failed loads retain rows for retry.
+- Added selected-event evidence showing decoded scalar topics/values plus original RPC
+  fields and XDR. Large integers remain exact strings; no token decimal scale, transfer
+  semantics, or graph flow is inferred. Complex/unsupported values retain raw evidence.
+- Added valid transaction-hash navigation to the existing Horizon inspector; its own
+  historical availability still applies. Missing success flags are labeled Unknown.
+
+### Exports, persistence, privacy, and scope
+
+- Added CSV/JSON contract exports and saved investigations with instance, events,
+  fixed query range, page provenance, retention bounds, and completion/page-limit state.
+  Unqueried event history is distinguished from an empty completed query.
+- Saved contract evidence is offline and excluded from single-resource library refresh;
+  inspect and save again to capture newer evidence. Contract lookups bypass the response
+  cache. Network/search changes and cancellation invalidate late requests.
+- Public RPC providers receive contract IDs and query parameters. No private keys,
+  credentials, contract execution, simulation, or transaction submission are used.
+  No WASM/source downloads, function discovery, or arbitrary storage enumeration were added.
+- Updated README and specification with endpoint choices, retention/precision caveats,
+  supported features, and the remaining advanced-contract scope. No new dependencies.
+
+### Validation
+
+- Added deterministic RPC tests for valid/invalid IDs, network verification, WASM/native
+  executable decoding, exact instance storage, absent/wrong entries, cursor parameters,
+  ledger boundaries, event identity/status/precision, duplicate/cursor failure, stale
+  responses, rate limits, RPC errors, retention validation, exports and saved snapshots.
+- Local validation: all 112 tests and Ruff checks passed; source distribution and wheel
+  builds, lockfile validation, and CLI version checks succeeded. A headless Qt preview
+  was inspected, and readable details were separated from raw instance evidence.
+- Read-only live checks on 2026-09-30 verified Testnet network/health and Mainnet's
+  public documentation example contract instance plus two 20-event pages with an
+  advancing cursor. This does not guarantee continuing provider availability or full history.
+- GitHub's Linux/macOS/Windows checks remain pending at the time of this source update.
+
 ## [0.0.9] - 2026-09-29
 
 ### Added — bounded graph expansion and observed routes

@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.9 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection, and saved investigations\
+**Implementation status:** Pre-alpha 0.0.10 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection, saved investigations, and read-only contract/RPC event inspection\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1560,8 +1560,7 @@ CSV contains metadata columns and JSON-encoded nested evidence. Spreadsheet form
 cells receive an apostrophe prefix; consumers should import amounts and identifiers as text.
 Empty results preserve metadata. UTF-8 files are saved locally and atomically replaced only
 after writing succeeds. Exports are unencrypted and independent of cache clearing.
-General XDR decoding and contract exploration
-remain planned.
+General XDR decoding and advanced contract exploration remain planned.
 Assets navigation was enabled in 0.0.7. Issued assets are identified by case-sensitive code,
 issuer G-address, and network. Users can search directly or navigate from balances and
 Payments (destination asset for path payments). Horizon statistics preserve exact amounts
@@ -1572,7 +1571,7 @@ account and its account-wide activity, not an asset-filtered activity feed. Nati
 local definition with no issuer/flags or supply lookup. Pool shares and standalone contract
 tokens are unsupported. Asset lookups are live, bypass the existing cache, support cancellation
 and stale-result rejection, and export statistics/flags/provenance to CSV or JSON.
-Contracts navigation remains disabled. See CHANGELOG.md for versioned
+Contracts navigation is enabled for limited read-only RPC inspection in 0.0.10. See CHANGELOG.md for versioned
 feature history. Update its Unreleased section with each implemented feature or fix and
 keep package metadata and the lockfile aligned whenever the version changes.
 
@@ -1699,3 +1698,24 @@ original retrieval/cache timestamps, per-account pagination/time coverage and un
 Saved graph evidence is offline and not eligible for single-resource refresh. Trace state is
 independent of later root pagination; reopening a closed trace starts a new snapshot. Network
 or investigation reset closes active traces. Existing caching applies; no new providers/dependencies.
+
+
+## V0.0.10 implemented slice — contract instances and RPC events
+
+Contracts accepts checksum-valid C-addresses directly or from main search. Public RPC
+endpoints are Gateway Mainnet and SDF Testnet; getNetwork passphrases are verified on every
+lookup/page. Only getNetwork, getHealth, getLedgerEntries and getEvents are allowed.
+The known persistent instance key reveals executable type, WASM hash when applicable,
+last-modified/live-until ledgers, instance storage and raw XDR. No live instance is an uncertain
+absence, not proof of nonexistence. Source verification, WASM/spec downloads, arbitrary storage
+key discovery, contract invocation, simulation and transaction submission are not implemented.
+Events are contract-type, ascending, 20 per page, at most 50 pages. The default start is the
+most recent 1,000 ledgers clipped to provider retention; an explicit retained start is supported.
+The captured end ledger is enforced locally on cursor pages, which omit start/end bounds as
+required by RPC. Unique event IDs are deduplicated, conflicting evidence/cursor cycles rejected,
+and errors retain earlier pages. Scalar ScVals decode without precision loss or inferred token
+decimals; complex/unsupported XDR remains raw. Events are not treated as payment flows.
+Export and saved contract evidence retain instance data, events, query boundaries and per-page
+provenance. Saved contract snapshots reopen offline; use Contracts to capture new evidence,
+not single-resource library refresh. Queries are live and bypass response cache. Cancellation
+and context changes invalidate late results. No new dependencies or credentials are required.

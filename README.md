@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with Soroban support o
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.9 · Pre-alpha**
+**Current version: 0.0.10 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.9 |
+| Area | Available in 0.0.10 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -40,13 +40,13 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
 | Relationship graph | Direct counterparties plus bounded multi-hop expansion and same-asset routes |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
+| Contracts | Read-only instance details, raw XDR, and paginated RPC contract events |
 | Assets | Issued asset statistics, authorization flags, issuer navigation, and native XLM details |
 | Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
 
-> **Pre-alpha:** native installers are not available yet. Contract exploration
-> and several advanced investigation features remain planned.
+> **Pre-alpha:** native installers and advanced contract analysis remain planned.
 
 ## Getting started
 
@@ -242,10 +242,52 @@ statistics, identity, issuer flags, source, retrieval time, and coverage notes. 
 website or metadata file is fetched. Field definitions follow the
 [Horizon asset reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/assets/object).
 
+### Soroban contract inspection and events
+
+Open **Contracts**, enter a checksum-valid **C-address**, and choose **Inspect / refresh**.
+You can also paste a contract ID into the main search bar. The current Mainnet/Testnet
+selection applies to the entire inspection, and the RPC endpoint's network passphrase
+is verified before accepting each lookup or event page.
+
+**Contract details** shows the known persistent contract instance: executable type,
+WASM hash when present, modification ledger, live-until ledger when available, and
+instance-storage key/value evidence. **Raw instance evidence** retains the original
+XDR and provenance. A missing live entry may be absent, archived, or unavailable;
+it does not prove the contract never existed. Events can still be queried.
+
+Choose **Load events (oldest first)**, then **Load more events**. By default, the query
+covers the most recent 1,000 ledgers within the provider's retained history. To start
+elsewhere, enter a start ledger before inspecting; expired or future starts are rejected.
+The end ledger is captured at inspection time. Each click loads up to 20 contract events,
+with a maximum of 50 pages (1,000 events). The status and exports distinguish unqueried,
+completed, and incomplete coverage. A retention window can expire during paging; start
+a new inspection if that happens.
+
+Select an event to see topics, values, original RPC fields and XDR. Common scalar values
+are decoded; large integers stay exact strings, with **no inferred token decimals**.
+Structured or unsupported values retain raw XDR. Events are not automatically interpreted
+as transfers or added to graph totals. A valid event transaction hash can be opened in the
+existing Horizon inspector, subject to Horizon's own history availability.
+
+CSV/JSON exports include the instance, loaded events, fixed query range, and per-page
+source/retrieval/retention metadata. **Save resource to selected investigation** keeps
+that evidence offline. Saved contract snapshots are not refreshed by the library's
+single-resource refresh button; inspect again in Contracts and save a new snapshot.
+
+RPC requests use the public Gateway Mainnet endpoint and SDF Testnet endpoint listed in
+[Stellar's provider directory](https://developers.stellar.org/docs/data/apis/rpc/providers).
+Queries disclose the public contract ID and ledger range to that provider. Contract data
+loads live and is not stored in the optional response cache. There are no contract calls,
+transaction simulations/submissions, source-code verification, WASM downloads, arbitrary
+storage enumeration, or automatic function discovery in this slice. See the official
+[getLedgerEntries](https://developers.stellar.org/docs/data/apis/rpc/api-reference/methods/getLedgerEntries)
+and [getEvents](https://developers.stellar.org/docs/data/apis/rpc/api-reference/methods/getEvents)
+references for the underlying data coverage.
+
 ### Saved investigations, notes, and labels
 
 Open **Investigations**, enter a name, and choose **Create new**. Select that
-investigation, inspect an account or asset, and choose **Save resource to selected
+investigation, inspect an account, asset, or contract, and choose **Save resource to selected
 investigation**. Transaction inspectors have their own **Save to selected investigation**
 button. An account save captures its balances and any already-loaded activity and graph
 evidence; it does not fetch additional pages. Each resource retains its network.
@@ -275,7 +317,7 @@ Each investigation is limited to 20 MB. Watchlists and encrypted storage remain 
 ### CSV and JSON export
 
 Choose **Export CSV** or **Export JSON** in Overview, Transactions, Operations,
-Payments, Graph, Assets, or an open transaction inspector. Choose a destination in the save
+Payments, Graph, Assets, Contracts, or an open transaction inspector. Choose a destination in the save
 dialog. Exports use the data already loaded and make no additional network requests.
 Use **Load more** first when you need older records.
 
@@ -346,8 +388,9 @@ so the desktop interface does not call remote APIs directly.
 | SQLite | Optional, expiring local snapshot cache |
 | uv | Dependency management and reproducible environments |
 
-**Horizon is the implemented data provider.** Stellar RPC for current ledger and Soroban
-access, and Hubble for deeper historical analysis, remain planned integrations.
+**Horizon** provides accounts, activity, transactions, and issued-asset statistics.
+**Stellar RPC** provides contract instances and retained contract events. Hubble for
+deeper historical analysis remains optional future work.
 
 ### Repository layout
 
@@ -368,16 +411,17 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 ## Roadmap
 
-The next areas of work include:
+The next V0.1 release slice is native packaging and release validation for Linux,
+macOS, and Windows. Further planned areas include:
 
 - Expanded asset inspection and filtering.
 - Watchlists and expanded investigation organization.
 - Advanced tracing controls and broader operation coverage.
-- Soroban contract inspection and event exploration through Stellar RPC.
+- Advanced contract specifications, storage-key discovery, and richer event interpretation.
 - Optional historical analytics through Hubble.
 - Native packaging and release validation for Linux, macOS, and Windows.
 
-These are **planned capabilities**, not features available in 0.0.9. The detailed release
+These are **planned capabilities**, not features available in 0.0.10. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

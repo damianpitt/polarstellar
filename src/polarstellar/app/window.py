@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from polarstellar import __version__
 from polarstellar.stellar.activity import ActivityKind
+from polarstellar.stellar.contracts import ContractProvider
 from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.service import AccountService, validate_account
@@ -33,6 +34,7 @@ from polarstellar.storage.export import (
 from polarstellar.ui.activity_view import ActivityView
 from polarstellar.ui.asset_view import AssetView
 from polarstellar.ui.cache_controls import CacheControls
+from polarstellar.ui.contract_view import ContractView
 from polarstellar.ui.export_controls import ExportControls
 from polarstellar.ui.graph_view import GraphView
 from polarstellar.ui.investigations_view import InvestigationsView
@@ -42,7 +44,9 @@ from polarstellar.ui.transaction_view import TransactionDialog
 class MainWindow(QMainWindow):
     """The main explorer window, coordinating search, network changes, and local cache controls."""
 
-    def __init__(self, service: AccountService, investigation_store=None) -> None:
+    def __init__(
+        self, service: AccountService, investigation_store=None, contract_provider=None
+    ) -> None:
         """Build this view and connect user actions to its data-loading controls."""
         super().__init__()
         """Build the explorer and keep pending requests separate from displayed results."""
@@ -75,7 +79,7 @@ class MainWindow(QMainWindow):
             self.cache_controls = CacheControls(service.provider, self.invalidate, self.tasks)
             layout.addWidget(self.cache_controls)
         self.search = QLineEdit()
-        self.search.setPlaceholderText("Paste a Stellar G-address or transaction hash")
+        self.search.setPlaceholderText("Paste a Stellar G-address, C-address, or transaction hash")
         self.search.setAccessibleName("Investigation search")
         search_row = QHBoxLayout()
         search_row.addWidget(self.search)
@@ -144,7 +148,11 @@ class MainWindow(QMainWindow):
         self.assets.issuer_requested.connect(self.investigate_issuer)
         self.activity_views[2].asset_requested.connect(self.open_asset)
         self.pages.addWidget(self.assets)
-        self.pages.addWidget(QWidget())  # Reserve Contracts' existing navigation index.
+        self.contracts = ContractView(
+            contract_provider or ContractProvider(), lambda: Network(self.network.currentText())
+        )
+        self.contracts.transaction_requested.connect(self.open_transaction)
+        self.pages.addWidget(self.contracts)
         self.investigations = None
         if investigation_store is not None:
             self.investigations = InvestigationsView(investigation_store, service.provider)
@@ -161,7 +169,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(content, 1)
         self.setCentralWidget(root)
         self.statusBar().showMessage("Mainnet selected • Ready")
-        for index in [6] if self.investigations is not None else [6, 7]:
+        for index in [] if self.investigations is not None else [7]:
             item = navigation.item(index)
             item.setText(item.text() + " (planned)")
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
@@ -207,7 +215,15 @@ class MainWindow(QMainWindow):
         """Save the displayed asset or account with currently loaded activity and graph evidence."""
         if self.investigations is None:
             return
-        if self.pages.currentIndex() == 5 and self.assets.snapshot is not None:
+        if self.pages.currentIndex() == 6 and self.contracts.snapshot is not None:
+            snapshot = self.contracts.snapshot
+            entry = {
+                "kind": "contract",
+                "identifier": snapshot["contract"],
+                "network": snapshot["network"],
+                "evidence": [self.contracts.export_document()],
+            }
+        elif self.pages.currentIndex() == 5 and self.assets.snapshot is not None:
             asset = self.assets.snapshot
             entry = {
                 "kind": "asset",
@@ -230,7 +246,7 @@ class MainWindow(QMainWindow):
             }
         else:
             self.investigations.error(
-                "Load an account or asset first; save transactions from their inspector."
+                "Load an account, asset, or contract first; save transactions from their inspector."
             )
             return
         self.investigations.add_evidence(entry)
@@ -299,6 +315,7 @@ class MainWindow(QMainWindow):
     def invalidate(self) -> None:
         """Cancel work from the previous context so late results cannot overwrite the current view."""
         self.assets.reset()
+        self.contracts.reset()
         self.open_balance_asset.setEnabled(False)
         for dialog in tuple(self.dialogs):
             dialog.reject()
@@ -332,6 +349,13 @@ class MainWindow(QMainWindow):
     def start_search(self) -> None:
         """Validate the entered identifier and start an account or transaction investigation."""
         value = self.search.text().strip()
+        if value.startswith("C") and len(value) != 64:
+            self.invalidate()
+            self.navigation.setCurrentRow(6)
+            self.message.setText("Contract inspection • " + self.network.currentText())
+            self.contracts.address.setText(value)
+            self.contracts.start()
+            return
         if len(value) == 64:
             self.invalidate()
             self.message.setText("Transaction inspection • " + self.network.currentText())
