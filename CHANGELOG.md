@@ -46,6 +46,13 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   are pre-alpha startup/integration checks, not full interactive clean-machine validation.
   Cache/investigation locations and normal live lookup behavior remain unchanged.
 
+### Fixed — native display readability
+
+- Reviewing the packaged startup screenshots exposed light Windows table headers with
+  pale text and dark selected navigation text on native Windows/macOS styles. Explicit
+  dark header backgrounds and light header/selection text preserve readable labels
+  across native platforms. Table contents, precision and investigation data are unchanged.
+
 ### Validation
 
 - Local source validation: all 114 tests and Ruff checks passed; source distribution,

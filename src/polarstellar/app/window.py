@@ -175,6 +175,9 @@ class MainWindow(QMainWindow):
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
         self.network.currentTextChanged.connect(self.show_network)
         self.message.setText("Paste a Stellar G-address to inspect its balances and trustlines.")
+        # Native Windows/macOS styles can paint light table headers or dark selected
+        # text despite the surrounding dark theme. Explicit foreground/background
+        # pairs keep these important labels readable on every packaged platform.
         self.setStyleSheet("""
             QWidget { background: #171b24; color: #e5e9f2; font-size: 14px; }
             QLineEdit, QComboBox, QListWidget {
@@ -182,7 +185,11 @@ class MainWindow(QMainWindow):
                 border-radius: 5px; padding: 10px;
             }
             QListWidget::item { padding: 12px 6px; }
-            QListWidget::item:selected { background: #34446a; }
+            QListWidget::item:selected { background: #34446a; color: #e5e9f2; }
+            QHeaderView::section, QTableCornerButton::section {
+                background: #202634; color: #e5e9f2;
+                border: 1px solid #343e52; padding: 5px;
+            }
             QStatusBar { color: #a7b3cc; }
         """)
 
