@@ -79,9 +79,11 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   refusal, cache bypass, exact balances/statistics, native XLM without API access,
   contract refresh without events, provider mismatch, saved/unsaved note preservation,
   failed/cancelled refresh, deletion during I/O, explorer shortcuts and protected closure.
-- Source CI will validate the pushed commit on Linux, macOS and Windows. No new native
-  bundles have been built or uploaded for this slice; 0.0.11 packaging results remain
-  historical and do not qualify a native 0.0.12 release.
+- [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/37070491358) passed
+  on Linux, macOS and Windows, including all 140 tests on each platform, Ruff, version
+  inspection and source/wheel builds. No new native bundles have been built or uploaded
+  for this slice; 0.0.11 packaging results remain historical and do not qualify a native
+  0.0.12 release.
 
 ## [0.0.11] - 2026-10-02
 
