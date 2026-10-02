@@ -10,6 +10,53 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.11] - 2026-10-02
+
+### Added — portable native builds
+
+- Added a build-only, locked PyInstaller 6.22.3 dependency group and a documented build
+  script. Linux and Windows use complete portable onedir bundles; macOS uses `.app`
+  bundles. Runtime users do not need to install Python or uv separately.
+- Added a Native builds workflow for Ubuntu 22.04 x86_64, Windows Server 2022 x86_64,
+  macOS 15 Apple Silicon, and macOS 15 Intel. Each target is built on its own operating
+  system; architecture checks prevent accidentally labeling an incompatible runner.
+- Added versioned archives, SHA-256 checksum files, source/version/platform build
+  metadata, project licensing, and a third-party build-environment license inventory.
+  Shared Qt libraries remain separate files. Build inputs copy only explicitly named
+  public documents and analyzed source/dependencies, excluding private investigation data.
+- Added Windows executable version resources and macOS bundle versions. macOS embedded
+  binaries use PyInstaller's ad-hoc signing and extracted signatures are verified.
+  Windows builds are unsigned; Apple notarization, publisher signing, system installers,
+  DMG, AppImage, Flatpak and automatic updates remain future packaging work.
+
+### Added — validation of the actual downloadable bundle
+
+- The build unpacks its deliverable archive into a fresh directory and launches the
+  frozen executable without development Python/Qt path overrides. JSON report/version/
+  architecture checks and a rendered startup screenshot are required for success.
+- Added offline smoke-test options that use disposable storage and fixture HTTP data.
+  Checks cover Qt startup/navigation, async-loop responsiveness, exact account balances,
+  SDK checksum/XDR support, NetworkX, saved investigation reopening, CSV/JSON output,
+  and TLS certificate/SSL availability. Existing user data is never opened by this mode.
+- Linux validation uses Xvfb with native X11 Qt; Windows and macOS validate their native
+  Qt plugins. Reports/screenshots accompany successful workflow artifacts; failed builds
+  preserve diagnostic logs. Public workflow permissions are read-only.
+- Documented download/extraction, native dependencies, architecture choices, approval
+  prompts, local builds, artifact retention and a draft-release review procedure. These
+  are pre-alpha startup/integration checks, not full interactive clean-machine validation.
+  Cache/investigation locations and normal live lookup behavior remain unchanged.
+
+### Validation
+
+- Local source validation: all 114 tests and Ruff checks passed; source distribution,
+  wheel, and dependency lockfile checks succeeded. The extracted Apple Silicon app
+  passed all seven frozen integration checks, including ad-hoc signature verification.
+- Fixed a frozen-startup failure by explicitly bundling the dynamically loaded CFFI
+  backend used by the Stellar SDK/PyNaCl. This was found by testing the deliverable app.
+- The four native GitHub targets and three source-platform jobs are validated after this
+  source commit is pushed. Their reports and the draft release record completed results;
+  initial implementation does not claim clean-machine or signed release qualification.
+
 ## [0.0.10] - 2026-09-30
 
 ### Added — read-only Soroban contract inspection

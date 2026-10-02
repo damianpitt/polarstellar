@@ -11,6 +11,8 @@
 !/uv.lock
 !/src/
 !/tests/
+!/tools/
+!/docs/
 !/.github/
 
 # Python environments, caches, and generated artifacts (at any depth)

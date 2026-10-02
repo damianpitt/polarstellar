@@ -1,0 +1,81 @@
+name: Native builds
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  package:
+    name: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: linux-x86_64
+            arch: x86_64
+          - os: macos-15
+            target: macos-arm64
+            arch: arm64
+          - os: macos-15-intel
+            target: macos-x86_64
+            arch: x86_64
+          - os: windows-2022
+            target: windows-x86_64
+            arch: x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.10"
+          python-version: "3.12"
+      - name: Install native Linux Qt libraries and virtual display
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libegl1 libgl1 libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0
+      - run: uv sync --locked --group packaging
+      - name: Source checks
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          uv run ruff check .
+          uv run pytest
+      - name: Build and validate Linux app under X11
+        if: runner.os == 'Linux'
+        run: xvfb-run -a uv run --group packaging python tools/build_native.py --expected-arch ${{ matrix.arch }}
+      - name: Build and validate native app
+        if: runner.os != 'Linux'
+        run: uv run --group packaging python tools/build_native.py --expected-arch ${{ matrix.arch }}
+      - name: Upload validated bundles and reports
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: PolarStellar-${{ matrix.target }}
+          path: |
+            dist/native/*.zip
+            dist/native/*.tar.gz
+            dist/native/*.sha256
+            dist/native/BUILD_INFO.json
+            dist/native/validation.json
+            dist/native/startup.png
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: native-failure-${{ matrix.target }}
+          path: |
+            dist/native/build.log
+            dist/native/validation.json
+            dist/native/startup.png
+          if-no-files-found: ignore
+          retention-days: 7

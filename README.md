@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with Soroban support o
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.10 · Pre-alpha**
+**Current version: 0.0.11 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.10 |
+| Area | Available in 0.0.11 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -46,11 +46,29 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
 
-> **Pre-alpha:** native installers and advanced contract analysis remain planned.
+> **Pre-alpha:** native portable builds are unsigned preview applications. System installers,
+> signing/notarization, and advanced contract analysis remain planned.
 
 ## Getting started
 
-### Requirements
+### Native downloads
+
+The [Native builds workflow](https://github.com/damianpitt/polarstellar/actions/workflows/native.yml)
+produces Linux x86_64, Windows x86_64, and macOS Apple Silicon/Intel bundles. Download
+artifacts from a successful run while preview releases are being validated. Draft releases
+are visible only to repository maintainers; published downloads will appear on the
+[Releases page](https://github.com/damianpitt/polarstellar/releases).
+
+Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
+`.app` inside `PolarStellar`. Runtime Python/uv installation is unnecessary. Keep the bundled
+libraries with the executable. Check the matching `.sha256` file and validation report.
+These are portable apps rather than system installers; Windows builds are unsigned and
+macOS builds are ad-hoc signed, without notarization.
+
+See [native builds and release validation](docs/RELEASES.md) for dependencies, architecture
+selection, platform approval prompts, local builds, and exact validation limits.
+
+### Requirements for running from source
 
 - Git to clone the repository.
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) to manage Python and dependencies.
@@ -77,8 +95,11 @@ uv run polarstellar --version
 
 ### Platform notes
 
-Linux is the primary target. Automated checks also run on macOS and Windows; these checks
-cover code, tests, and Python package builds, rather than native installer validation.
+Linux is the primary target. Source checks run on Linux, macOS and Windows. The separate
+native workflow builds on Ubuntu 22.04, macOS 15 (Apple Silicon/Intel), and Windows Server
+2022, then launches each extracted bundle with its native Qt display plugin. This preview
+validation does not establish compatibility with every OS version or replace clean-machine
+interactive testing. See the release guide for the current platform scope.
 
 On Ubuntu 24.04, if startup reports a missing `libEGL.so.1`, install the Qt graphics dependency:
 
@@ -411,17 +432,16 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 ## Roadmap
 
-The next V0.1 release slice is native packaging and release validation for Linux,
-macOS, and Windows. Further planned areas include:
+Portable native packaging is implemented. Further planned areas include:
 
 - Expanded asset inspection and filtering.
 - Watchlists and expanded investigation organization.
 - Advanced tracing controls and broader operation coverage.
 - Advanced contract specifications, storage-key discovery, and richer event interpretation.
 - Optional historical analytics through Hubble.
-- Native packaging and release validation for Linux, macOS, and Windows.
+- Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.10. The detailed release
+These are **planned capabilities**, not features available in 0.0.11. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

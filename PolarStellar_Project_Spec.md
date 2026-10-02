@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.10 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection, saved investigations, and read-only contract/RPC event inspection\
+**Implementation status:** Pre-alpha 0.0.11 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection, saved investigations, read-only contract/RPC event inspection, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1719,3 +1719,21 @@ Export and saved contract evidence retain instance data, events, query boundarie
 provenance. Saved contract snapshots reopen offline; use Contracts to capture new evidence,
 not single-resource library refresh. Queries are live and bypass response cache. Cancellation
 and context changes invalidate late results. No new dependencies or credentials are required.
+
+
+## V0.0.11 implemented slice — portable native packaging
+
+Build-only PyInstaller 6.22.3 is locked in a packaging dependency group. A native build
+script produces onedir Linux/Windows archives and macOS app archives, each with build
+metadata, project/third-party licenses and SHA-256 checksums. The GitHub matrix builds
+Ubuntu 22.04 x86_64, Windows Server 2022 x86_64, macOS 15 arm64 and macOS 15 Intel.
+Each generated archive is extracted into a fresh directory and its frozen app is launched
+without development Python/Qt path variables. Linux uses Xvfb with the native X11 plugin.
+An offline smoke mode checks Qt startup/rendering/navigation, async responsiveness, exact
+account fixture data, SDK XDR, SQLite investigation save/reopen, exports, NetworkX and TLS
+certificate support. Reports and screenshots accompany successful workflow artifacts.
+Smoke checks use temporary storage, never existing user investigations, and do not query
+live networks. Builds remain pre-alpha portable apps; system installers, Developer ID /
+Authenticode signing, Apple notarization, and broad clean-machine compatibility validation
+remain planned. macOS ad-hoc signatures are verified for bundle integrity. Application data
+uses normal user directories independently of the bundle. See docs/RELEASES.md for scope.

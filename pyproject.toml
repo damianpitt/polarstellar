@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "polarstellar"
-version = "0.0.10"
+version = "0.0.11"
 description = "Open-source desktop investigation toolkit for Stellar and Soroban"
 readme = "README.md"
 license = "MIT"
@@ -24,6 +24,9 @@ polarstellar = "polarstellar.app.main:main"
 
 [dependency-groups]
 dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
+packaging = [
+    "pyinstaller==6.22.3",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/polarstellar"]
