@@ -19,7 +19,7 @@ your processor. Windows ARM and Linux ARM builds are not provided in this slice.
 
 Linux requires a desktop session, glibc 2.35 or later, and Qt's native system dependencies.
 On Ubuntu, install `libegl1 libgl1 libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4
-libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0`. The build is validated
+libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-shape0`. The build is validated
 on Ubuntu 22.04; other Linux distributions require separate compatibility checks.
 
 Windows bundles are unsigned. macOS bundles are ad-hoc signed for bundle integrity and

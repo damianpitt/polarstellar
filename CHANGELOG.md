@@ -53,9 +53,12 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   passed all seven frozen integration checks, including ad-hoc signature verification.
 - Fixed a frozen-startup failure by explicitly bundling the dynamically loaded CFFI
   backend used by the Stellar SDK/PyNaCl. This was found by testing the deliverable app.
-- The four native GitHub targets and three source-platform jobs are validated after this
-  source commit is pushed. Their reports and the draft release record completed results;
-  initial implementation does not claim clean-machine or signed release qualification.
+- The first GitHub run passed all three source-platform jobs and both macOS/Windows
+  bundles. Native Linux validation identified a missing `libxcb-shape0` system library;
+  added it to the runner and documented Linux requirements. Startup loader logs are now
+  retained on failure, and old reports/screenshots are removed before repeat validation.
+  The updated four-target workflow is revalidated after the correction is pushed.
+  These results do not claim clean-machine or signed release qualification.
 
 ## [0.0.10] - 2026-09-30
 

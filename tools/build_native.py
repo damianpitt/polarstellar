@@ -101,6 +101,9 @@ def validate_archive(archive, system, version):
     """
     report = OUTPUT / "validation.json"
     screenshot = OUTPUT / "startup.png"
+    # A repeat build must not accidentally reuse successful output from an older app.
+    for output in (report, screenshot):
+        output.unlink(missing_ok=True)
     with tempfile.TemporaryDirectory(prefix="polarstellar-unpacked-") as temporary:
         destination = Path(temporary)
         if system == "Darwin":
@@ -120,20 +123,29 @@ def validate_archive(archive, system, version):
             "QT_QPA_PLATFORM_PLUGIN_PATH",
         ):
             environment.pop(key, None)
-        # All report paths live outside the temporary extracted app directory.
-        run(
-            [
-                str(program),
-                "--smoke-test",
-                "--smoke-report",
-                str(report),
-                "--smoke-screenshot",
-                str(screenshot),
-            ],
-            cwd=destination,
-            env=environment,
-            timeout=120,
-        )
+        # Linux loader diagnostics identify missing system libraries before Qt starts.
+        if system == "Linux":
+            environment["QT_DEBUG_PLUGINS"] = "1"
+        # Keep startup diagnostics even if Qt fails before a JSON report can be written.
+        with (OUTPUT / "startup.log").open("w", encoding="utf-8") as startup_log:
+            launch = subprocess.run(
+                [
+                    str(program),
+                    "--smoke-test",
+                    "--smoke-report",
+                    str(report),
+                    "--smoke-screenshot",
+                    str(screenshot),
+                ],
+                cwd=destination,
+                env=environment,
+                timeout=120,
+                stdout=startup_log,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+        if launch.returncode:
+            raise RuntimeError("Extracted app failed to start; see dist/native/startup.log")
         result = json.loads(report.read_text(encoding="utf-8"))
         if (
             result.get("status") != "passed"
