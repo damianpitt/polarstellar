@@ -43,7 +43,7 @@ X11 Qt plugin; macOS and Windows use their native Qt plugins. Validation checks:
 
 - Qt startup, navigation, rendering and asynchronous event-loop responsiveness.
 - An offline account fixture, exact balances and checksum-aware SDK/XDR support.
-- Saved investigation persistence/reopening and CSV/JSON writing in a temporary folder.
+- Saved investigation and watchlist persistence/reopening and CSV/JSON writing in a temporary folder.
 - NetworkX graph operations and HTTPX's bundled TLS certificate/SSL support.
 - The actual frozen application's version and architecture, plus macOS bundle signatures.
 
@@ -56,6 +56,10 @@ The bundle includes `BUILD_INFO.json` with source commit, version, platform, arc
 and build-tool versions, plus project license and third-party license information. Adjacent
 `.sha256` files allow integrity verification. Checksums alone do not authenticate an unsigned
 publisher; obtain both archive and checksum from the same trusted repository release.
+
+Current source version: **0.0.12**. Its source startup check adds disposable watchlist
+persistence and navigation. New native bundles/uploads remain deferred; the completed
+0.0.11 checks below describe the earlier artifacts, not a packaged 0.0.12 release.
 
 ## Completed 0.0.11 validation
 

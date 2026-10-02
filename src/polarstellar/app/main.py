@@ -38,6 +38,7 @@ def main() -> int:
     from polarstellar.storage.database import SnapshotCache
     from polarstellar.storage.investigations import InvestigationStore
     from polarstellar.storage.provider import CachedProvider
+    from polarstellar.storage.watchlists import WatchlistStore
 
     # Validation never opens the user's existing cache or investigations. Normal
     # launches continue to use the platform's standard application directories.
@@ -61,7 +62,9 @@ def main() -> int:
     if temporary is not None:
         data_location = Path(temporary.name)
     window = MainWindow(
-        AccountService(provider), InvestigationStore(data_location / "investigations.sqlite3")
+        AccountService(provider),
+        InvestigationStore(data_location / "investigations.sqlite3"),
+        watchlist_store=WatchlistStore(data_location / "watchlists.sqlite3"),
     )
     window.show()
     with loop:

@@ -20,6 +20,7 @@ from polarstellar.stellar.horizon import HorizonProvider
 from polarstellar.stellar.models import Network
 from polarstellar.storage.export import serialize, write_export
 from polarstellar.storage.investigations import InvestigationStore
+from polarstellar.storage.watchlists import WatchlistStore
 
 
 async def validate(window, root, screenshot=None):
@@ -77,6 +78,15 @@ async def validate(window, root, screenshot=None):
     reopened = InvestigationStore(root / "investigations.sqlite3").list()
     assert reopened[0]["entries"][0]["network"] == Network.MAINNET.value
     checks.append("sqlite_saved_investigation_restart")
+    # Exercise the production bookmark controls using the same disposable storage.
+    # Adding/reopening the entry must stay offline and preserve its selected network.
+    window.watchlists.name.setText("Disposable watchlist")
+    window.watchlists.create()
+    window.watch_resource()
+    bookmarks = WatchlistStore(root / "watchlists.sqlite3").list()
+    assert bookmarks[0]["entries"][0]["identifier"] == address
+    assert bookmarks[0]["entries"][0]["network"] == Network.MAINNET.value
+    checks.append("sqlite_watchlist_restart")
     snapshot = window.investigations.export_document()
     write_export(root / "evidence.json", snapshot, "json")
     write_export(root / "evidence.csv", snapshot, "csv")
@@ -96,7 +106,7 @@ async def validate(window, root, screenshot=None):
     async with httpx.AsyncClient():
         pass
     checks.append("httpx_tls_certificate_bundle")
-    for index in (5, 6, 7, 0):
+    for index in (5, 6, 7, 8, 0):
         window.navigation.setCurrentRow(index)
         await asyncio.sleep(0.01)
     assert window.pages.currentIndex() == 0 and ticks

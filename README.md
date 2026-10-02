@@ -2,11 +2,11 @@
 
 ### Navigate the Stellar network.
 
-An open-source desktop investigation toolkit for Stellar, with Soroban support on the roadmap.
+An open-source desktop investigation toolkit for Stellar, with read-only Soroban contract and event inspection.
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.11 · Pre-alpha**
+**Current version: 0.0.12 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.11 |
+| Area | Available in 0.0.12 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -43,6 +43,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Contracts | Read-only instance details, raw XDR, and paginated RPC contract events |
 | Assets | Issued asset statistics, authorization flags, issuer navigation, and native XLM details |
 | Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
+| Watchlists | Local account/asset/contract lists, labels/notes, saved snapshots, explorer shortcuts, and manual refresh |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
 
@@ -58,6 +59,9 @@ runs manually and produces Linux x86_64, Windows x86_64, and macOS Apple Silicon
 artifacts from a successful run while preview releases are being validated. Draft releases
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
+
+The current source version is 0.0.12; previously validated native artifacts are 0.0.11.
+New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
 `.app` inside `PolarStellar`. Runtime Python/uv installation is unnecessary. Keep the bundled
@@ -333,7 +337,55 @@ Investigations use a separate, unencrypted SQLite file in the operating system's
 application-data folder; hover over the library notice to see its location. Clearing the
 response cache does not delete investigations, and deleting an investigation does not
 remove previously exported files. Schema version 1 refuses unknown future versions.
-Each investigation is limited to 20 MB. Watchlists and encrypted storage remain planned.
+Each investigation is limited to 20 MB. Encrypted storage remains planned.
+
+### Watchlists
+
+Open **Watchlists** in the sidebar. Enter a name and choose **Create** to make a local
+list. Add an **Account** G-address, **Asset** code and issuer, or **Contract** C-address
+using **Add to list (offline)**. New entries use the network selected at the top of the
+window. Identifiers are checksum-validated locally; asset codes remain case-sensitive.
+For native XLM, enter `XLM` and leave the issuer empty. An issued asset named XLM with
+an issuer remains a separate resource.
+
+From a loaded Overview/activity/Graph, Assets, or Contracts page, choose **Add displayed
+resource to selected watchlist** to bookmark its identity without another request.
+Select a list in Watchlists first. This saves a bookmark, not the currently displayed
+snapshot. Adding the same kind/identity/network twice returns to the existing entry
+without replacing its label, notes, or saved snapshot. Different networks and different
+asset issuers always remain distinct. Entries may belong to more than one named list.
+
+| Action | Result |
+| --- | --- |
+| Select a list or entry | Read local annotations and the last saved snapshot offline |
+| Save label / notes | Commit your local interpretation separately from network facts |
+| Rename / Delete list | Organize lists; deleting a list requires confirmation |
+| Remove entry | Delete that bookmark, notes, and latest snapshot after confirmation |
+| Open in explorer / double-click entry | Switch to the entry's saved network and perform an explicit explorer lookup |
+| Refresh saved snapshot | Fetch a fresh resource on its saved network, bypassing the optional response cache |
+| Cancel refresh | Keep the previous saved snapshot and reject late results |
+
+Explorer opening follows normal cache settings and does not change the watchlist's saved
+snapshot. Watchlist refresh replaces **only the latest snapshot**, retaining labels and
+notes. To preserve a sequence of historical evidence, use **Investigations**. Failed
+refreshes retain old data, including its original source and retrieval time. Unsaved
+annotation edits are protected when changing selections or closing the window, and a
+refresh does not erase notes being typed. Saved snapshots are explicitly labeled as
+past data; there is no automatic monitoring, polling, change alert, or batch refresh.
+
+Account refresh retrieves account details/balances only. Issued-asset refresh retrieves
+Horizon asset statistics. Native XLM uses a local definition without an API request.
+Contract refresh retrieves the available RPC instance only; contract events are not
+loaded or saved by watchlist refresh. Reopen Contracts to explore events explicitly.
+Existing provider availability, retention, and accuracy limits still apply.
+
+Watchlists use separate unencrypted `watchlists.sqlite3` storage in the operating
+system's application-data folder; hover over the library notice for its location.
+Limits are **100 lists**, **500 entries per list**, and **10 MB per list**; list names
+allow 100 characters, labels 200, and notes 10,000. Unknown future database schemas are
+refused. Clear cache and investigation deletion do not remove watchlists. Labels and
+notes stay local; explicit lookups send only public identifiers to Horizon/Stellar RPC.
+Watchlist import/export, automatic alerts, and encrypted storage remain planned.
 
 ### CSV and JSON export
 
@@ -435,13 +487,13 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 Portable native packaging is implemented. Further planned areas include:
 
 - Expanded asset inspection and filtering.
-- Watchlists and expanded investigation organization.
+- Watchlist filtering/import/export and expanded investigation organization.
 - Advanced tracing controls and broader operation coverage.
 - Advanced contract specifications, storage-key discovery, and richer event interpretation.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.11. The detailed release
+These are **planned capabilities**, not features available in 0.0.12. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

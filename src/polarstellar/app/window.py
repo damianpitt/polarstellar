@@ -39,17 +39,21 @@ from polarstellar.ui.export_controls import ExportControls
 from polarstellar.ui.graph_view import GraphView
 from polarstellar.ui.investigations_view import InvestigationsView
 from polarstellar.ui.transaction_view import TransactionDialog
+from polarstellar.ui.watchlists_view import WatchlistsView
 
 
 class MainWindow(QMainWindow):
     """The main explorer window, coordinating search, network changes, and local cache controls."""
 
     def __init__(
-        self, service: AccountService, investigation_store=None, contract_provider=None
+        self,
+        service: AccountService,
+        investigation_store=None,
+        contract_provider=None,
+        watchlist_store=None,
     ) -> None:
-        """Build this view and connect user actions to its data-loading controls."""
+        """Build explorer pages and optionally inject independent local evidence/bookmark stores."""
         super().__init__()
-        """Build the explorer and keep pending requests separate from displayed results."""
         self.service = service
         self.account = None
         self.dialogs = set()
@@ -105,6 +109,7 @@ class MainWindow(QMainWindow):
                 "Assets",
                 "Contracts",
                 "Investigations",
+                "Watchlists",
             ]
         )
         navigation.setFixedWidth(180)
@@ -159,7 +164,27 @@ class MainWindow(QMainWindow):
             self.pages.addWidget(self.investigations)
             self.graph.can_save_trace = True
             self.graph.trace_save_requested.connect(self.save_trace)
+        # Keep fixed page indexes even when test/embedded clients omit persistence.
+        # Watchlist opening relies on the same explorer destinations as normal search.
+        while self.pages.count() < 8:
+            self.pages.addWidget(QWidget())
+        self.watchlists = None
+        if watchlist_store is not None:
+            self.watchlists = WatchlistsView(
+                watchlist_store,
+                service.provider,
+                self.contracts.provider,
+                lambda: Network(self.network.currentText()),
+            )
+            self.watchlists.open_requested.connect(self.open_watchlist_resource)
+            self.pages.addWidget(self.watchlists)
+        watch_resource = QPushButton("Add displayed resource to selected watchlist")
+        self.watch_resource_button = watch_resource
+        watch_resource.setEnabled(self.watchlists is not None)
+        watch_resource.clicked.connect(self.watch_resource)
+        pane.addWidget(watch_resource)
         save_resource = QPushButton("Save resource to selected investigation")
+        self.save_resource_button = save_resource
         save_resource.clicked.connect(self.save_resource)
         save_resource.setEnabled(self.investigations is not None)
         pane.addWidget(save_resource)
@@ -169,7 +194,10 @@ class MainWindow(QMainWindow):
         layout.addLayout(content, 1)
         self.setCentralWidget(root)
         self.statusBar().showMessage("Mainnet selected • Ready")
-        for index in [] if self.investigations is not None else [7]:
+        disabled = ([7] if self.investigations is None else []) + (
+            [8] if self.watchlists is None else []
+        )
+        for index in disabled:
             item = navigation.item(index)
             item.setText(item.text() + " (planned)")
             item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
@@ -192,6 +220,55 @@ class MainWindow(QMainWindow):
             }
             QStatusBar { color: #a7b3cc; }
         """)
+
+    def watch_resource(self):
+        """Bookmark displayed identity on its actual network, without another provider request."""
+        if self.watchlists is None:
+            return
+        index = self.pages.currentIndex()
+        if index == 6 and self.contracts.snapshot is not None:
+            snapshot = self.contracts.snapshot
+            identity = {
+                "kind": "contract",
+                "identifier": snapshot["contract"],
+                "network": snapshot["network"],
+            }
+        elif index == 5 and self.assets.snapshot is not None:
+            asset = self.assets.snapshot
+            identity = {
+                "kind": "asset",
+                "code": asset.code,
+                "issuer": asset.issuer,
+                "identifier": asset.code,
+                "network": asset.network.value,
+            }
+        elif index < 5 and self.account is not None:
+            identity = {
+                "kind": "account",
+                "identifier": self.account.address,
+                "network": self.account.network.value,
+            }
+        else:
+            self.watchlists.error("Load an account, asset, or contract before bookmarking it.")
+            return
+        self.watchlists.add_resource(identity)
+        self.navigation.setCurrentRow(8)
+
+    def open_watchlist_resource(self, entry):
+        """Open the saved identity explicitly, switching networks before any explorer request.
+
+        Explorer opening follows normal cache settings and never changes a watchlist's
+        stored snapshot. The separate watchlist Refresh action always bypasses caching.
+        """
+        self.network.setCurrentText(entry["network"])
+        self.invalidate()
+        if entry["kind"] == "asset":
+            self.message.setText("Asset inspection • " + entry["network"])
+            self.open_asset(entry["code"], entry["issuer"])
+        else:
+            self.search.setText(entry["identifier"])
+            self.navigation.setCurrentRow(0 if entry["kind"] == "account" else 6)
+            self.start_search()
 
     def save_trace(self, snapshot):
         """Persist the entire expanded graph, including filters, evidence, routes and page coverage."""
@@ -261,6 +338,11 @@ class MainWindow(QMainWindow):
     def select_page(self, index):
         """Show a navigation section and lazily load its first page when needed."""
         if index < self.pages.count():
+            # Local libraries have their own notices and actions. Hiding explorer
+            # controls gives lists/notes room without implying a displayed resource
+            # is being saved or fetched simply by opening a local library page.
+            for widget in (self.message, self.watch_resource_button, self.save_resource_button):
+                widget.setVisible(index < 7)
             self.pages.setCurrentIndex(index)
             if index == 4:
                 view = self.activity_views[2]
@@ -321,6 +403,8 @@ class MainWindow(QMainWindow):
 
     def invalidate(self) -> None:
         """Cancel work from the previous context so late results cannot overwrite the current view."""
+        if self.watchlists is not None and self.watchlists.task is not None:
+            self.watchlists.cancel_refresh()
         self.assets.reset()
         self.contracts.reset()
         self.open_balance_asset.setEnabled(False)
@@ -439,7 +523,12 @@ class MainWindow(QMainWindow):
         if self.investigations is not None and not self.investigations.allow_close():
             event.ignore()
             return
+        if self.watchlists is not None and not self.watchlists.allow_discard():
+            event.ignore()
+            return
         self.invalidate()
+        if self.watchlists is not None:
+            self.watchlists.cancel_refresh()
         if self.investigations is not None and self.investigations.task is not None:
             self.investigations.task.cancel()
         for task in self.tasks:

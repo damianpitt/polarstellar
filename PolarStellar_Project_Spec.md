@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.11 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection, saved investigations, read-only contract/RPC event inspection, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.12 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1740,3 +1740,32 @@ live networks. Builds remain pre-alpha portable apps; system installers, Develop
 Authenticode signing, Apple notarization, and broad clean-machine compatibility validation
 remain planned. macOS ad-hoc signatures are verified for bundle integrity. Application data
 uses normal user directories independently of the bundle. See docs/RELEASES.md for scope.
+
+
+## V0.0.12 implemented slice — local watchlists
+
+The Watchlists sidebar organizes validated account G-addresses, exact code/issuer asset
+identities (including native XLM), and contract C-addresses in named local lists. Entries
+carry their own Mainnet/Testnet identity, optional local labels/notes, and at most one
+latest snapshot. Duplicate additions within a list preserve annotations and snapshots;
+identical resources may be bookmarked in multiple lists. Selection and annotation work
+are offline, and unsaved notes require a choice before switching entries or closing.
+
+Open in explorer explicitly switches to the saved network and follows normal cache
+settings. Manual Refresh bypasses caching and updates only that entry's latest snapshot:
+account details/balances, issued-asset statistics, or available contract instance details.
+Native XLM uses a local definition. Activity, graph expansion and contract events are
+not fetched by watchlist refresh. Failures retain old snapshots; generation checks reject
+late results after cancellation/context changes, and atomic storage preserves intervening
+annotations and refuses to recreate deleted entries. No automatic polling or alerts run.
+
+Watchlists use a separate schema-1, unencrypted SQLite file in application data. Bounds
+are 100 lists, 500 entries per list, 10 MB per list, 100-character list names, 200-character
+labels, and 10,000-character notes. Clearing response caches or deleting investigations
+does not remove watchlists. Local annotations are not transmitted to providers. Snapshot
+history belongs in investigations. Watchlist import/export, filtering, batch refresh,
+change alerts and encrypted storage remain future work.
+
+Source startup validation now also creates and reopens a disposable watchlist and navigates
+the new sidebar page. Native bundle builds/uploads remain manual and paused; existing
+0.0.11 native validation does not imply new 0.0.12 packaged apps were tested or released.

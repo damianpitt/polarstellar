@@ -35,6 +35,7 @@ def test_offline_startup_report_and_render(tmp_path):
     assert not payload["frozen"]
     assert {
         "sqlite_saved_investigation_restart",
+        "sqlite_watchlist_restart",
         "csv_json_exports",
         "httpx_tls_certificate_bundle",
         "qt_navigation_and_async_event_loop",

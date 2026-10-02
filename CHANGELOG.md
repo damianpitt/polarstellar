@@ -6,6 +6,57 @@ source updates; they do not imply a packaged installer release.
 
 ## [Unreleased]
 
+Add upcoming changes here as they are implemented. For each version update, move the
+completed entries into a dated section and keep `pyproject.toml`, the package version,
+and the uv lockfile in sync. The application header and `--version` show the package version.
+
+## [0.0.12] - 2026-10-03
+
+### Added — local account, asset and contract watchlists
+
+- Added **Watchlists** in the sidebar: create, rename and delete named lists; add
+  checksum-valid account/contract IDs or exact, case-sensitive asset codes and issuers;
+  select resources offline; and save local labels/notes. Native XLM has no issuer and
+  remains distinct from issued assets named XLM. New entries use the selected network;
+  each row retains and displays its own Mainnet/Testnet identity.
+- Added **Add displayed resource to selected watchlist** on explorer pages. It bookmarks
+  the loaded account, asset or contract without making another request or silently
+  saving its current evidence. Repeated additions return to the existing bookmark
+  without erasing annotations or a saved snapshot. Resources can appear in multiple lists.
+- Added **Open in explorer (network lookup)** and entry double-click shortcuts. They
+  switch to the entry's saved network before lookup, open the existing account/asset/
+  contract inspector, and follow ordinary cache settings. Offline list selection and
+  explorer opening do not modify a watchlist's saved snapshot.
+- Added **Refresh saved snapshot (live)** and **Cancel refresh**. Manual refresh bypasses
+  the optional cache, retrieves one resource, and replaces only the latest saved snapshot.
+  Account refresh includes details/balances; issued assets include Horizon statistics;
+  contracts include available Stellar RPC instance details without event requests.
+  Native XLM is a local definition and needs no API access.
+
+### Accuracy, privacy and failure safeguards
+
+- Saved snapshots retain exact amounts, source, retrieval time and existing coverage
+  limits. Past snapshots are clearly labeled; watchlists are convenience bookmarks,
+  not historical evidence collections. Use Investigations to preserve snapshot history.
+  No background polling, automatic monitoring, alerts or batch refresh is implemented.
+- Failed or mismatched-provider refreshes keep old snapshots. Cancellation and generation
+  checks reject late results after selection/network changes. Atomic re-reading preserves
+  annotations saved during network I/O; refreshing never recreates a deleted bookmark.
+  Draft notes survive a completed refresh. Selection changes and window closure protect
+  unsaved edits; deletion of entries or whole lists requires confirmation.
+- Added separate unencrypted schema-1 `watchlists.sqlite3` storage in application data.
+  It is lazy-created, independent of response caches/investigations, and excluded from
+  Git. Unsupported future schemas are refused. Limits: 100 lists, 500 entries and 10 MB
+  per list, 100-character names, 200-character labels and 10,000-character notes.
+- Labels and notes remain local interpretations and are not sent to providers. Only
+  explicitly requested explorer/refresh actions send public identifiers to the entry's
+  saved network. Watchlist export/import, filtering, encrypted storage and alerts remain
+  planned. Runtime/build dependencies are unchanged.
+- Local library pages hide unrelated explorer save/bookmark controls to give list,
+  annotation and saved-evidence widgets room. Existing exploration and investigation
+  features retain their behavior. Updated README/specification and aligned package/lock
+  metadata; software version and startup header now show 0.0.12.
+
 ### Changed — development packaging scope
 
 - Removed Mac Intel from future native builds and distributions. Current targets are
@@ -17,9 +68,20 @@ source updates; they do not imply a packaged installer release.
   builds can be requested explicitly from GitHub Actions when downloads are needed.
   Release uploads remain paused; no release-write staging workflow has been published.
 
-Add upcoming changes here as they are implemented. For each version update, move the
-completed entries into a dated section and keep `pyproject.toml`, the package version,
-and the uv lockfile in sync. The application header and `--version` show the package version.
+### Validation
+
+- Local validation: all 140 tests and Ruff passed; source distribution, wheel and
+  locked dependency checks succeeded. The Watchlists layout was rendered and reviewed
+  at the normal 1180 × 760 window size. Startup smoke validation now includes disposable
+  watchlist persistence/reopening and the new sidebar page.
+- Added 26 watchlist checks covering network/issuer isolation, invalid identifiers,
+  offline restart, duplicate preservation, database/annotation bounds, unknown schema
+  refusal, cache bypass, exact balances/statistics, native XLM without API access,
+  contract refresh without events, provider mismatch, saved/unsaved note preservation,
+  failed/cancelled refresh, deletion during I/O, explorer shortcuts and protected closure.
+- Source CI will validate the pushed commit on Linux, macOS and Windows. No new native
+  bundles have been built or uploaded for this slice; 0.0.11 packaging results remain
+  historical and do not qualify a native 0.0.12 release.
 
 ## [0.0.11] - 2026-10-02
 
