@@ -57,8 +57,14 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   bundles. Native Linux validation identified a missing `libxcb-shape0` system library;
   added it to the runner and documented Linux requirements. Startup loader logs are now
   retained on failure, and old reports/screenshots are removed before repeat validation.
-  The updated four-target workflow is revalidated after the correction is pushed.
-  These results do not claim clean-machine or signed release qualification.
+  The corrected [native workflow](https://github.com/damianpitt/polarstellar/actions/runs/37007888180)
+  passed all four targets: Linux x86_64, Windows x86_64, macOS arm64, and macOS x86_64.
+  Each extracted bundle passed all seven checks with its native Qt display plugin.
+- [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/37007888166) passed
+  on Linux, macOS and Windows, including all 114 tests on each platform, Ruff, version
+  inspection, and source/wheel builds. Download checksums and build manifests are reviewed
+  before staging the draft pre-release. Interactive clean-machine checks, developer
+  signing and notarization remain pending; this version is still pre-alpha.
 
 ## [0.0.10] - 2026-09-30
 

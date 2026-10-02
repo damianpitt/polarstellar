@@ -57,6 +57,19 @@ and build-tool versions, plus project license and third-party license informatio
 `.sha256` files allow integrity verification. Checksums alone do not authenticate an unsigned
 publisher; obtain both archive and checksum from the same trusted repository release.
 
+## Completed 0.0.11 validation
+
+The [native workflow](https://github.com/damianpitt/polarstellar/actions/runs/37007888180)
+passed on all four targets in the platform table. Each extracted archive passed seven
+offline checks using Cocoa on macOS, Windows Qt on Windows, and X11/xcb on Linux.
+The [source workflow](https://github.com/damianpitt/polarstellar/actions/runs/37007888166)
+also passed all 114 tests, lint and package builds on Linux, macOS and Windows.
+
+The first Linux bundle check exposed a missing X11 shape library; `libxcb-shape0` is now
+included in the documented native dependencies. Native startup diagnostics are retained
+on failure, and repeat validation clears previous reports before launching the new app.
+These completed automated results do not imply signing or interactive clean-machine approval.
+
 ## Build locally
 
 Build only on the target operating system; PyInstaller does not cross-compile these apps.
