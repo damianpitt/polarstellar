@@ -1,8 +1,5 @@
 name: Native builds
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,9 +19,6 @@ jobs:
           - os: macos-15
             target: macos-arm64
             arch: arm64
-          - os: macos-15-intel
-            target: macos-x86_64
-            arch: x86_64
           - os: windows-2022
             target: windows-x86_64
             arch: x86_64

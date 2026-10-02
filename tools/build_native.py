@@ -182,6 +182,10 @@ def main():
     if system not in ("Darwin", "Linux", "Windows"):
         raise RuntimeError("Native packaging supports Linux, macOS and Windows.")
     arch = architecture()
+    # Development/distribution targets Apple Silicon only on macOS. Refuse Intel
+    # before freezing or archiving so manual runs follow the same policy as CI.
+    if system == "Darwin" and arch != "arm64":
+        raise RuntimeError("Native macOS packaging targets Apple Silicon (arm64) only.")
     if args.expected_arch and arch != args.expected_arch:
         raise RuntimeError(f"Expected {args.expected_arch} runner, got {arch}")
     version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"][

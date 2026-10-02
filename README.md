@@ -54,7 +54,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 ### Native downloads
 
 The [Native builds workflow](https://github.com/damianpitt/polarstellar/actions/workflows/native.yml)
-produces Linux x86_64, Windows x86_64, and macOS Apple Silicon/Intel bundles. Download
+runs manually and produces Linux x86_64, Windows x86_64, and macOS Apple Silicon bundles. Download
 artifacts from a successful run while preview releases are being validated. Draft releases
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
@@ -96,7 +96,7 @@ uv run polarstellar --version
 ### Platform notes
 
 Linux is the primary target. Source checks run on Linux, macOS and Windows. The separate
-native workflow builds on Ubuntu 22.04, macOS 15 (Apple Silicon/Intel), and Windows Server
+native workflow builds on Ubuntu 22.04, macOS 15 (Apple Silicon), and Windows Server
 2022, then launches each extracted bundle with its native Qt display plugin. This preview
 validation does not establish compatibility with every OS version or replace clean-machine
 interactive testing. See the release guide for the current platform scope.

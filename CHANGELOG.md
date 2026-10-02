@@ -6,6 +6,17 @@ source updates; they do not imply a packaged installer release.
 
 ## [Unreleased]
 
+### Changed — development packaging scope
+
+- Removed Mac Intel from future native builds and distributions. Current targets are
+  Linux x86_64, Windows x86_64, and macOS Apple Silicon/arm64. Local macOS packaging
+  also refuses Intel before producing an archive. Initial Intel validation remains
+  recorded below as historical results.
+- Made native packaging manual-only: routine development pushes and pull requests
+  continue source CI without building/uploading large standalone app archives. Native
+  builds can be requested explicitly from GitHub Actions when downloads are needed.
+  Release uploads remain paused; no release-write staging workflow has been published.
+
 Add upcoming changes here as they are implemented. For each version update, move the
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.

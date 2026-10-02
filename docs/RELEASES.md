@@ -10,12 +10,12 @@ The native build workflow produces portable pre-alpha bundles for:
 | --- | --- | --- | --- |
 | Linux (built on Ubuntu 22.04) | x86_64 | `.tar.gz` | Extract, then run `PolarStellar/PolarStellar` |
 | macOS (built on macOS 15) | Apple Silicon / arm64 | `.zip` | Extract, then open `PolarStellar/PolarStellar.app` |
-| macOS (built on macOS 15) | Intel / x86_64 | `.zip` | Extract, then open `PolarStellar/PolarStellar.app` |
 | Windows (built on Windows Server 2022) | x86_64 | `.zip` | Extract all files, then open `PolarStellar/PolarStellar.exe` |
 
 Keep the whole extracted folder together. Python and uv are bundled or unnecessary at
 runtime; do not move the executable away from its libraries. Choose the bundle matching
-your processor. Windows ARM and Linux ARM builds are not provided in this slice.
+your processor. Mac Intel, Windows ARM and Linux ARM builds are not provided. macOS development
+packaging targets Apple Silicon only.
 
 Linux requires a desktop session, glibc 2.35 or later, and Qt's native system dependencies.
 On Ubuntu, install `libegl1 libgl1 libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4
@@ -60,7 +60,8 @@ publisher; obtain both archive and checksum from the same trusted repository rel
 ## Completed 0.0.11 validation
 
 The [native workflow](https://github.com/damianpitt/polarstellar/actions/runs/37007888180)
-passed on all four targets in the platform table. Each extracted archive passed seven
+passed on Linux x86_64, Windows x86_64, and both macOS architectures in the initial run.
+Mac Intel was tested historically but is no longer a development/distribution target. Each extracted archive passed seven
 offline checks using Cocoa on macOS, Windows Qt on Windows, and X11/xcb on Linux.
 The [source workflow](https://github.com/damianpitt/polarstellar/actions/runs/37007888166)
 also passed all 114 tests, lint and package builds on Linux, macOS and Windows.
@@ -90,6 +91,11 @@ For headless local Linux validation, run the build command under `xvfb-run -a`. 
 the workflow's release check uses the native X11 plugin.
 
 ## Release procedure
+
+Native packaging is manual-only. Routine pushes and pull requests run source checks;
+they do not build or upload native app archives. Start **Native builds** from GitHub
+Actions when ready to produce the three platform bundles. Release uploads are a separate
+manual step and are currently paused.
 
 1. Align package version, lockfile, README, specification and changelog.
 2. Run source checks and the Native builds workflow for that exact commit.

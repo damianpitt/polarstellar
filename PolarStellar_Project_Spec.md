@@ -1726,7 +1726,10 @@ and context changes invalidate late results. No new dependencies or credentials 
 Build-only PyInstaller 6.22.3 is locked in a packaging dependency group. A native build
 script produces onedir Linux/Windows archives and macOS app archives, each with build
 metadata, project/third-party licenses and SHA-256 checksums. The GitHub matrix builds
-Ubuntu 22.04 x86_64, Windows Server 2022 x86_64, macOS 15 arm64 and macOS 15 Intel.
+Ubuntu 22.04 x86_64, Windows Server 2022 x86_64, and macOS 15 arm64.
+Mac Intel was included in the initial validation but is no longer a development or
+distribution target. Native packaging is manual-only; routine pushes run source checks
+without building/uploading native bundles. Release archive uploads remain paused.
 Each generated archive is extracted into a fresh directory and its frozen app is launched
 without development Python/Qt path variables. Linux uses Xvfb with the native X11 plugin.
 An offline smoke mode checks Qt startup/rendering/navigation, async responsiveness, exact
