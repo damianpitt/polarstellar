@@ -1,3 +1,3 @@
 """PolarStellar desktop network intelligence."""
 
-__version__ = "0.0.12"
+__version__ = "0.0.13"

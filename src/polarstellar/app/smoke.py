@@ -106,6 +106,11 @@ async def validate(window, root, screenshot=None):
     async with httpx.AsyncClient():
         pass
     checks.append("httpx_tls_certificate_bundle")
+    # Opening the discovery tab itself must remain offline; only Search fetches pages.
+    window.navigation.setCurrentRow(5)
+    window.assets.tabs.setCurrentIndex(1)
+    await asyncio.sleep(0.01)
+    window.assets.tabs.setCurrentIndex(0)
     for index in (5, 6, 7, 8, 0):
         window.navigation.setCurrentRow(index)
         await asyncio.sleep(0.01)

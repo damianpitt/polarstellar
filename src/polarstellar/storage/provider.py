@@ -25,6 +25,10 @@ class CachedProvider:
         self.lock = asyncio.Lock()
         self.error = ""
 
+    async def discover_assets(self, code, issuer, network, cursor=None):
+        """Keep catalog discovery live; expiring account/activity caches do not store asset pages."""
+        return await self.provider.discover_assets(code, issuer, network, cursor)
+
     async def get_asset(self, code, issuer, network):
         """Fetch asset statistics live; the existing snapshot cache does not store this resource."""
         return await self.provider.get_asset(code, issuer, network)

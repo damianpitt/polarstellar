@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.12 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.13 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1769,3 +1769,32 @@ change alerts and encrypted storage remain future work.
 Source startup validation now also creates and reopens a disposable watchlist and navigates
 the new sidebar page. Native bundle builds/uploads remain manual and paused; existing
 0.0.11 native validation does not imply new 0.0.12 packaged apps were tested or released.
+
+
+## V0.0.13 implemented slice — issued-asset discovery and filtering
+
+Assets now has separate Inspect asset and Discover assets tabs. Discovery queries
+Horizon /assets with optional exact, case-sensitive code and checksum-valid issuer
+filters; both blank explicitly browses issued-asset statistics. Requests load 20 rows
+per manual click, ascending, capped at 50 pages / 1,000 returned records. Asset cursors
+use Horizon's code_issuer_type token rather than numeric activity cursors. Requests
+stay on the selected fixed network endpoint; provider-supplied next-page URLs are ignored.
+
+Rows retain full code/issuer identity, exact parsed balances/counts, unknown fields,
+flags and retrieval provenance. Native XLM, pool shares and standalone contract tokens
+are excluded. An XLM code filter concerns issued assets named XLM. Values are not prices,
+valuation, circulating supply or endorsements. Discovery is live, uncached and not an
+atomic ledger snapshot. Submitted filters remain fixed despite unsubmitted form edits.
+
+Failed/cancelled pages retain earlier rows/cursors. Generation checks reject late results
+on restart/network context changes. Identical overlaps retain original observations;
+conflicting overlaps, cursor cycles, malformed rows and mismatched query/network results
+are rejected atomically. Empty pages mark only the current query end; caps/end boundaries
+are not lifetime completeness. CSV/JSON exports capture loaded rows, frozen filters,
+network, page provenance and limits without fetching anything.
+
+Inspect selected asset/double-click performs a separate exact-pair lookup while keeping
+discovery results available. Saving/bookmarking resources requires the inspector tab,
+preventing an older inspector snapshot from being confused with a selected catalog row.
+No issuer metadata crawling, prices, ranking, contract-token discovery or background
+monitoring is implemented. Dependencies are unchanged; native uploads remain paused.

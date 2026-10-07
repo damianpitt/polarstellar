@@ -23,6 +23,10 @@ class AccountProvider(Protocol):
 
     async def get_transaction(self, hash_value: str, network: Network) -> "TransactionDetail": ...
 
+    async def discover_assets(self, code, issuer, network, cursor=None):
+        """Return one issued-asset page bound to optional code/issuer filters and a cursor."""
+        ...
+
     async def get_asset(self, code: str, issuer: str, network: Network) -> "AssetDetail":
         """Return statistics for an exact code/issuer pair on the selected network."""
         ...

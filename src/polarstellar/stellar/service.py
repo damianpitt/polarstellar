@@ -45,6 +45,40 @@ class AccountService:
             raise AccountError("Transaction does not match this search and network.")
         return detail
 
+    async def discover_assets(self, code, issuer, network, cursor=None):
+        """Validate optional filters before I/O and reject pages from another query or network."""
+        from polarstellar.stellar.asset_discovery import PAGE_SIZE, filters, token
+
+        code, issuer = filters(code, issuer)
+        if cursor is not None:
+            token(cursor)
+        page = await self.provider.discover_assets(code, issuer, network, cursor)
+        if (page.code, page.issuer, page.network, page.cursor) != (code, issuer, network, cursor):
+            raise AccountError("Asset discovery page does not match this query and network.")
+        # Adapter metadata alone is insufficient: every row must belong to the
+        # saved query/network, and the outgoing cursor must identify its final row.
+        if len(page.items) > PAGE_SIZE or page.done != (not page.items):
+            raise AccountError("Invalid asset discovery page boundary.")
+        for item in page.items:
+            validate_asset(item.code, item.issuer)
+            if (
+                not item.issuer
+                or item.network != network
+                or (code and item.code != code)
+                or (issuer and item.issuer != issuer)
+            ):
+                raise AccountError("Asset discovery row does not match this query and network.")
+        expected = (
+            f"{page.items[-1].code}_{page.items[-1].issuer}_{page.items[-1].asset_type}"
+            if page.items
+            else None
+        )
+        if page.next_cursor != expected:
+            raise AccountError("Asset discovery cursor does not match the final row.")
+        if page.next_cursor is not None:
+            token(page.next_cursor)
+        return page
+
     async def asset(self, code: str, issuer: str, network: Network) -> AssetDetail:
         """Reject invalid input before I/O and ensure returned identity includes the issuer."""
         code, issuer = validate_asset(code, issuer)

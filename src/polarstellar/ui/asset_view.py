@@ -8,12 +8,14 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPlainTextEdit,
     QPushButton,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
 from polarstellar.stellar.providers import AccountError
 from polarstellar.storage.export import document, plain
+from polarstellar.ui.asset_discovery_view import AssetDiscoveryView
 from polarstellar.ui.export_controls import ExportControls
 
 FLAG_LABELS = {
@@ -37,7 +39,15 @@ class AssetView(QWidget):
         self.generation = 0
         self.tasks = set()
         self.task = None
-        layout = QVBoxLayout(self)
+        root = QVBoxLayout(self)
+        self.tabs = QTabWidget()
+        root.addWidget(self.tabs)
+        inspector = QWidget()
+        layout = QVBoxLayout(inspector)
+        self.tabs.addTab(inspector, "Inspect asset")
+        self.discovery = AssetDiscoveryView(service, network)
+        self.discovery.asset_requested.connect(self.open_asset)
+        self.tabs.addTab(self.discovery, "Discover assets")
         form = QHBoxLayout()
         self.code = QLineEdit()
         self.code.setPlaceholderText("Asset code (e.g. USDC or XLM)")
@@ -65,8 +75,11 @@ class AssetView(QWidget):
         layout.addWidget(self.export)
         self.reset()
 
-    def reset(self):
-        """Clear data and invalidate late responses when network or investigation changes."""
+    def reset(self, reset_discovery=True):
+        """Clear inspection and optionally discovery; main context changes always clear both."""
+        if reset_discovery:
+            self.discovery.reset()
+            self.tabs.setCurrentIndex(0)
         self.generation += 1
         for task in self.tasks:
             task.cancel()
@@ -85,7 +98,7 @@ class AssetView(QWidget):
 
     def cancel_lookup(self):
         """Cancel the request and discard its snapshot so it cannot be exported accidentally."""
-        self.reset()
+        self.reset(reset_discovery=False)
         self.details.setPlainText("Asset lookup cancelled. Enter an asset to try again.")
 
     def open_asset(self, code, issuer):
@@ -97,7 +110,9 @@ class AssetView(QWidget):
     def start(self):
         """Capture identity and network before clearing previous data and starting a request."""
         code, issuer, network = self.code.text(), self.issuer.text(), self.network()
-        self.reset()
+        # A separate asset lookup must not discard the catalog the user opened it from.
+        self.reset(reset_discovery=False)
+        self.tabs.setCurrentIndex(0)
         self.code.setText(code)
         self.issuer.setText(issuer)
         self.details.setPlainText(f"Loading asset on {network.value}…")

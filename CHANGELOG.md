@@ -10,6 +10,62 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.13] - 2026-10-07
+
+### Added — issued-asset discovery and exact filters
+
+- Added **Assets → Discover assets**, alongside the existing **Inspect asset** tab.
+  Browse Horizon issued-asset statistics with optional exact code, issuer, or combined
+  filters; leave both blank to browse. Codes are case-sensitive whole-code matches,
+  and issuer checksums are validated before network requests.
+- **Search / restart** loads the first 20 rows; **Load more (20)** fetches one additional
+  page with submitted filters/network frozen independently of later form edits. There
+  is no automatic crawl. Queries use ascending order and stop at 50 pages / at most
+  1,000 returned records, explicitly labeled incomplete when capped.
+- Rows display full code-and-issuer identities, asset type, available authorized-account
+  counts, exact authorized-account balances and approval flags. Missing values remain
+  unknown. Same-code issuers stay distinct. Native XLM, pool shares and standalone
+  contract tokens are excluded; an XLM filter finds issued assets named XLM.
+- Select **Inspect selected asset** or double-click a row for a separate exact-pair lookup.
+  Returning to discovery preserves its loaded results. Resource save/bookmark controls
+  require the inspector tab, avoiding accidental use of an older inspector snapshot.
+  Unrelated explorer metadata/actions are hidden on discovery to give results room.
+- Added discovery CSV/JSON exports for loaded rows, all parsed statistics/flags, frozen
+  filters, network, query order, page timestamps/source/cursors, and explicit limits.
+  Export is local and makes no requests; exact amounts remain decimal strings.
+
+### Pagination, accuracy and privacy safeguards
+
+- Validated Horizon's nonnumeric code_issuer_type asset tokens and reconstructed requests
+  only against fixed /assets endpoints. Provider next-page URLs are ignored. Invalid
+  rows, asset identities, type/cursor mismatches and query/network mismatches are refused
+  before committing a page. Cursor cycles cannot lead to endless paging.
+- Failed pages retain existing rows/cursors for retry. Cancel retains evidence and
+  generation checks reject late responses after restart/network changes, including
+  clients that suppress cancellation. Identical overlapping observations are deduplicated
+  with original timestamps retained; conflicting statistics require an explicit restart.
+- Discovery bypasses the response cache. Each page is a live observation at its own time;
+  the catalog is not an atomic ledger snapshot. Only an empty page confirms the current
+  query end. Short pages can continue, and end/limit boundaries do not imply lifetime
+  coverage. Statistics are not circulating supply, prices, market value or endorsements.
+- Only explicit discovery/inspection actions contact Horizon. No issuer website/TOML
+  requests, contract calls, polling or automatic monitoring were added. Existing local
+  watchlists/investigations and dependency versions are unchanged. Native builds remain
+  manual-only, Mac Intel remains excluded, and native/release uploads stay paused.
+- Updated README/specification, version header/package metadata and uv lockfile to 0.0.13.
+
+### Validation
+
+- Local validation: all 171 tests and Ruff passed, including 31 new discovery cases
+  covering optional filters, network routing, local validation before requests, malformed
+  pages, exact issuer/amount handling, failed-page retry, frozen queries, CSV/JSON
+  provenance, overlap/cursor conflicts, late cancellation, page caps, uncached lookup
+  and inspector navigation. Startup checks also navigate the discovery tab without
+  fetching. The new view was rendered at the normal 1180 × 760 window size.
+- Source/wheel builds and dependency-lock checks passed; dependencies are unchanged.
+  Source CI validates Linux, macOS and Windows after push. No native 0.0.13 bundles
+  have been built or uploaded; historical native results remain separate.
+
 ## [0.0.12] - 2026-10-03
 
 ### Added — local account, asset and contract watchlists

@@ -6,6 +6,7 @@ from decimal import Decimal, InvalidOperation
 import httpx
 
 from polarstellar.stellar.activity import PAGE_SIZE, ActivityKind, ActivityPage, parse_page
+from polarstellar.stellar.asset_discovery import filters, parse_catalog, token
 from polarstellar.stellar.assets import AssetDetail, parse_asset, validate_asset
 from polarstellar.stellar.models import Account, Balance, Network
 from polarstellar.stellar.providers import AccountError
@@ -58,6 +59,24 @@ def parse_account(data: dict, address: str, network: Network, source: str) -> Ac
 class HorizonProvider:
     def __init__(self, transport: httpx.AsyncBaseTransport | None = None):
         self.transport = transport
+
+    async def discover_assets(self, code, issuer, network, cursor=None):
+        """Fetch one issued-asset catalog page from a fixed network endpoint, without caching."""
+        code, issuer = filters(code, issuer)
+        params = {"order": "asc", "limit": "20"}
+        if code:
+            params["asset_code"] = code
+        if issuer:
+            params["asset_issuer"] = issuer
+        if cursor is not None:
+            params["cursor"] = token(cursor)
+        data = await self._request("/assets", network, params, "Asset catalog unavailable.")
+        try:
+            return parse_catalog(data, code, issuer, network, ENDPOINTS[network], cursor)
+        except (KeyError, TypeError, ValueError, AccountError, InvalidOperation) as exc:
+            raise AccountError(
+                "Horizon returned invalid asset discovery data. Retry or restart."
+            ) from exc
 
     async def get_asset(self, code: str, issuer: str, network: Network) -> AssetDetail:
         """Fetch one exact issued asset; native XLM has no issuer or /assets statistics."""

@@ -188,6 +188,8 @@ class MainWindow(QMainWindow):
         save_resource.clicked.connect(self.save_resource)
         save_resource.setEnabled(self.investigations is not None)
         pane.addWidget(save_resource)
+        self.assets.tabs.currentChanged.connect(self.update_asset_actions)
+        self.pages.currentChanged.connect(self.update_asset_actions)
         pane.addWidget(self.pages)
         navigation.currentRowChanged.connect(self.select_page)
         content.addLayout(pane, 1)
@@ -221,6 +223,21 @@ class MainWindow(QMainWindow):
             QStatusBar { color: #a7b3cc; }
         """)
 
+    def update_asset_actions(self, *_):
+        """Prevent saving/bookmarking a previous inspector snapshot while viewing discovery rows."""
+        available = self.pages.currentIndex() != 5 or self.assets.tabs.currentIndex() == 0
+        # Discovery owns its query/provenance display. Hide unrelated explorer
+        # metadata/actions to give catalog rows room and avoid implying that an old
+        # account or inspector snapshot describes the displayed discovery results.
+        for widget in (self.message, self.watch_resource_button, self.save_resource_button):
+            widget.setVisible(self.pages.currentIndex() < 7 and available)
+        self.watch_resource_button.setEnabled(self.watchlists is not None and available)
+        self.save_resource_button.setEnabled(self.investigations is not None and available)
+        for button in (self.watch_resource_button, self.save_resource_button):
+            button.setToolTip(
+                "" if available else "Open a discovery result in Inspect asset first."
+            )
+
     def watch_resource(self):
         """Bookmark displayed identity on its actual network, without another provider request."""
         if self.watchlists is None:
@@ -233,7 +250,9 @@ class MainWindow(QMainWindow):
                 "identifier": snapshot["contract"],
                 "network": snapshot["network"],
             }
-        elif index == 5 and self.assets.snapshot is not None:
+        elif (
+            index == 5 and self.assets.tabs.currentIndex() == 0 and self.assets.snapshot is not None
+        ):
             asset = self.assets.snapshot
             identity = {
                 "kind": "asset",
@@ -307,7 +326,11 @@ class MainWindow(QMainWindow):
                 "network": snapshot["network"],
                 "evidence": [self.contracts.export_document()],
             }
-        elif self.pages.currentIndex() == 5 and self.assets.snapshot is not None:
+        elif (
+            self.pages.currentIndex() == 5
+            and self.assets.tabs.currentIndex() == 0
+            and self.assets.snapshot is not None
+        ):
             asset = self.assets.snapshot
             entry = {
                 "kind": "asset",
@@ -344,6 +367,7 @@ class MainWindow(QMainWindow):
             for widget in (self.message, self.watch_resource_button, self.save_resource_button):
                 widget.setVisible(index < 7)
             self.pages.setCurrentIndex(index)
+            self.update_asset_actions()
             if index == 4:
                 view = self.activity_views[2]
                 if not view.loaded:

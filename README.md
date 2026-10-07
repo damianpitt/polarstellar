@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.12 · Pre-alpha**
+**Current version: 0.0.13 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.12 |
+| Area | Available in 0.0.13 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -41,7 +41,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Relationship graph | Direct counterparties plus bounded multi-hop expansion and same-asset routes |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
 | Contracts | Read-only instance details, raw XDR, and paginated RPC contract events |
-| Assets | Issued asset statistics, authorization flags, issuer navigation, and native XLM details |
+| Assets | Issued-asset discovery with exact filters/pagination, statistics, inspector shortcuts, and native XLM details |
 | Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
 | Watchlists | Local account/asset/contract lists, labels/notes, saved snapshots, explorer shortcuts, and manual refresh |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
@@ -60,7 +60,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.12; previously validated native artifacts are 0.0.11.
+The current source version is 0.0.13; previously validated native artifacts are 0.0.11.
 New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
@@ -216,6 +216,46 @@ limits, and per-account provenance. They reopen in the offline evidence viewer a
 are not refreshed by the single-resource refresh button. Build a new trace to capture
 newer graph evidence. Closing the trace discards its unsaved expansion; changing the
 root investigation or network closes it and rejects outstanding results.
+
+### Asset discovery and filtering
+
+In **Assets → Discover assets**, enter an optional exact **asset code**, an optional
+checksum-valid **issuer G-address**, or both. Leave both blank to browse Horizon's
+issued-asset statistics. Choose **Search / restart** to load the first **20 records**,
+then **Load more (20)** for another page. Code filters are case-sensitive and match whole
+codes; they are not prefix, name, or free-text searches. Edited filters take effect only
+on Search / restart; existing rows and exports retain their submitted query and network.
+
+Each row retains its full code/issuer identity and shows available authorized-account
+counts, exact authorized-account balances, asset type and approval flag. Unknown fields
+stay unknown. Same-code assets from different issuers are different resources. These
+statistics are not circulating supply, prices, market value, asset rankings or endorsements.
+Native XLM, liquidity-pool shares and standalone contract tokens are outside this catalog.
+An `XLM` code search finds **issued assets named XLM**. Inspect native XLM in **Inspect asset**
+with an empty issuer.
+
+Select a row and choose **Inspect selected asset**, or double-click it, to open its exact
+code/issuer pair in the existing inspector. Inspection performs a separate lookup; newer
+statistics may differ. Return to Discover assets to keep browsing the loaded catalog.
+To bookmark a result or save investigation evidence, open it in the inspector first.
+Unrelated explorer metadata/save controls are hidden and disabled on the discovery tab.
+
+Discovery is live and is not stored in the optional response cache. Each page carries
+its own source/retrieval time; pages are not an atomic ledger snapshot. Failed page loads
+retain previous rows/cursor for retry. Cancel retains loaded results, and late responses
+cannot overwrite a new query or network. Identical overlaps are deduplicated without
+changing original retrieval times; conflicting overlapping statistics require a restart.
+Cursor cycles and malformed/mismatched rows are rejected before committing a page.
+
+The limit is **50 pages / at most 1,000 returned records**, with no automatic crawl.
+Only an empty page marks the current query end; a short page may still have more results.
+Reaching the limit is labeled incomplete. Neither boundary proves a complete lifetime
+catalog. Network/search/cache-context changes clear discovery results and exports.
+
+**Export CSV / JSON** on the discovery tab saves loaded rows only, including exact values,
+all available parsed statistics/flags, frozen filters, network, ascending query order,
+per-page provenance and explicit coverage limits. Export makes no requests. Issuer
+metadata/TOML crawling, market data and contract-token discovery remain planned.
 
 ### Optional local cache
 
@@ -396,7 +436,7 @@ Use **Load more** first when you need older records.
 
 | View | Export contents |
 | --- | --- |
-| Assets | Exact statistics, issuer flags, identity, and coverage |
+| Assets | Inspector statistics/flags, or loaded discovery rows with frozen filters and page provenance |
 | Overview | Balances, trust limits, authorization, and account metadata |
 | Activity lists | All loaded rows, stable identifiers, and individual page provenance |
 | Graph | All filtered table relationships, exact totals, and supporting transfers |
@@ -486,14 +526,14 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 Portable native packaging is implemented. Further planned areas include:
 
-- Expanded asset inspection and filtering.
+- Broader asset metadata and contract-token discovery.
 - Watchlist filtering/import/export and expanded investigation organization.
 - Advanced tracing controls and broader operation coverage.
 - Advanced contract specifications, storage-key discovery, and richer event interpretation.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.12. The detailed release
+These are **planned capabilities**, not features available in 0.0.13. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks
