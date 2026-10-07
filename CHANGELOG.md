@@ -63,8 +63,14 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   and inspector navigation. Startup checks also navigate the discovery tab without
   fetching. The new view was rendered at the normal 1180 × 760 window size.
 - Source/wheel builds and dependency-lock checks passed; dependencies are unchanged.
-  Source CI validates Linux, macOS and Windows after push. No native 0.0.13 bundles
-  have been built or uploaded; historical native results remain separate.
+  [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/37588570260) passed
+  on Linux, macOS and Windows: all 171 tests on each platform, Ruff, version inspection
+  and source/wheel builds.
+- Live read-only Horizon checks validated 20 Mainnet catalog records, 20 Testnet records
+  and a second 20-record Testnet page using its returned asset cursor. These small checks
+  confirm current response/pagination compatibility, not exhaustive asset coverage.
+- No native 0.0.13 bundles have been built or uploaded; historical native validation
+  remains separate, and release uploads stay paused.
 
 ## [0.0.12] - 2026-10-03
 
