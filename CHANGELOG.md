@@ -10,6 +10,68 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.14] - 2026-10-08
+
+### Added — combined offline watchlist filters
+
+- Added text, network and resource-type filters in **Watchlists**, with a visible/total
+  entry count. Search is a case-insensitive substring match across committed identifiers,
+  codes, issuers, labels and notes; saved identities remain case-sensitive and unchanged.
+  Network/type filters combine with text and do not change the explorer network.
+- Hidden entries stay saved. Visible positions map to stable entry IDs for edit, remove,
+  refresh and opening actions. Filters that would hide unsaved notes require a choice;
+  refusing restores the old filters/selection. Retained selections preserve typed drafts.
+  New lists/imports/bookmark additions clear filters so their entries are not hidden.
+- Fixed a refresh/filter race: a concurrent saved annotation edit can stop matching the
+  current search. Reload clears those filters while preserving the selected unsaved draft,
+  instead of losing typed notes when the entry disappears from the filtered rows.
+
+### Added — portable bookmark JSON with explicit sharing scope
+
+- Added **Export list JSON** and **Import list JSON**. Portable schema 1 preserves every
+  account/contract ID, saved network, and exact asset code/issuer identity. Native XLM
+  remains distinct from issued assets named XLM; same-code issuers/networks stay separate.
+- Export defaults to the whole selected list. **Export visible entries only** creates a
+  filtered subset, recording that scope without storing the search text. The exporter
+  re-reads committed state before the file dialog; unsaved edits are not exported.
+- Local list names, labels and notes are omitted by default. **Include saved list name,
+  labels and notes** opts into committed annotations. Sharing preferences reset on list
+  changes. Snapshots/network evidence, database IDs, creation history and private paths
+  are always excluded, even with annotation sharing enabled.
+- Import creates a separate list with fresh IDs and no snapshots. It never merges or
+  replaces existing lists, including lists with the same name or resources. Files without
+  annotations receive the local name **Imported watchlist**. Imports/filtering/exporting
+  make no network requests; imported annotations remain interpretations, not verified facts.
+
+### Validation, storage and compatibility safeguards
+
+- Bound UTF-8 JSON input reads to 10 MB; accept an optional UTF-8 BOM. Validate all entries
+  before storage opens, requiring the supported format/schema, at most 500 entries, known
+  resource kinds/networks, canonical checksum-valid IDs and consistent full asset identities.
+- Reject duplicate JSON fields/identities, unknown fields/schema versions, foreign IDs,
+  snapshots, invalid annotation types/lengths, malformed text/depth and NaN/Infinity.
+  Portable schema 1 is independent of SQLite schema 1; no database migration is required.
+- Commit valid imports as one transaction. Existing 100-list/10-MB-per-list limits apply;
+  quota/write failures roll back the whole new list and preserve existing data. Export
+  validates its own schema and formatted byte size, and atomically replaces the selected
+  file. Cancellation leaves the library/destination untouched.
+- Updated version metadata/header/lockfile, README and specification to 0.0.14. Dependencies
+  are unchanged. CSV import, merging, snapshot transfer, encryption and batch refresh remain
+  planned. Native builds/uploads stay paused; Mac Intel stays outside development targets.
+
+### Validation results
+
+- Local checks: all 210 tests and Ruff passed. Added 39 transfer/filter cases covering
+  issuer/network/native-XLM round-trips, annotation privacy, saved-only export, filtered
+  selection/removal, sharing resets, failed write rollback, quotas, duplicate fields/IDs,
+  malformed UTF-8/depth/constants, future schemas, canonical identities and byte limits.
+  The refresh/filter draft race and file-dialog cancellation paths are covered.
+- Source/wheel builds and lock checks passed; startup validation now also performs a
+  disposable bookmark JSON export/import. The UI was rendered at the normal 1180 × 760
+  size; empty evidence panels are hidden to give bookmark rows room.
+- Source CI validates Linux, macOS and Windows after push. No native 0.0.14 bundles
+  have been built or uploaded; historical native results remain separate.
+
 ## [0.0.13] - 2026-10-07
 
 ### Added — issued-asset discovery and exact filters

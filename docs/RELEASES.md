@@ -57,9 +57,9 @@ and build-tool versions, plus project license and third-party license informatio
 `.sha256` files allow integrity verification. Checksums alone do not authenticate an unsigned
 publisher; obtain both archive and checksum from the same trusted repository release.
 
-Current source version: **0.0.13**. Source startup checks include disposable watchlist
-persistence and navigation. New native bundles/uploads remain deferred; the completed
-0.0.11 checks below describe the earlier artifacts, not a packaged 0.0.13 release.
+Current source version: **0.0.14**. Source startup checks include disposable watchlist
+persistence, portable JSON round-trip and navigation. New native bundles/uploads remain deferred; the completed
+0.0.11 checks below describe the earlier artifacts, not a packaged 0.0.14 release.
 
 ## Completed 0.0.11 validation
 

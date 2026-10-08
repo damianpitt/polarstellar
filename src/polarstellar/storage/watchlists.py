@@ -121,6 +121,33 @@ class WatchlistStore:
             self.write(connection, item)
             return result
 
+    def import_portable(self, payload):
+        """Validate all bookmarks, then atomically create a separate list with fresh local IDs.
+
+        No old lists are merged or replaced, and snapshots are never accepted from a
+        portable file. Validation completes before storage opens. Quota/write failures
+        roll back the entire new list instead of leaving a partially imported library.
+        """
+        from polarstellar.storage.watchlist_transfer import validate
+
+        name, entries = validate(payload)
+        created = datetime.now(UTC).isoformat()
+        item = {
+            "id": str(uuid4()),
+            "name": name,
+            "created_at": created,
+            "entries": [
+                {**entry, "id": str(uuid4()), "created_at": created, "snapshot": None}
+                for entry in entries
+            ],
+        }
+        with closing(self.connect()) as connection, connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if connection.execute("SELECT COUNT(*) FROM watchlists").fetchone()[0] >= 100:
+                raise ValueError("The watchlist limit is 100. Remove a list before importing.")
+            self.write(connection, item)
+        return item["id"]
+
     def rename(self, identifier, name):
         """Rename a list without changing its resources, annotations or snapshots."""
         name = text(name, 100, "List name", True)

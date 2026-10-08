@@ -20,6 +20,7 @@ from polarstellar.stellar.horizon import HorizonProvider
 from polarstellar.stellar.models import Network
 from polarstellar.storage.export import serialize, write_export
 from polarstellar.storage.investigations import InvestigationStore
+from polarstellar.storage.watchlist_transfer import read_file
 from polarstellar.storage.watchlists import WatchlistStore
 
 
@@ -86,6 +87,19 @@ async def validate(window, root, screenshot=None):
     bookmarks = WatchlistStore(root / "watchlists.sqlite3").list()
     assert bookmarks[0]["entries"][0]["identifier"] == address
     assert bookmarks[0]["entries"][0]["network"] == Network.MAINNET.value
+    # Bookmark portability is offline and independent of saved network snapshots.
+    portable = window.watchlists.export_document()
+    write_export(root / "watchlist.json", portable, "json")
+    imported = WatchlistStore(root / "watchlists.sqlite3").import_portable(
+        read_file(root / "watchlist.json")
+    )
+    restored = next(
+        item
+        for item in WatchlistStore(root / "watchlists.sqlite3").list()
+        if item["id"] == imported
+    )
+    assert restored["entries"][0]["identifier"] == address
+    assert restored["entries"][0]["snapshot"] is None
     checks.append("sqlite_watchlist_restart")
     snapshot = window.investigations.export_document()
     write_export(root / "evidence.json", snapshot, "json")

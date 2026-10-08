@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.13 · Pre-alpha**
+**Current version: 0.0.14 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.13 |
+| Area | Available in 0.0.14 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -43,7 +43,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Contracts | Read-only instance details, raw XDR, and paginated RPC contract events |
 | Assets | Issued-asset discovery with exact filters/pagination, statistics, inspector shortcuts, and native XLM details |
 | Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
-| Watchlists | Local account/asset/contract lists, labels/notes, saved snapshots, explorer shortcuts, and manual refresh |
+| Watchlists | Local resource lists, combined offline filters, portable JSON import/export, annotations and manual refresh |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
 
@@ -60,7 +60,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.13; previously validated native artifacts are 0.0.11.
+The current source version is 0.0.14; previously validated native artifacts are 0.0.11.
 New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
@@ -425,7 +425,46 @@ Limits are **100 lists**, **500 entries per list**, and **10 MB per list**; list
 allow 100 characters, labels 200, and notes 10,000. Unknown future database schemas are
 refused. Clear cache and investigation deletion do not remove watchlists. Labels and
 notes stay local; explicit lookups send only public identifiers to Horizon/Stellar RPC.
-Watchlist import/export, automatic alerts, and encrypted storage remain planned.
+Automatic alerts and encrypted storage remain planned.
+
+### Watchlist filters and portable JSON
+
+In **Watchlists**, combine the **text search**, **network**, and **type** filters to
+narrow the selected list. Text search is a case-insensitive substring match against
+committed identifiers, asset codes/issuers, labels, and notes. It does not alter the
+case-sensitive stored asset identity. The network filter is independent of the explorer's
+network selector. The visible count shows how many entries match; hidden entries stay
+saved. Filters never contact Horizon/RPC. If a filter would hide unsaved notes, you can
+keep those edits and restore the previous filters. New lists, imports and new bookmark
+additions clear filters so their entries are visible.
+
+Choose **Export list JSON** for a portable schema-1 bookmark file:
+
+- By default, export the **whole selected list**, even if filters are active.
+- Check **Export visible entries only** for a filtered subset. The file records that
+  scope, but omits the search text itself.
+- List names, labels, and notes are **omitted by default**. Check **Include saved list
+  name, labels and notes** to include committed annotations; unsaved edits stay local.
+- Snapshots, network evidence, database IDs, creation history and private file paths
+  are **never included**. This is bookmark portability, not an investigation backup.
+- Sharing preferences reset when changing lists. Files retain every resource's exact
+  network, kind, identifier, and asset code/issuer, including native versus issued XLM.
+
+Choose **Import list JSON** to create a **separate new list**, with fresh local entry IDs
+and no snapshots. Existing lists/notes/evidence are never merged or replaced, even if
+names or resources overlap. Without exported annotations, the new list is named
+**Imported watchlist**; rename it locally if desired. Imported annotations remain user
+interpretations, not verified facts. Imports do not fetch or refresh network data.
+
+Files must be UTF-8 JSON (an optional UTF-8 BOM is accepted), at most **10 MB** and
+**500 entries**, with the supported portable format/schema. Invalid checksums, networks,
+asset identities, duplicate identities/JSON fields, unknown fields/schemas, snapshots,
+foreign database IDs, invalid annotation types/lengths and nonstandard JSON constants
+are rejected before storage writes. A valid import commits as one transaction; quota
+or write failures leave existing lists intact. Existing 100-list/10-MB storage limits
+still apply. Exports validate their own format/byte size and replace the chosen file
+atomically. File-dialog cancellation makes no library changes. JSON is the supported
+portable format; CSV import, merging, encrypted files and snapshot transfer remain planned.
 
 ### CSV and JSON export
 
@@ -527,13 +566,13 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 Portable native packaging is implemented. Further planned areas include:
 
 - Broader asset metadata and contract-token discovery.
-- Watchlist filtering/import/export and expanded investigation organization.
+- Watchlist batch refresh/change comparison and expanded investigation organization.
 - Advanced tracing controls and broader operation coverage.
 - Advanced contract specifications, storage-key discovery, and richer event interpretation.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.13. The detailed release
+These are **planned capabilities**, not features available in 0.0.14. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

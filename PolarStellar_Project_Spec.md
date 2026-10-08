@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.13 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.14 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1798,3 +1798,32 @@ discovery results available. Saving/bookmarking resources requires the inspector
 preventing an older inspector snapshot from being confused with a selected catalog row.
 No issuer metadata crawling, prices, ranking, contract-token discovery or background
 monitoring is implemented. Dependencies are unchanged; native uploads remain paused.
+
+
+## V0.0.14 implemented slice — watchlist filtering and portable JSON
+
+Watchlists now combines offline substring search over committed identity/annotations
+with exact saved-network and resource-type selectors. Visible rows map to stable entry
+IDs, so edit/open/refresh/remove actions cannot target an underlying hidden row. Unsaved
+notes are protected when filters would hide their entry. Filter-preserving refreshes
+retain drafts; filters clear if concurrent saved annotation changes would hide that draft.
+
+Portable JSON schema 1 transfers full network/kind/identifier and asset code/issuer
+identities only by default. Optional list names/labels/notes require an explicit sharing
+choice, reset on list changes. Export can include the whole list (default) or a filtered
+subset without recording the search query. Unsaved edits, snapshots, evidence, database
+IDs, creation history and private paths never transfer. Export snapshots committed state,
+validates byte/schema bounds, and writes atomically using the existing export writer.
+
+Import accepts UTF-8/BOM JSON up to 10 MB / 500 entries. It rejects unsupported schemas,
+duplicate JSON fields/identities, invalid checksums/networks, inconsistent or noncanonical
+asset identities, unknown fields, snapshots/foreign IDs, nonstandard numeric constants,
+and invalid annotation types/lengths. Validation finishes before storage opens. A single
+transaction creates a separate list with new local IDs and no snapshots, never merging
+or overwriting existing lists. Quota/write failures roll back the whole new list.
+
+Imported annotations are local interpretations; their presence proves no network fact.
+All filtering/import/export is offline; reopening and manual refresh retain existing
+explicit network behavior. SQLite schema 1 and dependencies are unchanged. Portable
+JSON is not an evidence backup, encrypted file, or CSV import feature. Native builds
+and release uploads remain manual and paused, and Mac Intel remains excluded.
