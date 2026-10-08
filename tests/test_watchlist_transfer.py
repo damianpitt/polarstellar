@@ -158,6 +158,7 @@ def test_invalid_import_never_opens_database(tmp_path, change):
     assert not store.path.exists()
 
 
+# Short IDs keep the real 10 MB boundary test compatible with Windows environment limits.
 @pytest.mark.parametrize(
     "contents",
     [
@@ -168,6 +169,15 @@ def test_invalid_import_never_opens_database(tmp_path, change):
         b'{"value":Infinity}',
         b"[" * 2000 + b"0" + b"]" * 2000,
         b" " * 10_000_001,
+    ],
+    ids=[
+        "not-json",
+        "bad-utf8",
+        "duplicate-keys",
+        "nan",
+        "infinity",
+        "deep-nesting",
+        "over-byte-limit",
     ],
 )
 def test_bounded_file_parsing_rejects_ambiguous_or_invalid_json(tmp_path, contents):

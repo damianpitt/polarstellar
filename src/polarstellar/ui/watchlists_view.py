@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -18,6 +19,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -49,7 +51,18 @@ class WatchlistsView(QWidget):
         self.visible_entries = []
         self.last_filters = ("", "All networks", "All types")
         self.task, self.tasks, self.generation = None, set(), 0
-        layout = QVBoxLayout(self)
+        # Filters and transfer controls add useful height. A scrollable panel keeps
+        # every action reachable on smaller displays instead of compressing widgets
+        # below their minimum size or drawing one editor over another.
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        content = QWidget()
+        scroll.setWidget(content)
+        root.addWidget(scroll)
+        layout = QVBoxLayout(content)
         notice = QLabel(
             "Local watchlists • Selection and saved snapshots work offline. "
             "Open in explorer and Refresh contact the entry's saved network. "

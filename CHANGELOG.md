@@ -21,6 +21,7 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 - Hidden entries stay saved. Visible positions map to stable entry IDs for edit, remove,
   refresh and opening actions. Filters that would hide unsaved notes require a choice;
   refusing restores the old filters/selection. Retained selections preserve typed drafts.
+  The watchlist panel scrolls when needed so controls remain reachable on shorter windows.
   New lists/imports/bookmark additions clear filters so their entries are not hidden.
 - Fixed a refresh/filter race: a concurrent saved annotation edit can stop matching the
   current search. Reload clears those filters while preserving the selected unsaved draft,
@@ -69,7 +70,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 - Source/wheel builds and lock checks passed; startup validation now also performs a
   disposable bookmark JSON export/import. The UI was rendered at the normal 1180 × 760
   size; empty evidence panels are hidden to give bookmark rows room.
-- Source CI validates Linux, macOS and Windows after push. No native 0.0.14 bundles
+- Initial Linux/macOS CI passed. Windows exposed a pytest parameter-name issue: the
+  10 MB boundary payload generated an environment variable above Windows' limit. Added
+  short explicit test IDs while retaining the complete size/depth checks. Cross-platform
+  source CI is rerun after this correction. No native 0.0.14 bundles
   have been built or uploaded; historical native results remain separate.
 
 ## [0.0.13] - 2026-10-07
