@@ -72,9 +72,13 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   size; empty evidence panels are hidden to give bookmark rows room.
 - Initial Linux/macOS CI passed. Windows exposed a pytest parameter-name issue: the
   10 MB boundary payload generated an environment variable above Windows' limit. Added
-  short explicit test IDs while retaining the complete size/depth checks. Cross-platform
-  source CI is rerun after this correction. No native 0.0.14 bundles
-  have been built or uploaded; historical native results remain separate.
+  short explicit test IDs while retaining the complete size/depth checks.
+- The corrected [source CI](https://github.com/damianpitt/polarstellar/actions/runs/37726313197)
+  passed on Linux, macOS and Windows: all 210 tests on each platform, Ruff, version checks
+  and source/wheel builds. Reviewed the scrollable production layout with cache controls
+  visible at 1180 × 760; bookmark rows and transfer controls remain reachable.
+- No native 0.0.14 bundles have been built or uploaded; historical native results
+  remain separate and release uploads stay paused.
 
 ## [0.0.13] - 2026-10-07
 
