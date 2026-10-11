@@ -64,8 +64,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 - Source/wheel builds and lock checks passed; dependencies are unchanged. Reviewed the
   expanded-trace UI at 1120 × 864 with active funding/time filters and transaction
   evidence. Startup smoke checks now also apply local trace filters without fetching.
-- Source CI validates Linux, macOS and Windows after push. No native 0.0.15 artifacts
-  have been built or uploaded; historical packaging results remain separate.
+- [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/38126590524)
+  passed on Linux, macOS and Windows: all 233 tests, Ruff, locked dependency installation,
+  version checks and source/wheel builds succeeded on each platform. No native 0.0.15
+  artifacts have been built or uploaded; historical packaging results remain separate.
 
 ## [0.0.14] - 2026-10-08
 
