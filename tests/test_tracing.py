@@ -35,6 +35,7 @@ def transfer(token, sender, recipient, amount="1.0000000", asset="XLM"):
         str(token),
         f"{token:064x}",
         "2026-09-29T00:00:00Z",
+        "payment",
     )
     return ActivityRecord(str(token), str(token), (flow.created,), flow, "")
 

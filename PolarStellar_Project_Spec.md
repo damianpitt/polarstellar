@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.14 with account/activity inspection, bounded multi-hop graphs, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.15 with account/activity inspection, bounded multi-hop graphs with local time/operation-type filters, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1827,3 +1827,32 @@ All filtering/import/export is offline; reopening and manual refresh retain exis
 explicit network behavior. SQLite schema 1 and dependencies are unchanged. Portable
 JSON is not an evidence backup, encrypted file, or CSV import feature. Native builds
 and release uploads remain manual and paused, and Mac Intel remains excluded.
+
+
+## V0.0.15 implemented slice — local tracing time and operation-type controls
+
+Graph / Explore multiple hops adds applied From/Until ISO date-time inputs with explicit
+zones, inclusive UTC comparisons and at most microsecond precision. Blank boundaries
+are unbounded. Operation selection supports successful payment/create_account transfers
+only. Apply validates all inputs before replacing state; Clear restores all supported
+operations/times locally. Unsubmitted/invalid edits do not alter exports or saved traces.
+
+Graph/table totals, same-asset directed routes, and transaction evidence all select the
+same matching operations. Evidence preserves original time and adds original operation
+type. No path payment, merge, failed operation or other unsupported transfer is reclassified
+as a direct transfer. Malformed/naive transfer times are excluded with explicit counts.
+Conflicting observations are rejected before filtering; unique operations are never doubled.
+
+Discovery distances, account/asset selectors and expansion eligibility remain based on
+unfiltered valid loaded relationships. Filters never reset cursors, relax depth/account/
+page/path/canvas bounds or issue requests. Applying filters during expansion affects new
+accepted evidence without changing its frozen account/network query. Coverage describes
+all fetched pages/records, normalized known UTC spans and unknown times; unsupported
+exclusions are separate from time/type-hidden counts. No interval or route guarantees
+complete history, chronological fund flow, ownership, or cross-hop amounts.
+
+Exports and offline investigation snapshots capture applied interval/type metadata with
+matching evidence/routes and full fetch provenance/limits. Older saved JSON is unchanged.
+Transfer evidence now stores operation_type; cache format keys move from revision 1 to 2
+so old snapshots are refetched on explicit lookup rather than assigning guessed types.
+SQLite schemas/TTL/dependencies remain unchanged. Native builds/uploads remain paused.

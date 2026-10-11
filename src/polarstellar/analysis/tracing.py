@@ -6,6 +6,12 @@ from decimal import Decimal, localcontext
 
 import networkx as nx
 
+from polarstellar.analysis.trace_filters import (
+    FILTER_REASONS,
+    OPERATION_TYPES,
+    TraceFilters,
+    instant,
+)
 from polarstellar.stellar.activity import PAGE_SIZE, ActivityKind
 from polarstellar.stellar.models import Transfer
 from polarstellar.storage.export import document, plain
@@ -39,7 +45,7 @@ class Trace:
         for page in pages[:MAX_PAGES]:
             self.add_page(root, page)
 
-    def build(self):
+    def build(self, view_filters=None):
         """Deduplicate operations across accounts and return connections, exclusions and distances.
 
         Conflicting observations of an operation are excluded rather than silently choosing
@@ -61,6 +67,8 @@ class Trace:
                     records[record.identifier] = record
         excluded = Counter()
         groups = {}
+        graph = nx.Graph()
+        graph.add_node(self.root)
         for identifier, record in records.items():
             flow = record.transfer
             if identifier in conflicts:
@@ -69,17 +77,28 @@ class Trace:
                 excluded[record.exclusion or "Unsupported operation"] += 1
             elif flow.sender == flow.recipient:
                 excluded["Self transfer"] += 1
+            elif flow.operation_type not in OPERATION_TYPES:
+                excluded["Unsupported transfer operation type"] += 1
             else:
-                groups.setdefault((flow.sender, flow.recipient, flow.asset), []).append(flow)
+                try:
+                    instant(flow.created)
+                except ValueError:
+                    excluded["Invalid/unknown transfer time"] += 1
+                    continue
+                # Expansion eligibility/depth is based on all valid loaded relationships,
+                # independent of local display filters. Hiding links must not relax caps.
+                graph.add_edge(flow.sender, flow.recipient)
+                reason = view_filters.reason(flow) if view_filters is not None else ""
+                if reason:
+                    excluded[reason] += 1
+                else:
+                    groups.setdefault((flow.sender, flow.recipient, flow.asset), []).append(flow)
         connections = []
-        graph = nx.Graph()
-        graph.add_node(self.root)
         for (sender, recipient, asset), evidence in sorted(groups.items()):
             with localcontext() as context:
                 context.prec = 80
                 total = sum((flow.amount for flow in evidence), Decimal(0))
             connections.append(Connection(sender, recipient, asset, total, tuple(evidence)))
-            graph.add_edge(sender, recipient)
         distances = dict(nx.single_source_shortest_path_length(graph, self.root))
         return connections, dict(excluded), distances
 
@@ -124,13 +143,13 @@ class Trace:
             raise ValueError("Invalid next cursor.")
         self.pages.setdefault(address, []).append(page)
 
-    def paths(self, target, asset, incoming=False):
+    def paths(self, target, asset, incoming=False, view_filters=None):
         """Find at most 100 simple directed, same-asset paths of up to three edges.
 
         These are observed connections, not chronological fund tracing. A route never
         revisits an account, crosses asset identities, or sums amounts across its hops.
         """
-        connections, _, _ = self.build()
+        connections, _, _ = self.build(view_filters) if view_filters is not None else self.build()
         start, end = (target, self.root) if incoming else (self.root, target)
         adjacency = {}
         for edge in connections:
@@ -154,12 +173,24 @@ class Trace:
         visit([start])
         return results
 
-    def export(self, asset=None, target=None, incoming=False):
+    def export(self, asset=None, target=None, incoming=False, view_filters=None):
         """Freeze all filtered edges and page coverage for exports and offline investigations."""
-        connections, excluded, distances = self.build()
+        connections, excluded, distances = (
+            self.build(view_filters) if view_filters is not None else self.build()
+        )
+        filtered = {key: excluded.pop(key) for key in FILTER_REASONS if key in excluded}
         accounts = []
         for address, pages in self.pages.items():
-            times = [record.values[0] for page in pages for record in page.records]
+            times, unknown_times = [], 0
+            for page in pages:
+                for record in page.records:
+                    try:
+                        # Compare instants, not strings: offsets can otherwise reverse
+                        # min/max ordering. Coverage remains for all fetched records.
+                        created = record.transfer.created if record.transfer else record.values[0]
+                        times.append(instant(created))
+                    except (ValueError, IndexError):
+                        unknown_times += 1
             provenance = []
             for page in pages:
                 item = plain(page)
@@ -170,8 +201,9 @@ class Trace:
                     "address": address,
                     "pages": provenance,
                     "loaded_records": sum(len(page.records) for page in pages),
-                    "oldest_record_time": min(times) if times else None,
-                    "newest_record_time": max(times) if times else None,
+                    "oldest_record_time": min(times).isoformat() if times else None,
+                    "newest_record_time": max(times).isoformat() if times else None,
+                    "unknown_record_times": unknown_times,
                     "next_cursor": pages[-1].next_cursor,
                     "end_of_available_results": pages[-1].next_cursor is None,
                     "expansion_status": self.reason(address) or "More pages available",
@@ -183,10 +215,16 @@ class Trace:
             "accounts": accounts,
             "unfetched_accounts": sorted(set(distances) - set(self.pages)),
             "excluded_unique_operations": excluded,
+            "filtered_unique_operations": filtered,
+            "trace_filters": (view_filters or TraceFilters()).metadata(),
+            "matching_unique_operations_before_asset_filter": sum(
+                len(edge.evidence) for edge in connections
+            ),
+            "expansion_scope": "Unfiltered valid loaded relationships; display filters never change fetch/depth limits",
             "asset_filter": asset,
             "target": target,
             "direction": "To root" if incoming else "From root",
-            "paths": self.paths(target, asset, incoming) if target and asset else [],
+            "paths": self.paths(target, asset, incoming, view_filters) if target and asset else [],
             "limits": {
                 "accounts": MAX_ACCOUNTS,
                 "pages_per_account": MAX_PAGES,
@@ -195,7 +233,7 @@ class Trace:
                 "canvas_nodes": CANVAS_NODES,
             },
             "seed_truncated": self.seed_truncated,
-            "coverage": "Loaded successful direct payments/funding only. Deduplicated by "
+            "coverage": "Loaded successful direct payments/funding only; applied time/type filters select evidence locally. Deduplicated by "
             "operation ID. Paths are observed connections, not proof of the same funds, "
             "chronological flow, ownership, or complete history. No cross-hop totals.",
         }

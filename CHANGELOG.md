@@ -10,6 +10,63 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.15] - 2026-10-11
+
+### Added — local time and operation-type tracing controls
+
+- In **Graph → Explore multiple hops**, added **From**, **Until**, **Apply time / type**,
+  **Clear time / type**, and supported-operation selection. Time intervals are inclusive;
+  blank bounds are unbounded. Full ISO timestamps require seconds and an explicit zone,
+  normalize to UTC, and support up to six fractional digits. Naive/date-only values,
+  invalid ranges and excess precision are refused rather than guessed or truncated.
+- Select **Payments and funding**, **Direct payments**, or **Account funding**. Choices
+  filter successful `payment`/`create_account` evidence already supported by tracing;
+  unsupported path payments, merges, failed/self transfers and other excluded operations
+  remain outside totals. No additional transfer semantics were introduced.
+- Applied filters consistently affect exact edge totals, graph/table rows, directed
+  same-asset routes, CSV/JSON exports and saved investigation snapshots. Transfer evidence
+  now shows original operation type/time, exact amount, operation ID and transaction hash;
+  double-click continues to open the supporting transaction inspector.
+- Unsubmitted edits do not change applied results. Invalid input retains prior filters,
+  graph and export state. Clear restores all times/types without discarding loaded data.
+  Changes during expansion use the new filters on accepted pages without changing or
+  cancelling the pending account/network/cursor request. All filtering is local.
+
+### Coverage, accuracy and compatibility
+
+- Expansion choices/distances/eligibility continue to use the unfiltered valid loaded
+  graph. Hidden links cannot relax three-hop, ten-account, five-page or route/canvas
+  bounds, and cannot reset cursors or cause automatic fetching. Asset/direction filters
+  continue alongside local time/type selection.
+- Coverage stays attached to every fetched page/record, including filtered-out history.
+  Exports separate time/type-hidden counts from unsupported/invalid/conflicting exclusions,
+  record applied UTC bounds/types, and retain per-account source/cache/retrieval/cursor
+  details. Known loaded spans compare normalized instants; unknown timestamps are counted.
+  Invalid/naive transfer times do not contribute to expanded-trace totals.
+- Conflicts are rejected before filtering and overlapping operation IDs are deduplicated.
+  Monetary precision/issuer/network separation remain intact. Time windows select
+  observations; they do not prove chronological movement, fund continuity, ownership
+  or complete interval coverage. No cross-hop total is calculated.
+- Added original operation_type to normalized Transfer evidence; Horizon explicitly sets
+  funding/payment types. Cache format-key revision moves from 1 to 2 so old serialized
+  activity misses/refetches rather than guessing a type. SQLite schema, cache TTL, saved
+  historical JSON and dependencies are unchanged. Old saved traces remain readable offline.
+- Updated version metadata/header/lockfile, README and specification to 0.0.15. Native
+  builds remain manual, release uploads stay paused, and Mac Intel stays excluded.
+
+### Validation
+
+- Local validation: all 233 tests and Ruff passed, including 23 new filter cases for
+  strict timestamps/precision, offsets/inclusive endpoints, exact sums, typed funding,
+  unknown/malformed evidence, filtered routes, issuer identity, conflict deduplication,
+  full coverage, unchanged expansion bounds, unapplied/invalid UI edits, pending fetches
+  and cache serialization compatibility.
+- Source/wheel builds and lock checks passed; dependencies are unchanged. Reviewed the
+  expanded-trace UI at 1120 × 864 with active funding/time filters and transaction
+  evidence. Startup smoke checks now also apply local trace filters without fetching.
+- Source CI validates Linux, macOS and Windows after push. No native 0.0.15 artifacts
+  have been built or uploaded; historical packaging results remain separate.
+
 ## [0.0.14] - 2026-10-08
 
 ### Added — combined offline watchlist filters

@@ -40,7 +40,12 @@ class Account:
 
 @dataclass(frozen=True)
 class Transfer:
-    """A successful direct transfer used as evidence in counterparty analysis."""
+    """Successful direct transfer evidence with exact amount, time and original operation type.
+
+    An omitted type remains unknown for constructor compatibility and is excluded
+    from expanded tracing. Horizon explicitly sets payment/create_account; old cached
+    schemas are not guessed.
+    """
 
     network: Network
     sender: str
@@ -50,3 +55,4 @@ class Transfer:
     operation: str
     transaction: str
     created: str
+    operation_type: str = ""

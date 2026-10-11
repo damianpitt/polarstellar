@@ -114,6 +114,18 @@ async def validate(window, root, screenshot=None):
     checks.append("stellar_sdk_xdr_exact_integer")
     graph = nx.DiGraph([(address, issuer)])
     assert nx.shortest_path(graph, address, issuer) == [address, issuer]
+    # Exercise the new trace controls locally; opening/applying a trace is not a
+    # request to expand accounts or fetch additional activity.
+    from polarstellar.ui.trace_view import TraceDialog
+
+    trace = TraceDialog(window.activity_views[2], window)
+    trace.from_time.setText("2026-10-01T00:00:00Z")
+    trace.operation_type.setCurrentIndex(2)
+    trace.apply_filters()
+    assert trace.export_document()["metadata"]["trace_filters"]["operation_types"] == [
+        "create_account"
+    ]
+    trace.reject()
     checks.append("networkx_relationship_model")
     # TLS is constructed locally to verify packaged CA certificates and SSL support.
     assert Path(certifi.where()).is_file()

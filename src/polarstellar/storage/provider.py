@@ -80,7 +80,7 @@ class CachedProvider:
         warning = ""
         # Format revision and provider class isolate incompatible cached representations.
         key = json.dumps(
-            [1, type(self.provider).__module__, type(self.provider).__name__, method, *args]
+            [2, type(self.provider).__module__, type(self.provider).__name__, method, *args]
         )
         if self.enabled:
             try:

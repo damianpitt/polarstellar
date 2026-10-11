@@ -184,6 +184,7 @@ def parse_page(
                         identifier,
                         transaction,
                         created,
+                        operation,
                     )
                     exclusion = ""
         records.append(ActivityRecord(identifier, token, values, transfer, exclusion))

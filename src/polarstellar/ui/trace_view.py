@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QPlainTextEdit,
     QPushButton,
@@ -21,6 +22,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from polarstellar.analysis.trace_filters import TraceFilters, instant
 from polarstellar.analysis.tracing import CANVAS_NODES, MAX_PATHS, Trace
 from polarstellar.stellar.activity import ActivityKind
 from polarstellar.stellar.providers import AccountError
@@ -44,6 +46,7 @@ class TraceDialog(QDialog):
         self.tasks = set()
         self.edges = []
         self.connections = []
+        self.view_filters = None
         self.setWindowTitle(f"Expanded graph • {self.trace.network.value}")
         self.resize(1120, 850)
         layout = QVBoxLayout(self)
@@ -86,6 +89,36 @@ class TraceDialog(QDialog):
             )
             filters.addWidget(widget)
         layout.addLayout(filters)
+        time_row = QHBoxLayout()
+        self.from_time = QLineEdit()
+        self.from_time.setPlaceholderText("From ISO time (blank: no lower bound)")
+        self.from_time.setAccessibleName("Trace from time")
+        self.until_time = QLineEdit()
+        self.until_time.setPlaceholderText("Until ISO time (blank: no upper bound)")
+        self.until_time.setAccessibleName("Trace until time")
+        for field in (self.from_time, self.until_time):
+            field.setMaxLength(64)
+            field.setToolTip(
+                "Explicit timezone required, e.g. 2026-10-01T00:00:00Z. Bounds are inclusive."
+            )
+        self.operation_type = QComboBox()
+        self.operation_type.setAccessibleName("Trace operation type filter")
+        self.operation_type.addItem("Payments and funding", ("payment", "create_account"))
+        self.operation_type.addItem("Direct payments", ("payment",))
+        self.operation_type.addItem("Account funding", ("create_account",))
+        apply = QPushButton("Apply time / type")
+        apply.clicked.connect(self.apply_filters)
+        clear = QPushButton("Clear time / type")
+        clear.clicked.connect(self.clear_filters)
+        for widget in (self.from_time, self.until_time, self.operation_type, apply, clear):
+            time_row.addWidget(widget)
+        layout.addLayout(time_row)
+        self.filter_status = QLabel(
+            "Applied: all times, payments and funding. Edits apply only on Apply time / type."
+        )
+        self.filter_status.setWordWrap(True)
+        self.filter_status.setTextFormat(Qt.TextFormat.PlainText)
+        layout.addWidget(self.filter_status)
         self.scene = QGraphicsScene(self)
         self.canvas = Canvas(self.scene)
         self.canvas.setMinimumHeight(150)
@@ -129,6 +162,37 @@ class TraceDialog(QDialog):
         self.account.currentIndexChanged.connect(self.update_controls)
         self.finished.connect(self.cancel_request)
         self.rebuild()
+
+    def apply_filters(self):
+        """Validate all inputs before replacing applied state; bad edits keep the previous graph/export."""
+        try:
+            candidate = TraceFilters(
+                instant(self.from_time.text().strip()) if self.from_time.text().strip() else None,
+                instant(self.until_time.text().strip()) if self.until_time.text().strip() else None,
+                self.operation_type.currentData(),
+            )
+        except ValueError as exc:
+            self.filter_status.setText(str(exc) + " Previous applied filters/results retained.")
+            return
+        self.view_filters = candidate
+        metadata = candidate.metadata()
+        self.filter_status.setText(
+            f"Applied inclusive UTC: {metadata['from_utc'] or 'Unbounded'} to "
+            f"{metadata['until_utc'] or 'Unbounded'} • Types: {', '.join(candidate.operations)}. "
+            "Loaded evidence only; no extra requests. Edits require Apply time / type."
+        )
+        self.render()
+
+    def clear_filters(self):
+        """Restore all supported types/times locally, retaining pages, cursors and expansion limits."""
+        self.from_time.clear()
+        self.until_time.clear()
+        self.operation_type.setCurrentIndex(0)
+        self.view_filters = None
+        self.filter_status.setText(
+            "Applied: all times, payments and funding. Edits apply only on Apply time / type."
+        )
+        self.render()
 
     def fit(self):
         """Fit after layout has established the visible canvas dimensions."""
@@ -243,11 +307,12 @@ class TraceDialog(QDialog):
             self.asset.currentData(),
             self.target.currentData(),
             self.direction.currentText() == "To root",
+            self.view_filters,
         )
 
     def render(self, *_):
         """Draw bounded nodes and all filtered table edges; list route evidence without flow claims."""
-        connections, excluded, distances = self.trace.build()
+        connections, _, distances = self.trace.build(self.view_filters)
         asset = self.asset.currentData()
         self.connections = [edge for edge in connections if asset is None or edge.asset == asset]
         self.table.setRowCount(0)
@@ -310,6 +375,7 @@ class TraceDialog(QDialog):
             f"{self.trace.network.value} • Root: {self.trace.root}\n"
             f"{len(self.trace.pages)}/10 fetched accounts • Up to 3 hops, 5 pages/account. "
             f"Canvas {len(visible)}/{len(addresses)} nodes; table includes all filtered edges.\n"
+            "Local filters select evidence; expansion uses unfiltered discovered accounts. "
             "Observed connections only — not proof of the same funds, chronology, or ownership."
         )
         snapshot = self.export_document()
@@ -318,14 +384,16 @@ class TraceDialog(QDialog):
             lines.append(
                 f"{account['address']} • {account['loaded_records']} records • "
                 f"{account['oldest_record_time']} to {account['newest_record_time']} • "
-                f"{account['expansion_status']}"
+                f"{account['expansion_status']} • Unknown times: {account['unknown_record_times']}"
             )
             for page in account["pages"]:
                 lines.append(
                     f"  {page['source']} • {page['cache_status']} • Retrieved {page['fetched_at']}"
                 )
         lines.append(
-            f"Excluded unique operations: {excluded}. Unfetched discovered accounts: "
+            f"Excluded unique operations: {snapshot['metadata']['excluded_unique_operations']}. "
+            f"Hidden by time/type filters: {snapshot['metadata']['filtered_unique_operations']}. "
+            f"Unfetched discovered accounts: "
             f"{len(snapshot['metadata']['unfetched_accounts'])}. Horizon coverage may be limited."
         )
         if self.trace.seed_truncated:
@@ -336,8 +404,13 @@ class TraceDialog(QDialog):
             f"Observed same-asset routes (up to {MAX_PATHS}; select table edges for transaction evidence):\n"
             + "\n".join(" → ".join(route) for route in routes)
             if routes
-            else "Choose one asset and a target to find directed routes. No route in loaded "
-            "evidence does not prove no connection exists. Direction applies to routes, not the edge table."
+            else (
+                "No observed route matches the applied filters in loaded evidence. "
+                "This does not prove no connection exists. Direction applies to routes, not the table."
+                if self.asset.currentData() and self.target.currentData()
+                else "Choose one asset and a target to find directed routes. No route in loaded "
+                "evidence does not prove no connection exists. Direction applies to routes, not the edge table."
+            )
         )
         self.update_controls()
 
@@ -351,7 +424,7 @@ class TraceDialog(QDialog):
         self.evidence.show()
         for flow in self.connections[row].evidence:
             self.evidence.addItem(
-                f"{flow.created} • {flow.amount:f} {flow.asset} • "
+                f"{flow.created} • {flow.operation_type} • {flow.amount:f} {flow.asset} • "
                 f"Operation {flow.operation} • TX {flow.transaction}"
             )
             item = self.evidence.item(self.evidence.count() - 1)
