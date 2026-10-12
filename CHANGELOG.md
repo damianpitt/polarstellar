@@ -83,8 +83,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   Reviewed the expanded window at 1120 × 931 with both observation rows and transaction
   evidence. Source startup smoke now exercises local path/merge parsing, distinct amount
   semantics and type filters without additional HTTP requests.
-- Source CI checks Linux, macOS and Windows after push. No native 0.0.16 artifacts have
-  been built or uploaded; earlier native validation remains historical.
+- [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/38196376473)
+  passed on Linux, macOS and Windows: all 261 tests, Ruff, locked dependency installation,
+  version checks and source/wheel builds succeeded on each platform. No native 0.0.16
+  artifacts have been built or uploaded; earlier native validation remains historical.
 
 ## [0.0.15] - 2026-10-11
 
