@@ -116,15 +116,65 @@ async def validate(window, root, screenshot=None):
     assert nx.shortest_path(graph, address, issuer) == [address, issuer]
     # Exercise the new trace controls locally; opening/applying a trace is not a
     # request to expand accounts or fetch additional activity.
+    from polarstellar.stellar.activity import ActivityKind, parse_page
     from polarstellar.ui.trace_view import TraceDialog
 
     trace = TraceDialog(window.activity_views[2], window)
+    # Local fixture records exercise the two distinct semantic containers without
+    # adding network requests to packaging/source startup validation.
+    common = {
+        "transaction_successful": True,
+        "created_at": "2026-10-01T00:00:00Z",
+        "transaction_hash": "0" * 64,
+        "source_account": address,
+    }
+    trace.trace.add_page(
+        address,
+        parse_page(
+            {
+                "_embedded": {
+                    "records": [
+                        {
+                            **common,
+                            "id": "2",
+                            "paging_token": "2",
+                            "type": "account_merge",
+                            "account": address,
+                            "into": issuer,
+                        },
+                        {
+                            **common,
+                            "id": "1",
+                            "paging_token": "1",
+                            "type": "path_payment_strict_send",
+                            "from": address,
+                            "to": issuer,
+                            "source_asset_type": "native",
+                            "source_amount": "1.0000001",
+                            "asset_type": "native",
+                            "amount": "1.0000000",
+                            "destination_min": "0",
+                            "path": [],
+                        },
+                    ]
+                }
+            },
+            address,
+            trace.trace.network,
+            ActivityKind.PAYMENTS,
+            "fixture",
+            None,
+        ),
+    )
+    trace.rebuild()
+    assert len(trace.links) == 2 and not trace.connections
     trace.from_time.setText("2026-10-01T00:00:00Z")
-    trace.operation_type.setCurrentIndex(2)
+    trace.operation_type.setCurrentIndex(trace.operation_type.findText("Account merges"))
     trace.apply_filters()
-    assert trace.export_document()["metadata"]["trace_filters"]["operation_types"] == [
-        "create_account"
-    ]
+    exported = trace.export_document()
+    assert exported["metadata"]["trace_filters"]["operation_types"] == ["account_merge"]
+    assert exported["records"][0]["source_amount"] is None
+    assert not exported["metadata"]["paths"]
     trace.reject()
     checks.append("networkx_relationship_model")
     # TLS is constructed locally to verify packaged CA certificates and SSL support.

@@ -7,8 +7,9 @@ from decimal import Decimal, localcontext
 import networkx as nx
 
 from polarstellar.analysis.trace_filters import (
+    DIRECT_TYPES,
     FILTER_REASONS,
-    OPERATION_TYPES,
+    LINK_TYPES,
     TraceFilters,
     instant,
 )
@@ -45,39 +46,42 @@ class Trace:
         for page in pages[:MAX_PAGES]:
             self.add_page(root, page)
 
-    def build(self, view_filters=None):
-        """Deduplicate operations across accounts and return connections, exclusions and distances.
+    def observations(self, view_filters=None):
+        """Deduplicate all supported evidence before filtering and return discovery distances.
 
-        Conflicting observations of an operation are excluded rather than silently choosing
-        one amount. Missing, failed, self, foreign-network and unsupported transfers never
-        contribute to totals. Graph distance is undirected discovery distance, not flow direction.
+        A path payment/merge is a relationship observation, never an inferred direct
+        transfer. Discovery uses valid observations even if hidden by local filters.
+        Conflicting representations, wrong networks/parties and ambiguous records
+        are excluded before selection, so filters cannot conceal contradictions.
         """
         records, conflicts = {}, set()
         for address, pages in self.pages.items():
             for page in pages:
                 for record in page.records:
-                    flow = record.transfer
+                    flow = record.transfer or record.link
                     if flow is not None and (
-                        flow.network != self.network or address not in (flow.sender, flow.recipient)
+                        flow.network != self.network
+                        or address not in (flow.sender, flow.recipient)
+                        or flow.operation != record.identifier
+                        or (record.transfer is not None and record.link is not None)
                     ):
                         conflicts.add(record.identifier)
                     previous = records.get(record.identifier)
                     if previous is not None and previous != record:
                         conflicts.add(record.identifier)
                     records[record.identifier] = record
-        excluded = Counter()
-        groups = {}
+        excluded, selected = Counter(), []
         graph = nx.Graph()
         graph.add_node(self.root)
         for identifier, record in records.items():
-            flow = record.transfer
+            flow = record.transfer or record.link
             if identifier in conflicts:
                 excluded["Conflicting or mismatched observation"] += 1
             elif flow is None:
                 excluded[record.exclusion or "Unsupported operation"] += 1
             elif flow.sender == flow.recipient:
                 excluded["Self transfer"] += 1
-            elif flow.operation_type not in OPERATION_TYPES:
+            elif flow.operation_type not in (DIRECT_TYPES if record.transfer else LINK_TYPES):
                 excluded["Unsupported transfer operation type"] += 1
             else:
                 try:
@@ -85,22 +89,49 @@ class Trace:
                 except ValueError:
                     excluded["Invalid/unknown transfer time"] += 1
                     continue
-                # Expansion eligibility/depth is based on all valid loaded relationships,
-                # independent of local display filters. Hiding links must not relax caps.
+                # Intermediate path assets are not accounts. Only observed endpoints
+                # enter discovery; hiding an edge cannot relax depth/account/page caps.
                 graph.add_edge(flow.sender, flow.recipient)
                 reason = view_filters.reason(flow) if view_filters is not None else ""
                 if reason:
                     excluded[reason] += 1
                 else:
-                    groups.setdefault((flow.sender, flow.recipient, flow.asset), []).append(flow)
+                    selected.append(flow)
+        distances = dict(nx.single_source_shortest_path_length(graph, self.root))
+        return selected, dict(excluded), distances
+
+    def build(self, view_filters=None):
+        """Sum only direct payment/funding evidence; return all observation discovery distances.
+
+        Path payments have different sent/received amounts and merges have unknown
+        balances. Keeping them outside this aggregation also prevents routes from
+        implying asset conversion or financial continuity across those operations.
+        """
+        selected, excluded, distances = self.observations(view_filters)
+        groups = {}
+        for flow in selected:
+            if isinstance(flow, Transfer):
+                groups.setdefault((flow.sender, flow.recipient, flow.asset), []).append(flow)
         connections = []
         for (sender, recipient, asset), evidence in sorted(groups.items()):
             with localcontext() as context:
                 context.prec = 80
                 total = sum((flow.amount for flow in evidence), Decimal(0))
             connections.append(Connection(sender, recipient, asset, total, tuple(evidence)))
-        distances = dict(nx.single_source_shortest_path_length(graph, self.root))
-        return connections, dict(excluded), distances
+        return connections, excluded, distances
+
+    def links(self, view_filters=None, asset=None):
+        """Return separate path/merge operations matching either endpoint asset and applied filters."""
+        selected, _, _ = self.observations(view_filters)
+        return sorted(
+            (
+                flow
+                for flow in selected
+                if not isinstance(flow, Transfer) and flow.matches_asset(asset)
+            ),
+            key=lambda flow: int(flow.operation),
+            reverse=True,
+        )
 
     def reason(self, address):
         """Explain why another page cannot be fetched, or return an empty string if allowed."""
@@ -178,6 +209,7 @@ class Trace:
         connections, excluded, distances = (
             self.build(view_filters) if view_filters is not None else self.build()
         )
+        links = self.links(view_filters, asset)
         filtered = {key: excluded.pop(key) for key in FILTER_REASONS if key in excluded}
         accounts = []
         for address, pages in self.pages.items():
@@ -187,7 +219,8 @@ class Trace:
                     try:
                         # Compare instants, not strings: offsets can otherwise reverse
                         # min/max ordering. Coverage remains for all fetched records.
-                        created = record.transfer.created if record.transfer else record.values[0]
+                        flow = record.transfer or record.link
+                        created = flow.created if flow else record.values[0]
                         times.append(instant(created))
                     except (ValueError, IndexError):
                         unknown_times += 1
@@ -219,7 +252,11 @@ class Trace:
             "trace_filters": (view_filters or TraceFilters()).metadata(),
             "matching_unique_operations_before_asset_filter": sum(
                 len(edge.evidence) for edge in connections
-            ),
+            )
+            + len(self.links(view_filters)),
+            "separate_operation_links": len(links),
+            "routes_scope": "Direct payment/funding edges only; path payments and merges never enter same-asset routes",
+            "operation_link_semantics": "Per-operation source/destination observations, not totals; merge amounts are unknown. Intermediary assets are not accounts.",
             "expansion_scope": "Unfiltered valid loaded relationships; display filters never change fetch/depth limits",
             "asset_filter": asset,
             "target": target,
@@ -233,7 +270,7 @@ class Trace:
                 "canvas_nodes": CANVAS_NODES,
             },
             "seed_truncated": self.seed_truncated,
-            "coverage": "Loaded successful direct payments/funding only; applied time/type filters select evidence locally. Deduplicated by "
+            "coverage": "Loaded successful direct payment/funding totals and separate path-payment/merge observations; applied time/type filters select evidence locally. Deduplicated by "
             "operation ID. Paths are observed connections, not proof of the same funds, "
             "chronological flow, ownership, or complete history. No cross-hop totals.",
         }
@@ -241,5 +278,10 @@ class Trace:
         return document(
             "expanded_graph",
             metadata,
-            [edge for edge in connections if asset is None or edge.asset == asset],
+            [
+                {"record_kind": "direct_transfer_total", **plain(edge)}
+                for edge in connections
+                if asset is None or edge.asset == asset
+            ]
+            + [{"record_kind": "operation_link", **plain(link)} for link in links],
         )

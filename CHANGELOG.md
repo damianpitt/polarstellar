@@ -10,6 +10,82 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.16] - 2026-10-12
+
+### Added — broader tracing operation coverage
+
+- In **Graph → Explore multiple hops**, added a **Path payments / merges (individual
+  observations)** tab beside **Direct payment / funding totals**. Successful strict-send
+  and strict-receive path payments show actual sent/source and received/destination sides
+  with exact decimals and full issuer identities. They remain per-operation observations,
+  not aggregated direct transfers, even when both endpoint assets are identical.
+- Selecting an observation reveals original time/type, operation ID, transaction hash,
+  ordered intermediary assets and the requested `destination_min`/`source_max` separately
+  from actual amounts. Double-click evidence opens the transaction inspector. Asset paths
+  do not identify intermediary accounts, liquidity providers, ownership or exchange rates.
+- Successful account merges show the removed `account` and receiving `into` account.
+  Both XLM amount fields remain unknown (JSON null / blank CSV), never zero or a guessed
+  balance. Unexpected provider amount fields cannot override this rule. Effects/result
+  decoding for merge amounts is not implemented.
+- Dashed gold arrows identify path/merge endpoint relationships. These endpoints can be
+  selected for manual expansion within the existing depth/account/page bounds. The
+  one-hop counterparty graph retains direct-payment/funding-only totals. Same-asset routes
+  also remain direct-payment/funding-only: conversions and merges never enter route queries.
+
+### Filters, coverage and accuracy
+
+- Added **All supported operations** as the default type selection, plus payments/funding,
+  individual payment/funding types, either path-payment type/both, and merges. Clear time/
+  type restores all five supported types and all times without discarding pages/cursors.
+  Existing inclusive timezone-aware intervals apply to the new observations; unsubmitted
+  or invalid edits retain prior applied results and exports.
+- Endpoint asset filtering matches either source or destination with exact issuer identity.
+  Intermediary assets alone do not match. New pages honor the currently applied selection;
+  local filtering/tab changes make no requests and do not cancel pending expansion.
+- Unique operation IDs are deduplicated across accounts before selection. Conflicting
+  representations, mismatched networks/parties/operation IDs, ambiguous transfer/link
+  records, failed/self operations and invalid times remain excluded. Missing/invalid
+  path actuals/assets/paths/limits do not become graph links; displayable rows and full
+  loaded coverage remain available with explicit exclusion reasons.
+- Strict path quantities retain at most seven decimal places and the signed 64-bit
+  ledger amount bound. Negative, nonfinite, exponent-form, excess-precision amounts and
+  contradictory requested limits are refused; a zero destination minimum is accepted.
+  Corrupt typed cache links also fail semantic validation before reaching the UI.
+- Discovery uses unfiltered valid endpoints, including the new observation kinds, with
+  unchanged three-hop, ten-account, five-page, 100-route and 40-node canvas limits. Asset
+  path entries cannot consume or bypass account hops. Filters do not relax caps, reset
+  cursors, trigger crawling, or guarantee complete history or fund continuity.
+
+### Export, storage and compatibility
+
+- Expanded CSV/JSON and saved investigation snapshots distinguish `direct_transfer_total`
+  records from `operation_link` records. Only direct-total rows have a total; observation
+  rows carry actual endpoint amounts/assets, original operation evidence, path and limits.
+  Additive schema-1 metadata explains observation/route scope and counts, alongside full
+  page provenance, applied filters, coverage and exclusions. Consumers should inspect
+  `record_kind` before interpreting amounts. Activity exports also retain normalized links.
+- Added an immutable, validated OperationLink model and optional ActivityRecord link.
+  Cache format keys move from revision 2 to 3 so old activity is refetched on explicit
+  lookup instead of guessing new fields. SQLite schema/TTL and saved historical JSON
+  remain unchanged; old investigations still reopen offline. Dependencies are unchanged.
+- Updated package/header/lock metadata, README, specification and release documentation
+  to 0.0.16 with human-readable code explanations. Native builds/uploads stay paused;
+  Mac Intel remains excluded.
+
+### Validation
+
+- Local validation: all 261 tests and Ruff passed, including 28 new cases for both path
+  types, actual-versus-requested quantities, ledger precision/range, issuer identity,
+  invalid/incomplete details, unknown merge balances, same-asset path separation,
+  deduplication/conflicts, discovery depth, time/type/asset filters, mixed CSV/JSON,
+  offline investigation storage, incompatible/corrupt cache data and stale responses.
+- Locked dependency checks and source/wheel builds passed with unchanged dependencies.
+  Reviewed the expanded window at 1120 × 931 with both observation rows and transaction
+  evidence. Source startup smoke now exercises local path/merge parsing, distinct amount
+  semantics and type filters without additional HTTP requests.
+- Source CI checks Linux, macOS and Windows after push. No native 0.0.16 artifacts have
+  been built or uploaded; earlier native validation remains historical.
+
 ## [0.0.15] - 2026-10-11
 
 ### Added — local time and operation-type tracing controls

@@ -4,7 +4,7 @@ import asyncio
 import math
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -19,10 +19,17 @@ from PySide6.QtWidgets import (
     QSplitter,
     QTableWidget,
     QTableWidgetItem,
+    QTabWidget,
     QVBoxLayout,
 )
 
-from polarstellar.analysis.trace_filters import TraceFilters, instant
+from polarstellar.analysis.trace_filters import (
+    DIRECT_TYPES,
+    LINK_TYPES,
+    OPERATION_TYPES,
+    TraceFilters,
+    instant,
+)
 from polarstellar.analysis.tracing import CANVAS_NODES, MAX_PATHS, Trace
 from polarstellar.stellar.activity import ActivityKind
 from polarstellar.stellar.providers import AccountError
@@ -46,6 +53,7 @@ class TraceDialog(QDialog):
         self.tasks = set()
         self.edges = []
         self.connections = []
+        self.links = []
         self.view_filters = None
         self.setWindowTitle(f"Expanded graph • {self.trace.network.value}")
         self.resize(1120, 850)
@@ -103,9 +111,14 @@ class TraceDialog(QDialog):
             )
         self.operation_type = QComboBox()
         self.operation_type.setAccessibleName("Trace operation type filter")
-        self.operation_type.addItem("Payments and funding", ("payment", "create_account"))
+        self.operation_type.addItem("All supported operations", OPERATION_TYPES)
         self.operation_type.addItem("Direct payments", ("payment",))
         self.operation_type.addItem("Account funding", ("create_account",))
+        self.operation_type.addItem("Payments and funding", DIRECT_TYPES)
+        self.operation_type.addItem("Path payments (both types)", LINK_TYPES[:2])
+        self.operation_type.addItem("Path payment: strict send", (LINK_TYPES[0],))
+        self.operation_type.addItem("Path payment: strict receive", (LINK_TYPES[1],))
+        self.operation_type.addItem("Account merges", ("account_merge",))
         apply = QPushButton("Apply time / type")
         apply.clicked.connect(self.apply_filters)
         clear = QPushButton("Clear time / type")
@@ -114,7 +127,7 @@ class TraceDialog(QDialog):
             time_row.addWidget(widget)
         layout.addLayout(time_row)
         self.filter_status = QLabel(
-            "Applied: all times, payments and funding. Edits apply only on Apply time / type."
+            "Applied: all times, all supported operations. Edits apply only on Apply time / type."
         )
         self.filter_status.setWordWrap(True)
         self.filter_status.setTextFormat(Qt.TextFormat.PlainText)
@@ -133,10 +146,31 @@ class TraceDialog(QDialog):
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.itemSelectionChanged.connect(self.show_evidence)
-        split.addWidget(self.table)
+        self.operation_table = QTableWidget(0, 5)
+        self.operation_table.setHorizontalHeaderLabels(
+            [
+                "Sender",
+                "Recipient",
+                "Operation type",
+                "Sent / received (not a total)",
+                "Operation ID",
+            ]
+        )
+        self.operation_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.operation_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.operation_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.setMinimumHeight(110)
+        self.operation_table.setMinimumHeight(110)
+        self.operation_table.itemSelectionChanged.connect(self.show_link_evidence)
+        self.tables = QTabWidget()
+        self.tables.addTab(self.table, "Direct payment / funding totals")
+        self.tables.addTab(self.operation_table, "Path payments / merges (individual observations)")
+        # A shared evidence panel must never show a stale selection from the other tab.
+        self.tables.currentChanged.connect(self.refresh_evidence)
+        split.addWidget(self.tables)
         layout.addWidget(split, 1)
         self.evidence = QListWidget()
-        self.evidence.setMaximumHeight(90)
+        self.evidence.setMaximumHeight(110)
         self.evidence.hide()
         self.evidence.setToolTip("Double-click evidence to inspect the transaction")
         self.evidence.itemDoubleClicked.connect(
@@ -145,11 +179,11 @@ class TraceDialog(QDialog):
         layout.addWidget(self.evidence)
         self.paths = QPlainTextEdit()
         self.paths.setReadOnly(True)
-        self.paths.setMaximumHeight(110)
+        self.paths.setMaximumHeight(80)
         layout.addWidget(self.paths)
         self.coverage = QPlainTextEdit()
         self.coverage.setReadOnly(True)
-        self.coverage.setMaximumHeight(120)
+        self.coverage.setMaximumHeight(100)
         layout.addWidget(self.coverage)
         self.export = ExportControls(self.export_document)
         self.export.setEnabled(True)
@@ -190,7 +224,7 @@ class TraceDialog(QDialog):
         self.operation_type.setCurrentIndex(0)
         self.view_filters = None
         self.filter_status.setText(
-            "Applied: all times, payments and funding. Edits apply only on Apply time / type."
+            "Applied: all times, all supported operations. Edits apply only on Apply time / type."
         )
         self.render()
 
@@ -214,6 +248,7 @@ class TraceDialog(QDialog):
     def rebuild(self):
         """Refresh discovered nodes and assets, preserving user selections where possible."""
         connections, _, distances = self.trace.build()
+        links = self.trace.links()
         for combo, values, default in (
             (
                 self.account,
@@ -223,7 +258,14 @@ class TraceDialog(QDialog):
             (self.target, sorted(set(distances) - {self.trace.root}), "Choose path target"),
             (
                 self.asset,
-                sorted({edge.asset for edge in connections}),
+                sorted(
+                    {edge.asset for edge in connections}
+                    | {
+                        asset
+                        for link in links
+                        for asset in (link.source_asset, link.destination_asset)
+                    }
+                ),
                 "All assets (choose one for paths)",
             ),
         ):
@@ -315,6 +357,8 @@ class TraceDialog(QDialog):
         connections, _, distances = self.trace.build(self.view_filters)
         asset = self.asset.currentData()
         self.connections = [edge for edge in connections if asset is None or edge.asset == asset]
+        self.links = self.trace.links(self.view_filters, asset)
+        self.operation_table.setRowCount(0)
         self.table.setRowCount(0)
         self.evidence.clear()
         self.evidence.hide()
@@ -335,8 +379,25 @@ class TraceDialog(QDialog):
         self.table.resizeColumnsToContents()
         for column in (0, 1, 2):
             self.table.setColumnWidth(column, 200)
+        for row, link in enumerate(self.links):
+            self.operation_table.insertRow(row)
+            for column, value in enumerate(
+                (
+                    link.sender,
+                    link.recipient,
+                    link.operation_type,
+                    link.description(),
+                    link.operation,
+                )
+            ):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                self.operation_table.setItem(row, column, item)
+        self.operation_table.resizeColumnsToContents()
+        for column in (0, 1, 2, 3):
+            self.operation_table.setColumnWidth(column, 200 if column != 3 else 360)
         addresses = {self.trace.root}
-        for edge in self.connections:
+        for edge in [*self.connections, *self.links]:
             addresses.update((edge.sender, edge.recipient))
         visible = sorted(addresses, key=lambda address: (distances.get(address, 999), address))[
             :CANVAS_NODES
@@ -367,6 +428,20 @@ class TraceDialog(QDialog):
                         f"{edge.total:f} {edge.asset} • {len(edge.evidence)} operations",
                     )
                 )
+        for link in self.links:
+            if link.sender in nodes and link.recipient in nodes:
+                arrow = Edge(
+                    self.scene,
+                    nodes[link.sender],
+                    nodes[link.recipient],
+                    f"{link.operation_type} • {link.description()} • Operation {link.operation}",
+                )
+                # Dashed lines distinguish observations from numeric direct-transfer
+                # totals; labels and the separate tab carry the same distinction.
+                pen = QPen(QColor("#e2b76d"), 2, Qt.PenStyle.DashLine)
+                arrow.line.setPen(pen)
+                arrow.arrow.setBrush(QColor("#e2b76d"))
+                self.edges.append(arrow)
         self.canvas.fitInView(
             self.scene.itemsBoundingRect().adjusted(-40, -40, 40, 40),
             Qt.AspectRatioMode.KeepAspectRatio,
@@ -374,9 +449,10 @@ class TraceDialog(QDialog):
         self.summary.setText(
             f"{self.trace.network.value} • Root: {self.trace.root}\n"
             f"{len(self.trace.pages)}/10 fetched accounts • Up to 3 hops, 5 pages/account. "
-            f"Canvas {len(visible)}/{len(addresses)} nodes; table includes all filtered edges.\n"
+            f"Canvas {len(visible)}/{len(addresses)} nodes; tables retain all matching evidence.\n"
             "Local filters select evidence; expansion uses unfiltered discovered accounts. "
-            "Observed connections only — not proof of the same funds, chronology, or ownership."
+            "Dashed: path/merge observations, excluded from direct totals/routes. "
+            "No proof of the same funds, chronology, or ownership."
         )
         snapshot = self.export_document()
         lines = []
@@ -401,18 +477,51 @@ class TraceDialog(QDialog):
         self.coverage.setPlainText("\n".join(lines))
         routes = snapshot["metadata"]["paths"]
         self.paths.setPlainText(
-            f"Observed same-asset routes (up to {MAX_PATHS}; select table edges for transaction evidence):\n"
-            + "\n".join(" → ".join(route) for route in routes)
-            if routes
-            else (
-                "No observed route matches the applied filters in loaded evidence. "
-                "This does not prove no connection exists. Direction applies to routes, not the table."
-                if self.asset.currentData() and self.target.currentData()
-                else "Choose one asset and a target to find directed routes. No route in loaded "
-                "evidence does not prove no connection exists. Direction applies to routes, not the edge table."
+            "Routes use direct payment/funding only; path payments and merges are excluded.\n"
+            + (
+                f"Observed same-asset routes (up to {MAX_PATHS}; select table edges for transaction evidence):\n"
+                + "\n".join(" → ".join(route) for route in routes)
+                if routes
+                else (
+                    "No observed route matches the applied filters in loaded evidence. "
+                    "This does not prove no connection exists. Direction applies to routes, not the table."
+                    if self.asset.currentData() and self.target.currentData()
+                    else "Choose one asset and a target to find directed routes. No route in loaded "
+                    "evidence does not prove no connection exists. Direction applies to routes, not the edge table."
+                )
             )
         )
         self.update_controls()
+
+    def refresh_evidence(self, *_):
+        """Display evidence for the currently visible table, never a hidden stale row."""
+        if self.tables.currentIndex() == 1:
+            self.show_link_evidence()
+        else:
+            self.show_evidence()
+
+    def show_link_evidence(self):
+        """Expose actual endpoint amounts, requested limits and asset path with a transaction link."""
+        self.evidence.clear()
+        self.evidence.hide()
+        row = self.operation_table.currentRow()
+        if not 0 <= row < len(self.links):
+            return
+        link = self.links[row]
+        details = link.description()
+        if link.limit_name:
+            details += (
+                f"\nRequested {link.limit_name}: {link.limit_amount:f} (not an actual amount)"
+            )
+            details += " • Intermediary assets: " + (" → ".join(link.path) or "None")
+        self.evidence.addItem(
+            f"{link.created} • {link.operation_type} • Operation {link.operation}\n"
+            f"{details}\nTX {link.transaction}"
+        )
+        item = self.evidence.item(0)
+        item.setData(Qt.ItemDataRole.UserRole, link.transaction)
+        item.setToolTip(item.text())
+        self.evidence.show()
 
     def show_evidence(self):
         """Expose each unique supporting operation with its transaction and exact amount."""

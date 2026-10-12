@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.15 · Pre-alpha**
+**Current version: 0.0.16 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,13 +32,13 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.15 |
+| Area | Available in 0.0.16 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
 | Transaction inspection | Status, ledger, fees, memo, ordered operations, and raw Horizon data |
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
-| Relationship graph | Bounded multi-hop expansion, local time/type filters, same-asset routes and transaction evidence |
+| Relationship graph | Bounded multi-hop expansion, local time/type filters, direct-transfer routes and separate path/merge evidence |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
 | Contracts | Read-only instance details, raw XDR, and paginated RPC contract events |
 | Assets | Issued-asset discovery with exact filters/pagination, statistics, inspector shortcuts, and native XLM details |
@@ -60,7 +60,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.15; previously validated native artifacts are 0.0.11.
+The current source version is 0.0.16; previously validated native artifacts are 0.0.11.
 New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
@@ -189,7 +189,7 @@ to zoom, or use **Fit graph**. Failed requests can be retried; Cancel retains lo
 Expansion is limited to **three hops**, **ten fetched accounts**, and **five pages
 (100 records) per account**. Depth is the shortest undirected discovery distance from
 the root; directed routes are a separate query. The canvas shows up to **40 nodes**,
-while the edge table and exports keep all filtered evidence. The account selector also
+while the tables and exports keep all filtered evidence. The account selector also
 includes discovered nodes outside the canvas limit.
 
 Choose an asset (including its issuer), a target, and **From root** or **To root** to
@@ -201,7 +201,8 @@ double-click evidence to open the transaction inspector.
 These are **observed connections**, not proof that the same funds flowed through a
 route, that transfers occurred in chronological order, or that accounts share an owner.
 Amounts are never summed across hops. Only successful direct payments and account
-funding contribute. Overlapping pages are deduplicated by operation ID; conflicting
+funding contribute to numeric totals and same-asset routes. Path payments and merges
+are separate relationship observations, described below. Overlapping pages are deduplicated by operation ID; conflicting
 observations are excluded. No route in loaded evidence does not prove no connection.
 
 The coverage panel records each fetched account's loaded time range, source, retrieval
@@ -257,6 +258,44 @@ all available parsed statistics/flags, frozen filters, network, ascending query 
 per-page provenance and explicit coverage limits. Export makes no requests. Issuer
 metadata/TOML crawling, market data and contract-token discovery remain planned.
 
+### Path payments and account merges
+
+In **Graph → Explore multiple hops**, switch to **Path payments / merges (individual
+observations)**. Successful `path_payment_strict_send` and `path_payment_strict_receive`
+records show each operation's actual **sent amount/source asset** and **received
+amount/destination asset**. Asset identities retain the issuer. These sides are never
+combined into a single transfer amount or added to direct-payment totals, even when
+the endpoint asset is the same. Selecting either endpoint asset includes the observation;
+intermediary assets alone do not match the asset filter.
+
+Select a row to inspect the requested `destination_min` or `source_max` separately from
+actual amounts, the ordered intermediary asset path, original time, operation ID and
+transaction hash. Double-click evidence to inspect the transaction. Intermediary assets
+are **not intermediary accounts**: the view does not infer offers, liquidity providers,
+exchange rates, or custody from the asset path. Incomplete/invalid actual amounts,
+identities, paths or limits remain excluded with a coverage reason.
+
+Successful `account_merge` records show the removed account and the destination account,
+with **unknown XLM balance amount**. Horizon's operation record supplies no merged amount;
+it is never displayed as zero or guessed from an account balance. Effects/result-based
+merge amount recovery is not implemented.
+
+Path/merge endpoint relationships use **dashed gold arrows** and may reveal accounts for
+manual expansion within the existing limits. They are excluded from the direct totals tab
+and same-asset routes. The one-hop counterparty view continues to show direct payment/
+funding totals only; use expanded tracing for the broader observations.
+
+CSV/JSON and saved investigations contain separate `record_kind` values:
+`direct_transfer_total` rows carry totals and supporting evidence; `operation_link` rows
+carry individual source/destination observations, requested limits and intermediary assets.
+Merge amounts are JSON `null` (blank CSV cells), never zero. Metadata explains these
+semantics alongside filters, per-account coverage and exclusions. Exports remain schema 1
+with additive fields; consumers should use `record_kind` before reading an amount.
+
+The normalization follows Stellar's [strict-send reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/operations/object/path-payment-strict-send),
+[strict-receive reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/operations/object/path-payment-strict-receive)
+and [account-merge reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/operations/object/account-merge).
+
 ### Advanced tracing filters
 
 In **Graph → Explore multiple hops**, use **From** and **Until** with **Apply time / type**
@@ -267,17 +306,18 @@ up to six decimal places. Date-only, naive local times, invalid ranges and exces
 are refused rather than guessed or truncated. Comparisons and exported boundaries normalize
 to UTC; each operation's original timestamp stays in its supporting evidence.
 
-Choose **Payments and funding**, **Direct payments**, or **Account funding**. These select
-the already-supported successful `payment` and `create_account` operations. They do not
-add path payments, merges, failed operations, pool shares or other unsupported transfers
-to totals. **Clear time / type** restores both types/all times without losing pages.
+Choose **All supported operations** (the default), **Payments and funding**, **Direct
+payments**, **Account funding**, either path-payment type or both, or **Account merges**.
+The selected types apply to both direct totals and the separate operation observations.
+Failed/self operations and other unsupported records remain excluded. **Clear time / type**
+restores all supported types/all times without losing pages.
 
 Edits remain unapplied until **Apply time / type**. Invalid edits retain the previously
 applied graph, routes and export state. Filtering is local and makes no requests, including
 while expansion is pending. Newly accepted pages are evaluated using the applied filters.
 Asset and route-direction controls continue to work alongside time/type selection.
 
-Totals, canvas/table edges, routes and supporting transaction evidence reflect only the
+Totals, canvas/table edges, separate observations, routes and transaction evidence reflect only the
 matching operations. Evidence now shows operation type as well as original time, exact
 amount, operation ID and transaction hash. Double-click evidence to open its transaction.
 Time windows constrain observations; routes still do **not** prove chronological movement,
@@ -296,7 +336,7 @@ naive transfer timestamps never contribute to expanded-trace totals. CSV/JSON ex
 saved investigation traces retain the applied normalized interval/types, matching evidence,
 route query, unfiltered page provenance/cursors and unchanged limits. Older saved traces
 remain readable offline. The response-cache format revision changed for typed transfer
-evidence: old snapshots miss the new keys and explicit lookups refetch; cache database
+and operation-link evidence: old snapshots miss the new keys and explicit lookups refetch; cache database
 schema/TTL settings and saved investigations are unchanged.
 
 ### Optional local cache
@@ -609,12 +649,12 @@ Portable native packaging is implemented. Further planned areas include:
 
 - Broader asset metadata and contract-token discovery.
 - Watchlist batch refresh/change comparison and expanded investigation organization.
-- Broader tracing operation coverage and chronological evidence tools.
+- Chronological evidence tools and effects/result-based operation enrichment.
 - Advanced contract specifications, storage-key discovery, and richer event interpretation.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.15. The detailed release
+These are **planned capabilities**, not features available in 0.0.16. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

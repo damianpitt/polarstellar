@@ -4,7 +4,9 @@ import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-OPERATION_TYPES = ("payment", "create_account")
+DIRECT_TYPES = ("payment", "create_account")
+LINK_TYPES = ("path_payment_strict_send", "path_payment_strict_receive", "account_merge")
+OPERATION_TYPES = (*DIRECT_TYPES, *LINK_TYPES)
 FILTER_REASONS = ("Operation type filter", "Outside selected time range")
 
 
@@ -51,7 +53,7 @@ class TraceFilters:
             or any(kind not in OPERATION_TYPES for kind in self.operations)
             or len(set(self.operations)) != len(self.operations)
         ):
-            raise ValueError("Choose direct payments, account funding, or both.")
+            raise ValueError("Choose supported payment, funding, path-payment or merge types.")
 
     def reason(self, flow):
         """Return one deterministic filtering reason; an operation is never counted twice."""
@@ -71,5 +73,5 @@ class TraceFilters:
             "until_utc": self.end.astimezone(UTC).isoformat() if self.end else None,
             "operation_types": list(self.operations),
             "time_bounds": "inclusive",
-            "scope": "Local selection of loaded successful direct payments/account funding only",
+            "scope": "Local selection of loaded successful direct transfers and separate path/merge observations",
         }

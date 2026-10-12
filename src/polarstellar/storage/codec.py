@@ -9,7 +9,7 @@ from types import UnionType
 from typing import get_args, get_origin, get_type_hints
 
 from polarstellar.stellar.activity import ActivityKind, ActivityPage, ActivityRecord
-from polarstellar.stellar.models import Account, Balance, Network, Transfer
+from polarstellar.stellar.models import Account, Balance, Network, OperationLink, Transfer
 from polarstellar.stellar.transaction import OperationDetail, TransactionDetail
 
 # Cache files can only reconstruct these known data containers, never arbitrary classes.
@@ -19,6 +19,7 @@ TYPES = {
         Account,
         Balance,
         Transfer,
+        OperationLink,
         ActivityPage,
         ActivityRecord,
         TransactionDetail,

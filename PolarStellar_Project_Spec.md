@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.15 with account/activity inspection, bounded multi-hop graphs with local time/operation-type filters, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.16 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1856,3 +1856,39 @@ matching evidence/routes and full fetch provenance/limits. Older saved JSON is u
 Transfer evidence now stores operation_type; cache format keys move from revision 1 to 2
 so old snapshots are refetched on explicit lookup rather than assigning guessed types.
 SQLite schemas/TTL/dependencies remain unchanged. Native builds/uploads remain paused.
+
+
+## V0.0.16 implemented slice — broader operation observations
+
+Expanded tracing now normalizes successful path-payment strict-send/strict-receive and
+account-merge records from the existing account Payments endpoint. These are separate
+OperationLink observations, never direct Transfer values. Actual source/destination
+amounts and assets retain exact decimals and issuer identity; source_max/destination_min
+remain explicit requested limits. Ordered path assets are not inferred accounts or
+liquidity providers. Account merges use explicit account/into endpoints and retain unknown
+XLM balance amounts, even if an unexpected amount field is present.
+
+The expanded graph has separate direct-total and operation-observation tabs; dashed gold
+arrows distinguish additional relationships. Selecting observation evidence reveals actual
+sides, limits/path, original time/operation ID and a transaction-inspector shortcut. The
+one-hop graph retains its direct-payment/funding-only totals. Same-asset routes still use
+only direct transfers/funding; path payments never enter them, including same-asset paths.
+
+All five supported operation types participate in local time/type selection, defaulting
+to all supported types. Asset filtering matches either endpoint identity, never intermediate
+assets alone. Unfiltered valid endpoints determine discovery/depth and manual expansion
+within existing three-hop, ten-account, five-page, 100-route and 40-canvas-node bounds.
+Overlapping evidence is deduplicated; conflicts, failed/self operations, wrong networks,
+invalid timestamps and incomplete/invalid path details remain excluded before filtering.
+Filtering and tab changes make no requests; cancellation/stale-result protection persists.
+
+CSV/JSON and offline investigations keep direct_transfer_total and operation_link records
+separate with additive record_kind fields. Merge amounts remain null/blank, never zero.
+Full loaded coverage, cache/source/cursor provenance, applied filters and routes remain
+attached. Cache key revision 3 refetches incompatible older activity on explicit lookup;
+SQLite schemas, TTL, dependencies and previously saved JSON investigations are unchanged.
+
+No new endpoint, effect/result decoding, chronological continuity claim, automatic crawl,
+conversion route, exchange-rate estimate or cross-hop amount is introduced. Native builds
+and release uploads remain paused; Mac Intel remains excluded. The next tracing slice is
+chronological evidence tools: ordered observations with explicit ambiguity/coverage limits.

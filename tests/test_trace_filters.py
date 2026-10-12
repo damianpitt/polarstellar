@@ -73,10 +73,10 @@ def test_invalid_or_naive_time_is_refused(value):
 
 @pytest.mark.parametrize(
     "operations",
-    [(), ("account_merge",), ("payment", "payment"), ["payment"], ("path_payment_strict_send",)],
+    [(), ("set_options",), ("payment", "payment"), ["payment"], ("invoke_host_function",)],
 )
 def test_invalid_operation_filter_is_refused(operations):
-    """Only explicitly supported direct transfer types can be selected or summed."""
+    """Unsupported types, duplicates and invalid containers cannot become filter selections."""
     with pytest.raises(ValueError):
         TraceFilters(operations=operations)
 
@@ -215,6 +215,9 @@ def test_ui_applied_state_bad_edits_and_clear_keep_pagination(app):
     assert dialog.export_document()["metadata"]["trace_filters"]["operation_types"] == [
         "payment",
         "create_account",
+        "path_payment_strict_send",
+        "path_payment_strict_receive",
+        "account_merge",
     ]
     dialog.apply_filters()
     assert dialog.table.rowCount() == 1 and dialog.connections[0].total == Decimal("0.0000002")

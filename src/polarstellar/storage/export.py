@@ -80,6 +80,7 @@ def activity_document(view):
             identifier=record.identifier,
             cursor=record.cursor,
             transfer=record.transfer,
+            link=record.link,
             exclusion=record.exclusion,
         )
         rows.append(row)
