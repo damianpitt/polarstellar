@@ -73,8 +73,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   and coverage. Locked dependency checks and source/wheel builds passed; dependencies
   remain unchanged. Source startup smoke also exercises local timeline selection/order and
   hidden-peer ambiguity with unknown merge amounts, without additional HTTP requests.
-- Source CI checks Linux, macOS and Windows after push. No native 0.0.17 artifacts are
-  built/uploaded; earlier native packaging results remain separate.
+- [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/38372519284)
+  passed on Linux, macOS and Windows: all 275 tests, Ruff, locked dependency installation,
+  version checks and source/wheel builds succeeded on each platform. No native 0.0.17
+  artifacts are built/uploaded; earlier native packaging results remain separate.
 
 ## [0.0.16] - 2026-10-12
 
