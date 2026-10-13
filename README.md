@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.16 · Pre-alpha**
+**Current version: 0.0.17 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,13 +32,13 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.16 |
+| Area | Available in 0.0.17 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
 | Transaction inspection | Status, ledger, fees, memo, ordered operations, and raw Horizon data |
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
-| Relationship graph | Bounded multi-hop expansion, local time/type filters, direct-transfer routes and separate path/merge evidence |
+| Relationship graph | Bounded multi-hop expansion, local time/type filters, direct-transfer routes, separate path/merge evidence and chronological timelines |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
 | Contracts | Read-only instance details, raw XDR, and paginated RPC contract events |
 | Assets | Issued-asset discovery with exact filters/pagination, statistics, inspector shortcuts, and native XLM details |
@@ -60,7 +60,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.16; previously validated native artifacts are 0.0.11.
+The current source version is 0.0.17; previously validated native artifacts are 0.0.11.
 New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
@@ -295,6 +295,50 @@ with additive fields; consumers should use `record_kind` before reading an amoun
 The normalization follows Stellar's [strict-send reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/operations/object/path-payment-strict-send),
 [strict-receive reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/operations/object/path-payment-strict-receive)
 and [account-merge reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/operations/object/account-merge).
+
+### Chronological evidence timeline
+
+In **Graph → Explore multiple hops**, select **Timeline** to see individual loaded
+payment, funding, path-payment and merge observations ordered by UTC time. Choose
+**Oldest first** or **Newest first**, and use **Timeline focus** to show operations
+involving a particular discovered account. Account focus matches either endpoint;
+selecting it does not fetch that account. The existing applied time/type and asset
+filters also apply. Graph route target and direction do not select timeline rows.
+
+Original timestamps remain in supporting evidence; offsets normalize only for comparison.
+Operations at the same instant have a **Shared timestamp** label. The count includes all
+valid unique supported loaded observations before filters/focus, so hiding a peer does not
+erase known timing ambiguity. Equal-time rows use deterministic operation-ID display
+order, with the same tie order in both directions. IDs are not decoded into execution
+order. Even distinct timestamps do not prove fund continuity, ownership or custody.
+
+**Earlier selected gap (s)** is exact elapsed time from the earlier distinct selected
+UTC timestamp. The earliest group has no earlier gap; every row in a shared group has
+that group's gap. This meaning stays the same in newest-first order. Gaps are between
+selected observations, not proof of inactivity, missing records or complete interval
+coverage. No running balance, conversion route or cross-hop monetary total is calculated.
+
+Select a row for original/UTC times, exact amount evidence, timestamp ambiguity and the
+source account/page, source endpoint, cache label and original retrieval time of every
+loaded copy. Duplicate observations appear once but retain their source-page provenance.
+Path sides/limits/intermediary assets remain separate; merge amounts remain unknown.
+Double-click a timeline row or its evidence to open the supporting transaction inspector.
+Failed, unsupported, self, conflicting, wrong-network and invalid-time observations retain
+existing exclusions and never become ordered supported rows.
+
+With **Timeline** visible, **Export CSV / JSON** and **Save timeline to selected
+investigation** create a standalone `trace_timeline` snapshot. Each `timeline_operation`
+record keeps exact amounts, original evidence, UTC time, timing/gap labels and `observed_in`
+page provenance. Metadata records applied filters, focus/order, counts, selected span and
+full unfiltered trace coverage/cursors/limits. Graph tabs still export/save `expanded_graph`.
+Empty timelines retain metadata. Saved timelines reopen as frozen JSON in the offline
+evidence viewer; selection does not refresh or rebuild them. Save a new timeline to
+record subsequent loaded observations; older snapshots remain unchanged.
+
+Ordering, focusing, exporting and saving make no additional requests and cannot relax
+expansion limits. Newly accepted pages refresh the timeline using current controls;
+cancelled/stale responses cannot add evidence. No new dependency or cache/storage schema
+is required for this view.
 
 ### Advanced tracing filters
 
@@ -649,12 +693,12 @@ Portable native packaging is implemented. Further planned areas include:
 
 - Broader asset metadata and contract-token discovery.
 - Watchlist batch refresh/change comparison and expanded investigation organization.
-- Chronological evidence tools and effects/result-based operation enrichment.
+- Effects/result-based operation enrichment and deeper evidence comparison.
 - Advanced contract specifications, storage-key discovery, and richer event interpretation.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.16. The detailed release
+These are **planned capabilities**, not features available in 0.0.17. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

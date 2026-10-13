@@ -290,11 +290,11 @@ class MainWindow(QMainWindow):
             self.start_search()
 
     def save_trace(self, snapshot):
-        """Persist the entire expanded graph, including filters, evidence, routes and page coverage."""
+        """Persist a frozen graph or chronological timeline with its original evidence and coverage."""
         if self.investigations is not None:
             self.investigations.add_evidence(
                 {
-                    "kind": "expanded_graph",
+                    "kind": snapshot["kind"],
                     "identifier": snapshot["metadata"]["root"],
                     "network": snapshot["metadata"]["network"],
                     "evidence": [snapshot],

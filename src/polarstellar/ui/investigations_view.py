@@ -218,7 +218,7 @@ class InvestigationsView(QWidget):
         )
         self.refresh_button.setEnabled(refreshable and self.task is None)
         self.refresh_button.setToolTip(
-            "Saved graph/contract evidence remains offline; open Graph or Contracts for a new snapshot."
+            "Saved graph/timeline/contract evidence remains offline; open Graph or Contracts for a new snapshot."
             if valid and not refreshable
             else "Fetch a new resource snapshot while keeping old evidence."
         )

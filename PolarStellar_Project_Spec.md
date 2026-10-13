@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.16 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.17 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1892,3 +1892,38 @@ No new endpoint, effect/result decoding, chronological continuity claim, automat
 conversion route, exchange-rate estimate or cross-hop amount is introduced. Native builds
 and release uploads remain paused; Mac Intel remains excluded. The next tracing slice is
 chronological evidence tools: ordered observations with explicit ambiguity/coverage limits.
+
+
+## V0.0.17 implemented slice — chronological evidence tools
+
+The expanded graph now includes a Timeline tab over valid supported unique loaded
+observations. UTC time orders timestamp groups; equal instants use stable operation-ID
+presentation order, preserved in oldest-first/newest-first views. IDs are not decoded into
+ledger/execution order. Original timestamps remain in evidence. Shared-time counts cover
+all valid unique supported observations before local filters/account focus, so hidden peers
+cannot remove known ambiguity. Invalid/unknown times remain excluded with full coverage.
+
+Timeline focus selects either endpoint of a discovered account without fetching. Applied
+inclusive time/type and endpoint-asset filters carry over; route target/direction do not
+select timeline rows. Exact gaps compare the earlier distinct selected timestamp using
+integer microseconds; earliest groups have no gap. Gaps do not establish inactivity,
+missing records or coverage continuity. No running balances or cross-hop totals are added.
+
+Rows expose original/UTC times, exact direct amounts, separate path sides/limits/assets,
+unknown merge balances, operation IDs/transaction hashes and every observation-page
+source/account/cache/retrieval/cursor. Duplicate copies become one row with multiple
+provenance entries; conflicts and existing structural exclusions are reused before selection.
+Selecting evidence or double-clicking a timeline row opens the transaction inspector.
+
+The visible tab determines export/save scope: graph tabs retain expanded_graph snapshots;
+Timeline produces trace_timeline with flat timeline_operation records, applied query/count/
+span/ordering/ambiguity metadata and full trace provenance/cursors/limits. Empty results
+retain metadata. Timelines are saved separately to avoid repeating all timeline rows in
+an expanded graph CSV. Saved timelines reopen as frozen JSON offline, with refresh disabled;
+old investigation evidence remains unchanged. No SQLite/cache schema or dependency changes.
+
+Local control changes make no requests, reset no cursor, cancel no pending expansion and
+relax no resource cap. Accepted pages update current timeline selection; cancellation and
+network/context stale-result guards remain intact. Native builds/uploads stay paused and
+Mac Intel stays excluded. Planned further work includes effects/result-based enrichment and
+advanced contract specifications/storage/event interpretation.

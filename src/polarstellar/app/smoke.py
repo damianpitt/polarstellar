@@ -175,6 +175,15 @@ async def validate(window, root, screenshot=None):
     assert exported["metadata"]["trace_filters"]["operation_types"] == ["account_merge"]
     assert exported["records"][0]["source_amount"] is None
     assert not exported["metadata"]["paths"]
+    # A hidden path-payment peer still makes the merge timestamp ambiguous.
+    # Switching timeline controls is local and retains the unknown merge amount.
+    trace.tables.setCurrentIndex(2)
+    timeline = trace.active_document()
+    assert timeline["kind"] == "trace_timeline"
+    assert timeline["records"][0]["same_timestamp_loaded_operations"] == 2
+    assert timeline["records"][0]["source_amount"] is None
+    trace.timeline_order.setCurrentIndex(1)
+    assert trace.active_document()["metadata"]["timeline"]["order"] == "Newest first"
     trace.reject()
     checks.append("networkx_relationship_model")
     # TLS is constructed locally to verify packaged CA certificates and SSL support.

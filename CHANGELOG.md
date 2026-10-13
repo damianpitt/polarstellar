@@ -10,6 +10,72 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.17] - 2026-10-13
+
+### Added — chronological evidence tools
+
+- In **Graph → Explore multiple hops**, added **Timeline** alongside direct totals and
+  path/merge observations. It displays individual supported successful loaded operations
+  by UTC, with **Oldest first**/**Newest first** and local **Timeline focus** for either
+  endpoint of a discovered account. Applied time/type and endpoint-asset filters carry
+  over; graph route target/direction do not select timeline rows.
+- Timeline uses the canvas space for rows and disables graph-only fit/route controls;
+  graph tabs restore the loaded canvas. Timing/ambiguity columns appear before amounts
+  so chronology limitations remain easy to find alongside the visible explanation.
+- Preserved original timestamp strings and exact amounts. Equal instants across offsets
+  show **Shared timestamp** counts against all valid unique supported loaded observations
+  before filters/focus. Hidden peers cannot erase known ambiguity. Operation IDs provide
+  stable display ties in both order directions, without decoding ledger/execution order.
+- Added **Earlier selected gap (s)**: exact elapsed time from the earlier distinct selected
+  UTC timestamp, using integer microseconds without float/decimal-context rounding.
+  The earliest timestamp group has no earlier gap; tied rows share a gap. Newest-first
+  keeps the same meaning. Observed gaps do not prove inactivity, missing records or
+  continuous coverage; no running balances, fund continuity or cross-hop sums are inferred.
+- Selecting a timeline row exposes original/UTC times, exact direct or separate path sides,
+  requested path limits/intermediary assets, unknown merge balances and transaction hash.
+  Every loaded copy retains its account/page/source/cache/retrieval/cursor provenance while
+  the operation appears once. Double-click a row or its evidence to inspect its transaction.
+
+### Export, saved evidence and safeguards
+
+- Export/save follows the visible tab: **Timeline** creates standalone `trace_timeline`
+  CSV/JSON or saved investigation evidence; graph tabs keep `expanded_graph`. New flat
+  `timeline_operation` records include timing/gaps, original typed evidence, exact endpoint
+  amounts and all `observed_in` page entries. Metadata records focus/order, counts/span,
+  ambiguity/gap interpretation, applied filters and complete unfiltered trace coverage.
+- Empty timelines retain an auditable metadata-only CSV row/JSON envelope. Saving a timeline
+  stores a frozen snapshot in the existing offline investigation library; it is not
+  automatically rebuilt or refreshable as an account resource. Older saved evidence remains
+  unchanged. Separate timeline snapshots avoid embedding/repeating every timeline operation
+  in each graph CSV row. Export schema remains 1 with a new kind and additive record fields.
+- Reused deduplication/conflict/network/party/type/time validation before chronological
+  selection. Failed, unsupported, self, conflicting and invalid-time observations remain
+  excluded and counted. Account focus and type/time/asset filters cannot alter discovery,
+  pagination or resource limits. Qt header sorting is disabled so display rows cannot detach
+  from their transaction evidence; explicit order controls sort the frozen row data instead.
+- Timeline control/tab changes are local; they make no requests and preserve pending account/
+  network/cursor queries. Accepted pages use current selection/order, while existing cancellation/
+  stale-context protections prevent late responses from adding evidence. Timestamp order and
+  deterministic ties do not establish execution order, custody, ownership or financial continuity.
+- Updated package/header/lock versions, README, specification and release documentation to
+  0.0.17 with plain-English code explanations. Dependencies, cache key revision, SQLite schemas
+  and TTL settings are unchanged. Native builds/uploads remain paused; Mac Intel stays excluded.
+
+### Validation
+
+- Local validation: all 275 tests and Ruff passed, including 14 new cases for UTC/offset
+  ordering, deterministic ties in both directions, microsecond gaps under a reduced decimal
+  context, hidden-peer ambiguity, exact direct/path amounts and unknown merges, issuer/
+  account/type/time selection, duplicate page provenance, structural exclusions, empty and
+  mixed exports, offline saving, visible-tab scope, pending queries and stale cancellation.
+- Verified that the timeline retains all 1,000 operations permitted by the ten-account /
+  five-page fetch limits. Reviewed Timeline at 1120 × 850 with timing columns, evidence
+  and coverage. Locked dependency checks and source/wheel builds passed; dependencies
+  remain unchanged. Source startup smoke also exercises local timeline selection/order and
+  hidden-peer ambiguity with unknown merge amounts, without additional HTTP requests.
+- Source CI checks Linux, macOS and Windows after push. No native 0.0.17 artifacts are
+  built/uploaded; earlier native packaging results remain separate.
+
 ## [0.0.16] - 2026-10-12
 
 ### Added — broader tracing operation coverage

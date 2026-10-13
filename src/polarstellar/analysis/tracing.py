@@ -6,6 +6,7 @@ from decimal import Decimal, localcontext
 
 import networkx as nx
 
+from polarstellar.analysis.timeline import timeline
 from polarstellar.analysis.trace_filters import (
     DIRECT_TYPES,
     FILTER_REASONS,
@@ -132,6 +133,24 @@ class Trace:
             key=lambda flow: int(flow.operation),
             reverse=True,
         )
+
+    def timeline_export(self, asset=None, view_filters=None, account=None, newest_first=False):
+        """Freeze a standalone ordered snapshot with full trace coverage and applied local selection.
+
+        Graph exports keep their original record kinds; a timeline is saved/exported
+        independently to avoid repeating a complete timeline on every graph CSV row.
+        Existing page provenance and exclusions describe all loaded records, even
+        those hidden by account focus or asset/time/type selection.
+        """
+        rows, timing = timeline(self, asset, view_filters, account, newest_first)
+        metadata = self.export(asset=asset, view_filters=view_filters)["metadata"]
+        # Timeline order is a presentation query, independent of the graph's target
+        # and route direction. Remove those empty route-query fields for clarity.
+        for key in ("target", "direction", "paths", "paths_may_be_truncated"):
+            metadata.pop(key)
+        metadata["timeline"] = timing
+        metadata["coverage"] = timing["coverage"]
+        return document("trace_timeline", metadata, rows)
 
     def reason(self, address):
         """Explain why another page cannot be fetched, or return an empty string if allowed."""

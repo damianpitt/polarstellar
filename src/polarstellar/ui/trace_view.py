@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QTabWidget,
     QVBoxLayout,
+    QWidget,
 )
 
 from polarstellar.analysis.trace_filters import (
@@ -54,6 +55,9 @@ class TraceDialog(QDialog):
         self.edges = []
         self.connections = []
         self.links = []
+        self.timeline_rows = []
+        self.graph_paths_text = ""
+        self.timeline_notice = ""
         self.view_filters = None
         self.setWindowTitle(f"Expanded graph • {self.trace.network.value}")
         self.resize(1120, 850)
@@ -76,6 +80,7 @@ class TraceDialog(QDialog):
         for widget in (self.account, self.expand, self.cancel):
             controls.addWidget(widget)
         fit = QPushButton("Fit graph")
+        self.fit_button = fit
         fit.clicked.connect(self.fit)
         controls.addWidget(fit)
         layout.addLayout(controls)
@@ -165,6 +170,50 @@ class TraceDialog(QDialog):
         self.tables = QTabWidget()
         self.tables.addTab(self.table, "Direct payment / funding totals")
         self.tables.addTab(self.operation_table, "Path payments / merges (individual observations)")
+        self.timeline_page = QWidget()
+        timeline_layout = QVBoxLayout(self.timeline_page)
+        timeline_layout.setContentsMargins(0, 0, 0, 0)
+        timeline_controls = QHBoxLayout()
+        self.timeline_account = QComboBox()
+        self.timeline_account.setAccessibleName("Timeline account focus")
+        self.timeline_account.setMinimumContentsLength(18)
+        self.timeline_account.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self.timeline_order = QComboBox()
+        self.timeline_order.setAccessibleName("Timeline display order")
+        self.timeline_order.addItem("Oldest first", False)
+        self.timeline_order.addItem("Newest first", True)
+        timeline_controls.addWidget(QLabel("Timeline focus:"))
+        timeline_controls.addWidget(self.timeline_account, 1)
+        timeline_controls.addWidget(self.timeline_order)
+        timeline_layout.addLayout(timeline_controls)
+        self.timeline_table = QTableWidget(0, 8)
+        self.timeline_table.setHorizontalHeaderLabels(
+            [
+                "Observed time (UTC)",
+                "Operation type",
+                "Timing / ambiguity",
+                "Earlier selected gap (s)",
+                "Amounts (individual observation)",
+                "Sender",
+                "Recipient",
+                "Operation ID",
+            ]
+        )
+        self.timeline_table.setMinimumHeight(110)
+        self.timeline_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.timeline_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.timeline_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        # Qt's optional table sorting would detach rows from the frozen evidence
+        # list; the explicit order control sorts the data and display together.
+        self.timeline_table.setSortingEnabled(False)
+        self.timeline_table.itemSelectionChanged.connect(self.show_timeline_evidence)
+        self.timeline_table.itemDoubleClicked.connect(self.open_timeline_transaction)
+        timeline_layout.addWidget(self.timeline_table)
+        self.tables.addTab(self.timeline_page, "Timeline")
+        self.timeline_account.currentIndexChanged.connect(self.render_timeline)
+        self.timeline_order.currentIndexChanged.connect(self.render_timeline)
         # A shared evidence panel must never show a stale selection from the other tab.
         self.tables.currentChanged.connect(self.refresh_evidence)
         split.addWidget(self.tables)
@@ -185,11 +234,11 @@ class TraceDialog(QDialog):
         self.coverage.setReadOnly(True)
         self.coverage.setMaximumHeight(100)
         layout.addWidget(self.coverage)
-        self.export = ExportControls(self.export_document)
+        self.export = ExportControls(self.active_document)
         self.export.setEnabled(True)
         layout.addWidget(self.export)
         self.save = QPushButton("Save expanded graph to selected investigation")
-        self.save.clicked.connect(lambda: self.save_requested.emit(self.export_document()))
+        self.save.clicked.connect(lambda: self.save_requested.emit(self.active_document()))
         layout.addWidget(self.save)
         for widget in (self.asset, self.direction, self.target):
             widget.currentIndexChanged.connect(self.render)
@@ -256,6 +305,7 @@ class TraceDialog(QDialog):
                 None,
             ),
             (self.target, sorted(set(distances) - {self.trace.root}), "Choose path target"),
+            (self.timeline_account, sorted(distances), "All observed accounts"),
             (
                 self.asset,
                 sorted(
@@ -351,6 +401,110 @@ class TraceDialog(QDialog):
             self.direction.currentText() == "To root",
             self.view_filters,
         )
+
+    def timeline_document(self):
+        """Freeze timeline rows/order/focus with applied graph filters and complete loaded coverage."""
+        return self.trace.timeline_export(
+            self.asset.currentData(),
+            self.view_filters,
+            self.timeline_account.currentData(),
+            self.timeline_order.currentData(),
+        )
+
+    def active_document(self):
+        """Export/save the visible timeline or graph; tab selection makes the chosen artifact explicit."""
+        return (
+            self.timeline_document() if self.tables.currentIndex() == 2 else self.export_document()
+        )
+
+    def render_timeline(self, *_):
+        """Reorder/focus local observation rows without changing graph discovery or any network query."""
+        snapshot = self.timeline_document()
+        self.timeline_rows = snapshot["records"]
+        timing = snapshot["metadata"]["timeline"]
+        self.timeline_notice = (
+            f"{len(self.timeline_rows)} selected operations • {timing['order']} • "
+            f"{timing['selected_operations_with_shared_loaded_timestamp']} share a loaded timestamp.\n"
+            "UTC timestamp order only; identifier ties do not establish execution order. "
+            "Gaps are between selected observations, not proof of inactivity or missing history. "
+            "Account focus is local; graph route target/direction do not select timeline rows."
+        )
+        if self.tables.currentIndex() == 2:
+            self.paths.setPlainText(self.timeline_notice)
+        self.timeline_table.setRowCount(0)
+        if self.tables.currentIndex() == 2:
+            self.evidence.clear()
+            self.evidence.hide()
+        for row, observation in enumerate(self.timeline_rows):
+            self.timeline_table.insertRow(row)
+            for column, value in enumerate(
+                (
+                    observation["created_utc"],
+                    observation["operation_type"],
+                    observation["timing"],
+                    observation["seconds_since_earlier_selected_timestamp"] or "—",
+                    self.timeline_amounts(observation),
+                    observation["sender"],
+                    observation["recipient"],
+                    observation["operation"],
+                )
+            ):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                self.timeline_table.setItem(row, column, item)
+        for column, width in enumerate((210, 180, 230, 170, 340, 180, 180, 120)):
+            self.timeline_table.setColumnWidth(column, width)
+        self.timeline_table.setToolTip(
+            "UTC observation order only. Shared timestamps do not establish execution order. "
+            "Gaps are between selected timestamps, not evidence of inactivity or missing records. "
+            "Select for original evidence; double-click a row to inspect its transaction."
+        )
+
+    @staticmethod
+    def timeline_amounts(row):
+        """Describe exact per-operation amounts, retaining separate path sides and unknown merge balances."""
+        if row["evidence_kind"] == "direct_transfer":
+            return f"{row['source_amount']} {row['source_asset']}"
+        if row["operation_type"] == "account_merge":
+            return "XLM balance amount unknown"
+        return (
+            f"Sent {row['source_amount']} {row['source_asset']} → "
+            f"Received {row['destination_amount']} {row['destination_asset']}"
+        )
+
+    def show_timeline_evidence(self):
+        """Show original time, exact amounts, timing ambiguity and all observation-page provenance."""
+        self.evidence.clear()
+        self.evidence.hide()
+        row = self.timeline_table.currentRow()
+        if not 0 <= row < len(self.timeline_rows):
+            return
+        observation = self.timeline_rows[row]
+        origins = "; ".join(
+            f"{item['account']} page {item['page_number']} • {item['source']} • "
+            f"{item['cache_status']} • Retrieved {item['fetched_at']}"
+            for item in observation["observed_in"]
+        )
+        detail = (
+            f"Original: {observation['original_created']} • UTC: {observation['created_utc']} • "
+            f"{observation['timing']} (display ties are not execution order)\n"
+            f"{observation['operation_type']} • {self.timeline_amounts(observation)} • "
+            f"Operation {observation['operation']}\nTX {observation['transaction']}\nObserved in: {origins}"
+        )
+        evidence = observation["evidence"]
+        if evidence.get("limit_name"):
+            detail += f"\nRequested {evidence['limit_name']}: {evidence['limit_amount']} • "
+            detail += "Intermediary assets: " + (" → ".join(evidence["path"]) or "None")
+        self.evidence.addItem(detail)
+        item = self.evidence.item(0)
+        item.setData(Qt.ItemDataRole.UserRole, observation["transaction"])
+        item.setToolTip(detail)
+        self.evidence.show()
+
+    def open_timeline_transaction(self, item):
+        """Open the transaction belonging to the clicked frozen row, independent of identifier tie order."""
+        if 0 <= item.row() < len(self.timeline_rows):
+            self.transaction_requested.emit(self.timeline_rows[item.row()]["transaction"])
 
     def render(self, *_):
         """Draw bounded nodes and all filtered table edges; list route evidence without flow claims."""
@@ -491,11 +645,35 @@ class TraceDialog(QDialog):
                 )
             )
         )
+        self.graph_paths_text = self.paths.toPlainText()
+        self.render_timeline()
         self.update_controls()
 
     def refresh_evidence(self, *_):
         """Display evidence for the currently visible table, never a hidden stale row."""
-        if self.tables.currentIndex() == 1:
+        is_timeline = self.tables.currentIndex() == 2
+        # Give the chronological table the canvas space. Its graph remains loaded
+        # and is shown again on graph tabs; tab changes never rebuild discovery.
+        self.canvas.setVisible(not is_timeline)
+        self.fit_button.setEnabled(not is_timeline)
+        self.direction.setEnabled(not is_timeline)
+        self.target.setEnabled(not is_timeline)
+        if not is_timeline:
+            QTimer.singleShot(0, self.fit)
+        self.save.setText(
+            "Save timeline to selected investigation"
+            if is_timeline
+            else "Save expanded graph to selected investigation"
+        )
+        self.export.setToolTip(
+            "Save the visible timeline with timing/coverage evidence."
+            if is_timeline
+            else "Save the expanded graph with evidence and coverage."
+        )
+        self.paths.setPlainText(self.timeline_notice if is_timeline else self.graph_paths_text)
+        if is_timeline:
+            self.show_timeline_evidence()
+        elif self.tables.currentIndex() == 1:
             self.show_link_evidence()
         else:
             self.show_evidence()
