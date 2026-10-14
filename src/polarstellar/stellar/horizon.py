@@ -147,6 +147,32 @@ class HorizonProvider:
             f"Account not found on {network.value}. It may not be funded.",
         )
 
+    async def get_effects(self, identifier, network, cursor=None):
+        """Fetch one live effects page from a fixed network URL; never follow returned links."""
+        from polarstellar.stellar.effects import (
+            PAGE_SIZE,
+            cursor_index,
+            operation_id,
+            parse_effects,
+        )
+
+        operation_id(identifier)
+        if cursor is not None:
+            cursor_index(cursor, identifier)
+        params = {"order": "asc", "limit": str(PAGE_SIZE)}
+        if cursor is not None:
+            params["cursor"] = cursor
+        data = await self._request(
+            f"/operations/{identifier}/effects",
+            network,
+            params,
+            "Operation effects unavailable in Horizon history.",
+        )
+        try:
+            return parse_effects(data, identifier, network, ENDPOINTS[network], cursor)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise AccountError("Horizon returned invalid or mismatched operation effects.") from exc
+
     async def get_transaction(self, hash_value: str, network: Network) -> TransactionDetail:
         path = f"/transactions/{hash_value}"
         missing = f"Transaction not found in available {network.value} Horizon history."

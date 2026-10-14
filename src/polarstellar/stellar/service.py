@@ -45,6 +45,37 @@ class AccountService:
             raise AccountError("Transaction does not match this search and network.")
         return detail
 
+    async def effects(self, transaction, identifier, cursor=None):
+        """Fetch effects only for a loaded successful transaction operation and verify query binding."""
+        from polarstellar.stellar.effects import PAGE_SIZE, cursor_index, operation_id
+
+        operation_id(identifier)
+        if not transaction.successful or identifier not in {
+            op.identifier for op in transaction.operations
+        }:
+            raise AccountError(
+                "Effects require an operation from this loaded successful transaction."
+            )
+        if cursor is not None:
+            cursor_index(cursor, identifier)
+        page = await self.provider.get_effects(identifier, transaction.network, cursor)
+        if (page.operation, page.network, page.cursor) != (
+            identifier,
+            transaction.network,
+            cursor,
+        ) or len(page.records) > PAGE_SIZE:
+            raise AccountError("Effects do not match this operation, network or cursor.")
+        previous = cursor_index(cursor, identifier) if cursor is not None else 0
+        for record in page.records:
+            index = cursor_index(record.cursor, identifier)
+            if index <= previous:
+                raise AccountError("Effects cursor did not advance.")
+            previous = index
+        expected = page.records[-1].cursor if len(page.records) == PAGE_SIZE else None
+        if page.next_cursor != expected:
+            raise AccountError("Invalid effects continuation.")
+        return page
+
     async def discover_assets(self, code, issuer, network, cursor=None):
         """Validate optional filters before I/O and reject pages from another query or network."""
         from polarstellar.stellar.asset_discovery import PAGE_SIZE, filters, token

@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.17 · Pre-alpha**
+**Current version: 0.0.18 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,11 +32,11 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.17 |
+| Area | Available in 0.0.18 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
-| Transaction inspection | Status, ledger, fees, memo, ordered operations, and raw Horizon data |
+| Transaction inspection | Status, ledger, fees, memo, ordered operations, checked result codes/merge balances and live effects |
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
 | Relationship graph | Bounded multi-hop expansion, local time/type filters, direct-transfer routes, separate path/merge evidence and chronological timelines |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
@@ -60,7 +60,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.17; previously validated native artifacts are 0.0.11.
+The current source version is 0.0.18; previously validated native artifacts are 0.0.11.
 New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
@@ -155,6 +155,63 @@ trustline changes, offers, and recognized account-option changes.
 
 Failed instructions are marked as **not applied**. Unsupported operation types retain raw
 data, and incomplete operation lists are labeled explicitly.
+
+### Transaction results and operation effects
+
+The transaction inspector decodes available `result_xdr` locally when the matching
+`envelope_xdr` and a complete ordered operation list are available. It checks the searched
+network's envelope hash, fee, status, transaction source/fee payer, operation types/sources
+and Horizon operation-ID ledger/index positions before assigning result codes. Fee-bump
+structures also check the inner hash/status. Missing, malformed, partial or mismatched
+optional evidence produces a **RESULT LIMITATION** notice while basic transaction data
+and raw fields stay readable.
+
+For a successful account merge, a checked result can provide the exact transferred XLM
+balance in both stroops and seven-decimal XLM, with matching envelope endpoints. Failed
+transactions never expose an applied merge amount, even when an individual operation
+result reports success before rollback. These are **Horizon-reported results checked for
+structure and identity**, not independent consensus or signature verification. General
+transaction-meta decoding and result payload interpretation beyond codes/merge balances
+remain outside this slice.
+
+Open **Operation effects**, choose a loaded operation, and click **Load effects / next 20**.
+Each click requests one ascending page on the selected network, with its own cursor per
+operation and a limit of **five pages / 100 effects per operation**. Opening the tab or
+changing selection makes no request. Effects load live, separately from cached transaction
+snapshots; the selected public operation ID is sent to that network's fixed Horizon
+endpoint. Failed/unloaded transactions cannot load applied effects in this view.
+
+Loaded pages retain operation/network/cursor, source and original retrieval time. Every
+record must match the requested operation's compound cursor, padded effect identity and
+source operation link; returned links are checked but never followed. Account credits,
+debits, creation and removal have readable details and exact known amounts/issuers;
+other effect types retain raw data without invented transfer semantics. Loading failures
+retain prior pages/cursor for retry. Cancellation/reload/close reject late results; changing
+the selected operation during a pending request keeps its original query and stores an
+accepted page under its original operation.
+
+For merge comparison, the view requires an exhausted loaded effects selection with exactly
+one destination XLM credit and one source-account removal, plus the checked result amount.
+Agreement, incomplete/ambiguous evidence and **CONTRADICTION** are labeled separately.
+Credits are never summed into a guessed merge balance. End-of-results is not proof of
+complete history; a full fifth page keeps comparison incomplete. Both sources remain
+available for inspection, regardless of comparison outcome.
+
+Inspector CSV/JSON and **Save transaction** include decoded results, original raw evidence,
+all explicitly loaded effects pages and comparison notices. Saved snapshots reopen offline;
+resource refresh saves a new base transaction/result snapshot without automatically fetching
+effects. Existing graph/timeline snapshots retain unknown merge amounts and their original
+scope; inspector enrichment does not rewrite them or enter direct totals/routes.
+
+Cache format keys move to revision 4 for enriched transaction containers. Older cached
+snapshots miss/refetch on explicit lookup (including account/activity snapshots sharing
+the key revision); cache database schema/TTL and saved historical JSON stay unchanged.
+Refused result enrichment is retried live instead of cached as a complete one-day transaction.
+Basic transactions with absent optional XDR may still be cached with **Not provided** shown.
+
+See Stellar's [operation effects API](https://developers.stellar.org/docs/data/apis/horizon/api-reference/retrieve-an-operations-effects),
+[result XDR definition](https://github.com/stellar/stellar-xdr/blob/main/Stellar-transaction.x)
+and [Horizon operation-ID format](https://github.com/stellar/go-stellar-sdk/blob/main/toid/main.go).
 
 ### Counterparty analysis and graph
 
@@ -277,8 +334,8 @@ identities, paths or limits remain excluded with a coverage reason.
 
 Successful `account_merge` records show the removed account and the destination account,
 with **unknown XLM balance amount**. Horizon's operation record supplies no merged amount;
-it is never displayed as zero or guessed from an account balance. Effects/result-based
-merge amount recovery is not implemented.
+it is never displayed as zero or guessed from an account balance. Graph/timeline records retain unknown merge amounts; the transaction inspector can recover
+a checked result balance as described above.
 
 Path/merge endpoint relationships use **dashed gold arrows** and may reveal accounts for
 manual expansion within the existing limits. They are excluded from the direct totals tab
@@ -693,12 +750,12 @@ Portable native packaging is implemented. Further planned areas include:
 
 - Broader asset metadata and contract-token discovery.
 - Watchlist batch refresh/change comparison and expanded investigation organization.
-- Effects/result-based operation enrichment and deeper evidence comparison.
+- Deeper evidence comparison and additional result/effect payload interpretation.
 - Advanced contract specifications, storage-key discovery, and richer event interpretation.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.17. The detailed release
+These are **planned capabilities**, not features available in 0.0.18. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

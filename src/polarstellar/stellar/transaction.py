@@ -2,15 +2,17 @@
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 
 from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
+from polarstellar.stellar.results import ResultEvidence, decode_results
 
 
 def validate_hash(value: str) -> str:
+    """Normalize a hexadecimal transaction identity before any network request."""
     result = value.strip().lower()
     if re.fullmatch(r"[0-9a-f]{64}", result) is None:
         raise AccountError("Enter a transaction hash containing exactly 64 hexadecimal characters.")
@@ -26,6 +28,7 @@ class OperationDetail:
     source: str
     explanation: str
     raw: str
+    result: ResultEvidence | None = None
 
 
 @dataclass(frozen=True)
@@ -48,9 +51,12 @@ class TransactionDetail:
     fetched_at: datetime
     raw: str
     cache_status: str = "Live data"
+    result_code: str = "Not provided"
+    result_warning: str = ""
 
 
 def text(row: dict, name: str) -> str:
+    """Read required text without guessing a missing provider field."""
     value = row[name]
     if not isinstance(value, str):
         raise TypeError("Expected text")
@@ -58,6 +64,7 @@ def text(row: dict, name: str) -> str:
 
 
 def amount(row: dict, name: str) -> str:
+    """Preserve original exact nonnegative amounts for readable instruction explanations."""
     value = text(row, name)
     number = Decimal(value)
     if not number.is_finite() or number < 0:
@@ -66,19 +73,21 @@ def amount(row: dict, name: str) -> str:
 
 
 def asset(row: dict, prefix: str = "asset_") -> str:
+    """Describe an operation asset with its issuer identity retained."""
     if row[prefix + "type"] == "native":
         return "XLM"
     return f"{text(row, prefix + 'code')}:{text(row, prefix + 'issuer')}"
 
 
 def explain(row: dict) -> str:
+    """Explain recognized instructions; raw fields remain available for all unsupported types."""
     kind = row["type"]
     if kind == "payment":
         return f"Send {amount(row, 'amount')} {asset(row)} to {text(row, 'to')}."
     if kind == "create_account":
         return f"Create {text(row, 'account')} with {amount(row, 'starting_balance')} XLM."
     if kind == "account_merge":
-        return f"Merge this account into {text(row, 'into')}; the transferred balance is not provided here."
+        return f"Merge this account into {text(row, 'into')}; the operation fields omit the transferred balance (see result evidence when available)."
     if kind in ("path_payment_strict_receive", "path_payment_strict_send"):
         return (
             f"Path payment: send {amount(row, 'source_amount')} {asset(row, 'source_asset_')}; "
@@ -140,6 +149,7 @@ def explain(row: dict) -> str:
 
 
 def decode_operation(row: dict, successful: bool) -> OperationDetail:
+    """Keep raw instructions alongside a safe explanation, labeling failed transactions as not applied."""
     try:
         description = explain(row)
     except (KeyError, TypeError, ValueError, InvalidOperation):
@@ -158,6 +168,7 @@ def decode_operation(row: dict, successful: bool) -> OperationDetail:
 def parse_transaction(
     data: dict, hash_value: str, network: Network, rows: list, source: str, warning: str = ""
 ) -> TransactionDetail:
+    """Validate transaction/ordered operation identity and enrich optional results without losing basic data."""
     if data["hash"] != hash_value or type(data["successful"]) is not bool:
         raise ValueError("Invalid transaction identity or status")
     count = data["operation_count"]
@@ -185,6 +196,11 @@ def parse_transaction(
             warning or "Operation data is incomplete in Horizon; this is not a complete decode."
         )
     memo = text(data, "memo_type") + (": " + text(data, "memo") if "memo" in data else "")
+    results, result_code, result_warning = decode_results(data, rows, network)
+    operations = tuple(
+        replace(decode_operation(row, data["successful"]), result=result)
+        for row, result in zip(rows, results, strict=True)
+    )
     return TransactionDetail(
         hash_value,
         network,
@@ -196,9 +212,11 @@ def parse_transaction(
         int(fee),
         count,
         memo,
-        tuple(decode_operation(row, data["successful"]) for row in rows),
+        operations,
         warning,
         source,
         datetime.now(UTC),
         json.dumps(data, indent=2, ensure_ascii=False),
+        result_code=result_code,
+        result_warning=result_warning,
     )

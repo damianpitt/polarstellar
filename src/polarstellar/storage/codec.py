@@ -10,6 +10,7 @@ from typing import get_args, get_origin, get_type_hints
 
 from polarstellar.stellar.activity import ActivityKind, ActivityPage, ActivityRecord
 from polarstellar.stellar.models import Account, Balance, Network, OperationLink, Transfer
+from polarstellar.stellar.results import ResultEvidence
 from polarstellar.stellar.transaction import OperationDetail, TransactionDetail
 
 # Cache files can only reconstruct these known data containers, never arbitrary classes.
@@ -24,6 +25,7 @@ TYPES = {
         ActivityRecord,
         TransactionDetail,
         OperationDetail,
+        ResultEvidence,
     )
 }
 ENUMS = {"Network": Network, "ActivityKind": ActivityKind}

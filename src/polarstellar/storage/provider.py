@@ -29,6 +29,10 @@ class CachedProvider:
         """Keep catalog discovery live; expiring account/activity caches do not store asset pages."""
         return await self.provider.discover_assets(code, issuer, network, cursor)
 
+    async def get_effects(self, identifier, network, cursor=None):
+        """Keep explicit operation-effects reads live and separate from expiring transaction caches."""
+        return await self.provider.get_effects(identifier, network, cursor)
+
     async def get_asset(self, code, issuer, network):
         """Fetch asset statistics live; the existing snapshot cache does not store this resource."""
         return await self.provider.get_asset(code, issuer, network)
@@ -80,7 +84,7 @@ class CachedProvider:
         warning = ""
         # Format revision and provider class isolate incompatible cached representations.
         key = json.dumps(
-            [3, type(self.provider).__module__, type(self.provider).__name__, method, *args]
+            [4, type(self.provider).__module__, type(self.provider).__name__, method, *args]
         )
         if self.enabled:
             try:
@@ -99,7 +103,15 @@ class CachedProvider:
         snapshot = await getattr(self.provider, method)(*args)
         if not self.valid(snapshot, method, args):
             raise AccountError("Provider result does not match this search and network.")
-        if self.enabled and epoch == self.epoch and not getattr(snapshot, "warning", ""):
+        # Refused optional results should retry live instead of being frozen as a
+        # complete one-day transaction snapshot. Missing optional XDR is still a
+        # valid basic snapshot; its explicit Not provided status remains visible.
+        if (
+            self.enabled
+            and epoch == self.epoch
+            and not getattr(snapshot, "warning", "")
+            and not getattr(snapshot, "result_warning", "")
+        ):
             try:
                 payload = codec.dumps(snapshot)
                 async with self.lock:
@@ -119,5 +131,5 @@ class CachedProvider:
         return await self.fetch("get_activity", (address, network, kind, cursor), 60)
 
     async def get_transaction(self, hash_value, network):
-        """Cache complete transaction details for one day; partial operations are retried live."""
+        """Cache complete transaction details for one day; partial/refused enrichment is retried live."""
         return await self.fetch("get_transaction", (hash_value, network), 86400)

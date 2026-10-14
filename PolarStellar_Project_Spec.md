@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.17 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.18 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1927,3 +1927,43 @@ relax no resource cap. Accepted pages update current timeline selection; cancell
 network/context stale-result guards remain intact. Native builds/uploads stay paused and
 Mac Intel stays excluded. Planned further work includes effects/result-based enrichment and
 advanced contract specifications/storage/event interpretation.
+
+
+## V0.0.18 implemented slice — checked results and live operation effects
+
+Transaction inspection now decodes optional result_xdr against envelope_xdr on the searched
+network, requiring an exact XDR round trip, matching envelope hash/fee/status/source/fee payer,
+complete ordered operations, Horizon TOID ledger/transaction/index alignment and matching
+operation types/sources. Fee-bump decoding checks inner hash/status explicitly. Result codes
+are preserved; a successful merge's sourceAccountBalance supplies exact stroops/seven-decimal
+XLM after endpoint checks. Failed transactions never expose applied balances. Missing,
+malformed, incompatible or mismatched optional evidence produces a result-specific limitation
+while basic transaction/raw data remain available. Checks establish reported-data structure/
+identity consistency, not independent consensus or signature verification.
+
+The inspector's Operation effects tab fetches one ascending live page only on explicit click,
+with twenty records/page and five pages/operation, independent operation cursors and fixed
+network endpoints. Every record binds its compound token/padded ID/source operation link;
+links are never followed. Credits/debits retain exact assets/issuers and ledger amounts;
+account creation/removal have readable details; other kinds retain raw evidence. Failed or
+unloaded transactions cannot load applied effects. Partial/error/capped/end-of-results states
+remain explicit; end-of-results is not proof of complete history.
+
+Merge comparison requires an exhausted loaded selection with one destination XLM credit,
+one source removal and the checked result amount. Matching, partial/ambiguous and contradictory
+sources remain separately visible; no credit summing or amount fallback is performed. Result
+and effect evidence never rewrites graph/timeline observations or enters direct totals/routes.
+
+CSV/JSON and the real Save transaction action retain result codes/amounts, original raw XDR,
+all explicitly loaded effect pages/source/retrieval/cursors and comparison notices. Saved JSON
+remains readable offline; explicit transaction refresh preserves old evidence and does not
+fetch effects automatically. Selection changes during pending effects preserve the original
+query; failure retry keeps rows/cursor; dedicated effects cancellation and transaction reload/
+close generations reject cancellation-resistant stale responses.
+
+Cache key revision 4 refetches incompatible snapshots on explicit lookup; cached account/
+activity keys also move with the shared revision. Refused results are not cached as complete
+one-day snapshots, while absent optional XDR remains explicitly Not provided. Existing SQLite
+schemas/TTL, dependencies and historical saved JSON remain unchanged. Native builds/uploads
+stay paused and Mac Intel stays excluded. Advanced contract specifications and richer event
+interpretation remain a planned next slice.

@@ -10,6 +10,83 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.18] - 2026-10-14
+
+### Added — checked transaction-result enrichment
+
+- The transaction inspector decodes available `result_xdr` locally against `envelope_xdr`
+  and a complete ordered Horizon operation list. It requires strict bounded base64 and
+  exact XDR round trips, searched-network envelope hash, matching fee/status/source/fee payer,
+  operation counts/types/sources and Horizon TOID ledger/transaction/index alignment before
+  associating result codes. Fee-bump structures additionally check inner hash/status.
+- Successful account merges can show exact transferred XLM and stroops from the result's
+  `sourceAccountBalance`, with matching envelope endpoints. Integer-to-decimal conversion
+  preserves seven-decimal ledger precision even under a reduced global Decimal context.
+  Failed transactions never expose an applied balance, including earlier individually
+  successful operations rolled back with the transaction.
+- Missing optional XDR remains **Not provided**; malformed, incomplete, incompatible or
+  mismatched evidence produces **RESULT LIMITATION** without hiding basic transaction/raw
+  fields. Result statuses/amounts are Horizon-reported evidence checked for structure and
+  identity, not independent consensus or signature verification. Broader result/meta payload
+  interpretation is not claimed; result codes and successful merge balances are this slice.
+
+### Added — explicitly paginated live operation effects
+
+- In the inspector's **Operation effects** tab, select a loaded successful operation and
+  choose **Load effects / next 20**. Each click requests one ascending page from the fixed
+  network Horizon endpoint; each operation retains its own cursor and up to five pages /
+  100 effects. Opening/changing selection makes no request. Effects stay live and separate
+  from optional transaction caches; the chosen public operation ID is sent to that endpoint.
+- Bind each effect's compound cursor, padded identity and operation link to the requested
+  operation/source; reject nonadvancing, oversized and mismatched pages before accepting
+  them. Returned URLs are compared but never followed. Credits/debits preserve exact ledger
+  amounts and issuer identity; creation/removal have readable details. Unknown types retain
+  raw evidence without inventing transfer amounts or unsupported semantics.
+- Merge comparison requires an exhausted loaded selection with exactly one destination XLM
+  credit and one source removal plus the checked result amount. Agreement, partial/ambiguous
+  evidence and **CONTRADICTION** are labeled separately, retaining both sources. Credits
+  are not summed or substituted for missing result balances. A full fifth page remains
+  incomplete; end of available effects is not proof of complete historical coverage.
+- Loading failures retain prior rows/cursor for retry. Selection during a pending request
+  preserves its captured transaction/network/operation/cursor and stores accepted evidence
+  under that original operation. Dedicated effects cancellation keeps the transaction and
+  accepted pages; reload/close and effects generations reject cancellation-resistant late
+  responses. Failed/unloaded transactions cannot load applied effects in this view.
+
+### Export, storage and compatibility
+
+- Inspector CSV/JSON and **Save transaction** now include checked result codes/merge balances,
+  original raw evidence, all explicitly loaded effect pages with network/source/retrieval/
+  cursor provenance, and comparison notices. The actual save action uses the inspector's
+  enriched snapshot rather than dropping effects. Offline saved JSON remains readable;
+  explicit transaction refresh keeps old snapshots and does not automatically fetch effects.
+- Graph/timeline merge amounts remain unknown and their scopes/limits unchanged. Inspector
+  enrichment does not rewrite old snapshots or enter direct totals, conversion routes,
+  running balances or cross-hop sums.
+- Added ResultEvidence containers and transaction/result fields with cache key revision 4.
+  Older cached snapshots refetch on explicit lookup; account/activity keys also change with
+  the shared revision. Refused optional results are not cached as complete one-day snapshots
+  and can retry live. Basic transactions without optional XDR can still cache **Not provided**.
+  Corrupt cached amount/stroop combinations fail closed. SQLite schemas/TTL, dependencies
+  and previously saved JSON are unchanged.
+- Updated package/header/lock metadata, README, specification and release documentation to
+  0.0.18, with plain-English explanations in changed/new code. Native builds and release
+  uploads remain paused; Mac Intel stays excluded.
+
+### Validation
+
+- Local validation: all 310 tests and Ruff passed, including 35 new cases for normal/fee-bump
+  result binding, exact/rolled-back merge balances, XDR/fee/network/source/endpoint/count/
+  status/position mismatches, bad inner hashes, negative/corrupt amounts, strict effect IDs/
+  cursors/links/assets, raw unknown types, complete/partial/contradictory merge comparison,
+  live routing, failed preflight, pagination caps, retry/cancellation, enriched offline saving
+  and cache retry/serialization compatibility. Source startup smoke now decodes a local
+  checked merge result without additional HTTP requests.
+- Source/wheel builds and lock checks passed with unchanged dependencies. Reviewed result
+  and effects inspector tabs at 900 × 700 with an exact merge balance, comparison and
+  original raw evidence. Source CI checks Linux, macOS and Windows after push. No native
+  0.0.18 artifacts have been built or uploaded; earlier packaging results remain separate.
+
 ## [0.0.17] - 2026-10-13
 
 ### Added — chronological evidence tools

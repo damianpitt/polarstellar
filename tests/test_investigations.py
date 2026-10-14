@@ -12,7 +12,7 @@ from polarstellar.app.window import MainWindow
 from polarstellar.stellar.horizon import parse_account
 from polarstellar.stellar.models import Network
 from polarstellar.stellar.service import AccountService
-from polarstellar.storage.export import account_document, serialize
+from polarstellar.storage.export import account_document, serialize, transaction_document
 from polarstellar.storage.investigations import InvestigationStore, new_investigation
 from polarstellar.ui.investigations_view import InvestigationsView
 
@@ -259,7 +259,9 @@ def test_asset_transaction_capture_and_refresh(app, tmp_path):
         window.pages.setCurrentIndex(5)
         window.assets.snapshot = asset
         window.save_resource()
-        window.save_transaction(SimpleNamespace(transaction=tx))
+        window.save_transaction(
+            SimpleNamespace(transaction=tx, export_document=lambda: transaction_document(tx))
+        )
         assert [item["kind"] for item in library.current["entries"]] == ["asset", "transaction"]
         for row in (0, 1):
             library.entries.setCurrentRow(row)

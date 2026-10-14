@@ -24,6 +24,71 @@ from polarstellar.storage.watchlist_transfer import read_file
 from polarstellar.storage.watchlists import WatchlistStore
 
 
+def validate_result_enrichment(address, destination):
+    """Decode a local merge envelope/result fixture to exercise SDK result support without network I/O."""
+    from stellar_sdk import Account, TransactionBuilder, xdr
+    from stellar_sdk import Network as SDKNetwork
+
+    from polarstellar.stellar.transaction import parse_transaction
+
+    envelope = (
+        TransactionBuilder(
+            Account(address, 1),
+            SDKNetwork.TESTNET_NETWORK_PASSPHRASE,
+            base_fee=100,
+        )
+        .append_account_merge_op(destination)
+        .set_timeout(0)
+        .build()
+    )
+    result = xdr.TransactionResult(
+        xdr.Int64(100),
+        xdr.TransactionResultResult(
+            xdr.TransactionResultCode.txSUCCESS,
+            results=[
+                xdr.OperationResult(
+                    xdr.OperationResultCode.opINNER,
+                    xdr.OperationResultTr(
+                        xdr.OperationType.ACCOUNT_MERGE,
+                        account_merge_result=xdr.AccountMergeResult(
+                            xdr.AccountMergeResultCode.ACCOUNT_MERGE_SUCCESS,
+                            xdr.Int64(100000001),
+                        ),
+                    ),
+                ),
+            ],
+        ),
+        xdr.TransactionResultExt(0),
+    )
+    data = {
+        "hash": envelope.hash_hex(),
+        "successful": True,
+        "operation_count": 1,
+        "ledger": 1,
+        "fee_charged": "100",
+        "source_account": address,
+        "memo_type": "none",
+        "created_at": "2026-10-14T00:00:00Z",
+        "result_xdr": result.to_xdr(),
+        "envelope_xdr": envelope.to_xdr(),
+    }
+    rows = [
+        {
+            "id": "4294971393",
+            "paging_token": "4294971393",
+            "type": "account_merge",
+            "transaction_hash": data["hash"],
+            "transaction_successful": True,
+            "source_account": address,
+            "account": address,
+            "into": destination,
+        }
+    ]
+    parsed = parse_transaction(data, data["hash"], Network.TESTNET, rows, "fixture")
+    assert parsed.operations[0].result.merge_amount == Decimal("10.0000001")
+    assert not parsed.result_warning
+
+
 async def validate(window, root, screenshot=None):
     """Exercise bundled dependencies and Qt navigation without contacting any public endpoint.
 
@@ -111,6 +176,7 @@ async def validate(window, root, screenshot=None):
     checks.append("csv_json_exports")
     value = decoded_value(scval.to_int128(2**100).to_xdr())
     assert value["value"] == str(2**100)
+    validate_result_enrichment(address, issuer)
     checks.append("stellar_sdk_xdr_exact_integer")
     graph = nx.DiGraph([(address, issuer)])
     assert nx.shortest_path(graph, address, issuer) == [address, issuer]

@@ -29,7 +29,6 @@ from polarstellar.storage.export import (
     account_document,
     activity_document,
     graph_document,
-    transaction_document,
 )
 from polarstellar.ui.activity_view import ActivityView
 from polarstellar.ui.asset_view import AssetView
@@ -302,7 +301,7 @@ class MainWindow(QMainWindow):
             )
 
     def save_transaction(self, dialog):
-        """Capture the loaded transaction, including partial evidence and its network."""
+        """Capture the inspector's result/effects snapshot, including partial pages and provenance."""
         tx = dialog.transaction
         if tx is not None:
             self.investigations.add_evidence(
@@ -310,7 +309,7 @@ class MainWindow(QMainWindow):
                     "kind": "transaction",
                     "identifier": tx.hash,
                     "network": tx.network.value,
-                    "evidence": [transaction_document(tx)],
+                    "evidence": [dialog.export_document()],
                 }
             )
 

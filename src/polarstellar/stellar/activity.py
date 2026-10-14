@@ -89,8 +89,9 @@ def field(row: dict, key: str) -> str:
 def ledger_amount(row, key, allow_zero=False):
     """Read a positive seven-decimal ledger amount without float conversion.
 
-    Only requested destination minima may use allow_zero; actual amounts stay
-    positive. Missing/invalid values raise rather than substituting a limit.
+    Callers permit zero for requested destination minima or observed zero-valued
+    effects; normalized path-payment actual amounts stay positive. Missing/invalid
+    values raise rather than substituting a limit.
     """
     value = field(row, key)
     # Limits are ledger amounts too. Reject exponent forms and extra precision;
