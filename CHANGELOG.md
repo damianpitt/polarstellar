@@ -84,8 +84,11 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   checked merge result without additional HTTP requests.
 - Source/wheel builds and lock checks passed with unchanged dependencies. Reviewed result
   and effects inspector tabs at 900 × 700 with an exact merge balance, comparison and
-  original raw evidence. Source CI checks Linux, macOS and Windows after push. No native
-  0.0.18 artifacts have been built or uploaded; earlier packaging results remain separate.
+  original raw evidence.
+- [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/38499862745)
+  passed on Linux, macOS and Windows: all 310 tests, Ruff, locked dependency installation,
+  version checks and source/wheel builds succeeded on each platform. No native 0.0.18
+  artifacts have been built or uploaded; earlier packaging results remain separate.
 
 ## [0.0.17] - 2026-10-13
 
