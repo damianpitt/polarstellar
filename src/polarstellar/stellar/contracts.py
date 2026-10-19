@@ -1,5 +1,7 @@
 """Read-only Stellar RPC contract instances and bounded contract-event history."""
 
+import hashlib
+import re
 from datetime import UTC, datetime
 
 import httpx
@@ -198,6 +200,104 @@ class ContractProvider:
             return result
         except Exception as exc:
             raise AccountError("RPC returned an invalid or unsupported contract instance.") from exc
+
+    async def specification(self, snapshot, network):
+        """Explicitly fetch code bound to the inspected executable, verifying a fresh instance alongside it.
+
+        The instance and code are requested together. Changed/archived executables,
+        wrong keys or code hashes are refused rather than labeling another interface
+        as belonging to this inspection. This does not prove historical event ABI.
+        """
+        from polarstellar.stellar.contract_specs import MAX_WASM, extract
+
+        contract = validate_contract(snapshot["contract"])
+        if snapshot["network"] != network.value or snapshot["source"] != ENDPOINTS[network]:
+            raise AccountError("Specification context does not match this RPC network.")
+        base = {
+            "contract": contract,
+            "network": network.value,
+            "source": ENDPOINTS[network],
+            "fetched_at": datetime.now(UTC).isoformat(),
+            "entries": [],
+            "wasm_hash": snapshot.get("wasm_hash"),
+            "coverage": "Declared interface of the inspected executable; author documentation is untrusted. Not proof of behavior, ownership or historical event compatibility. No contract execution.",
+        }
+        if (
+            not snapshot.get("instance_available")
+            or snapshot.get("executable") != "CONTRACT_EXECUTABLE_WASM"
+        ):
+            return {**base, "status": "Unavailable for absent/native instance", "spec_sha256": None}
+        digest = snapshot.get("wasm_hash")
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise AccountError("Invalid inspected WASM hash. Inspect again.")
+        instance = instance_key(contract)
+        code_key = xdr.LedgerKey(
+            xdr.LedgerEntryType.CONTRACT_CODE,
+            contract_code=xdr.LedgerKeyContractCode(xdr.Hash(bytes.fromhex(digest))),
+        )
+        async with httpx.AsyncClient(transport=self.transport, timeout=20) as client:
+            await self.verify(client, network)
+            data = await self.request(
+                client,
+                network,
+                "getLedgerEntries",
+                {"keys": [instance.to_xdr(), code_key.to_xdr()]},
+            )
+        try:
+            entries = data["entries"]
+            if not isinstance(entries, list) or len(entries) != 2:
+                raise ValueError("Code or instance unavailable")
+            keyed = {entry["key"]: entry for entry in entries}
+            if set(keyed) != {instance.to_xdr(), code_key.to_xdr()}:
+                raise ValueError("Wrong ledger keys")
+            fresh = xdr.LedgerEntryData.from_xdr(keyed[instance.to_xdr()]["xdr"])
+            body = fresh.contract_data
+            if (
+                fresh.type != xdr.LedgerEntryType.CONTRACT_DATA
+                or body is None
+                or body.contract != instance.contract_data.contract
+                or body.key != instance.contract_data.key
+                or body.durability != xdr.ContractDataDurability.PERSISTENT
+                or body.val.type != xdr.SCValType.SCV_CONTRACT_INSTANCE
+            ):
+                raise ValueError("Wrong refreshed instance")
+            executable = body.val.instance.executable
+            if (
+                executable.type != xdr.ContractExecutableType.CONTRACT_EXECUTABLE_WASM
+                or executable.wasm_hash.hash.hex() != digest
+            ):
+                raise ValueError("Executable changed since inspection")
+            code_entry = keyed[code_key.to_xdr()]
+            ledger = xdr.LedgerEntryData.from_xdr(code_entry["xdr"])
+            code = ledger.contract_code
+            if (
+                ledger.type != xdr.LedgerEntryType.CONTRACT_CODE
+                or code is None
+                or code.hash.hash.hex() != digest
+                or len(code.code) > MAX_WASM
+                or hashlib.sha256(code.code).hexdigest() != digest
+            ):
+                raise ValueError("WASM hash/content mismatch or size limit")
+            latest = integer(data["latestLedger"])
+            modified = integer(code_entry["lastModifiedLedgerSeq"])
+            if (
+                modified > latest
+                or integer(keyed[instance.to_xdr()]["lastModifiedLedgerSeq"]) > latest
+            ):
+                raise ValueError("Invalid code ledger metadata")
+            return {
+                **base,
+                **extract(code.code),
+                "code_latest_ledger": latest,
+                "code_last_modified_ledger": modified,
+                "wasm_size": len(code.code),
+                "code_key_xdr": code_key.to_xdr(),
+                "fetched_at": datetime.now(UTC).isoformat(),
+            }
+        except Exception as exc:
+            raise AccountError(
+                "Specification unavailable, oversized, invalid or executable changed. Existing instance/events retained; inspect again if code changed."
+            ) from exc
 
     async def events(self, contract, network, start, end, cursor=None):
         """Fetch one ascending page and retain a fixed ledger boundary despite moving chain state."""

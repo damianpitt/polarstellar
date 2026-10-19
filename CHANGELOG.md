@@ -10,6 +10,73 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.19] - 2026-10-20
+
+### Added — explicit declared contract interface inspection
+
+- In **Contracts → Specification**, choose **Load specification (read only)** after inspecting
+  an instance. Initial inspection/event reads remain unchanged; optional code loading is an
+  explicit action. Verify network/passphrase, fresh instance/code keys and WASM content hash
+  against the inspected executable. Changed, archived/missing or mismatched code is refused;
+  refresh the inspection after an upgrade. Native/absent instances get an unavailable status,
+  without fabricated built-in interfaces.
+- Read one `contractspecv0` custom section without compiling/executing WASM. Show author-declared
+  function signatures, named inputs/outputs and documentation, structs/unions/enums/error cases,
+  plus event prefixes, data layout and topic/data field locations. Each declaration retains
+  exact original XDR for export. Declarations/docs are untrusted descriptions, not proof of
+  behavior, export correctness, source code or ownership.
+- Distinguish absent/empty specs from malformed/unsupported ones. Bound WASM to 2,000,000 bytes,
+  specification data to 256 KiB / 256 entries, sections to 4096 and parsing/type recursion.
+  Future unsupported SDK/XDR metadata remains unavailable while base instance/events stay usable.
+
+### Added — conservative candidate event fields
+
+- Selecting/exporting events can show **Candidate match** names, declared field types and topic/
+  data locations under the loaded executable's specification. Match contract identity, static
+  symbol/compatible-string prefixes, exact counts and single-value/vector/map payload layouts.
+- Put readable candidate fields before original event/interpretation JSON in the event details.
+  Selecting **Specification** gives the interface the available pane; returning to the other
+  tabs restores the event list and evidence without discarding their contents.
+- Support common scalars and option/vector/map/tuple/fixed-byte/named-struct/U32-enum encodings
+  without monetary inference. Exact integers remain strings; generic values remain raw XDR.
+  Unsupported result/union/muxed-address shapes, missing/ambiguous user types, duplicate keys/
+  fields, malformed data and multiple matching declarations remain **Raw only**. Unsupported
+  potential matches cannot be dropped to manufacture a unique candidate.
+- Bind annotations to contract/WASM/specification digests and preserve failed/unknown call status.
+  A shape match does not prove which historical executable emitted an event, author claims,
+  token decimals, ownership, applied financial changes or fund continuity. Original RPC event
+  dictionaries, XDR, cursor/conflict checks and retained-window limits remain unchanged; no new
+  totals, balances or routes are inferred.
+- Limit event interpretation to four topics, 64 KiB per decoded ScVal, bounded recursion and a
+  shared 4096-step budget across candidates/fields. Exceeding limits retains raw evidence rather
+  than accepting a partially checked interpretation.
+
+### Export, storage and compatibility
+
+- Specification has separate CSV/JSON export as `contract_specification`, with full declarations,
+  original entry XDR, source/retrieval/code-ledger metadata and digests. Main contract exports
+  contain compact specification context and per-event annotations, rather than repeating every
+  declaration in every CSV event row. WASM binaries are not stored in these artifacts.
+- **Save resource** stores contract/events plus one separate full specification document in the
+  selected investigation. They reopen offline as frozen JSON; historical snapshots are unchanged.
+  Optional metadata failures retain earlier accepted spec/events/cursors; Cancel and context/reset
+  generations reject late results. Rendering is validated before replacing accepted metadata.
+- Updated package/header/lock versions, README, specification and release documentation to 0.0.19
+  with plain-English code explanations. Dependencies, cache key revision, SQLite schemas and TTL
+  remain unchanged. No contract execution, simulation, signing or submission methods were added.
+  Native builds/uploads remain paused; Mac Intel stays excluded.
+
+### Validation
+
+- Local validation: all 338 tests pass, including 28 new cases covering interface extraction,
+  exact event fields, ambiguity, malformed/bounded inputs, pinned RPC code identity, optional
+  failures, stale results, exports and saved evidence. Ruff formatting/lint and locked dependency
+  checks pass; source archive and wheel builds succeed. Contract/specification and event screens
+  were reviewed at 1180 × 760 with local fixtures.
+- Source startup smoke now extracts a local declared event interface and checks an exact
+  candidate integer without network access or WASM execution. Cross-platform source CI results
+  are pending. No native 0.0.19 artifacts are built/uploaded.
+
 ## [0.0.18] - 2026-10-14
 
 ### Added — checked transaction-result enrichment

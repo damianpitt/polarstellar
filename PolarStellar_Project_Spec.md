@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.18 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC event inspection, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.19 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations and candidate event interpretations, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1967,3 +1967,35 @@ one-day snapshots, while absent optional XDR remains explicitly Not provided. Ex
 schemas/TTL, dependencies and historical saved JSON remain unchanged. Native builds/uploads
 stay paused and Mac Intel stays excluded. Advanced contract specifications and richer event
 interpretation remain a planned next slice.
+
+
+## V0.0.19 implemented slice — declared specifications and candidate event fields
+
+Contracts now offers explicit read-only Specification loading after an instance inspection.
+The optional RPC lookup verifies network/passphrase, requests fresh instance and pinned code
+keys together, rejects changed/archived/missing executables or wrong keys and verifies the
+WASM SHA-256 against the inspected hash. It extracts one contractspecv0 custom section without
+WASM execution/compilation. Native/absent instances have no fabricated built-in specification.
+
+Readable author-declared signatures/docs, structs/unions/enums/errors and event definitions
+retain original SCSpecEntry XDR. Missing/empty specs are distinct from malformed/unsupported
+ones. Bounds are 2,000,000 WASM bytes, 256 KiB spec bytes, 256 entries, 4096 sections and explicit
+parse/type depth limits. Optional failures/cancellation retain prior accepted instance/events/
+metadata; reset/network changes invalidate late responses. No function calls or simulations.
+
+Candidate event interpretation matches contract identity, prefix symbols/compatible strings,
+exact topic/data counts and SINGLE_VALUE/VEC/MAP layouts. Supported common scalar/composite/
+named-struct/U32-enum shapes retain exact unscaled values; generic Val retains raw XDR.
+Unknown/unsupported or ambiguous declarations/encodings remain Raw only. Duplicate keys,
+fields and mismatches are refused. Work/depth/value-size bounds prevent unbounded recursive
+interpretation. Failed/unknown call status remains explicit. A candidate binds WASM/spec
+digests and does not establish historical ABI, author claims, token decimals or fund flow.
+
+The main contract snapshot exports per-event interpretations and compact spec context;
+contract_specification exports full declarations once. Save resource stores both artifacts
+as separate evidence documents, avoiding full-spec repetition per event CSV row. WASM binaries
+are not persisted in these artifacts. Offline JSON and prior saved evidence stay unchanged.
+SQLite/cache schemas/TTL and dependencies remain unchanged. Source smoke parses a local spec
+and exact event value without RPC/execution. Native builds/uploads stay paused; Mac Intel stays
+excluded. The planned next slice is explicit contract storage-key inspection with raw/XDR key
+validation, snapshot provenance and no claims of automatic storage enumeration.

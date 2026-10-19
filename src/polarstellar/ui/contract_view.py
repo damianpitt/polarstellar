@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from polarstellar.stellar.contract_specs import interpret, readable
 from polarstellar.stellar.contracts import MAX_EVENT_PAGES, validate_contract
 from polarstellar.stellar.providers import AccountError
 from polarstellar.storage.export import document
@@ -61,10 +62,25 @@ class ContractView(QWidget):
         self.details.setMinimumHeight(100)
         split = QSplitter(Qt.Orientation.Vertical)
         detail_tabs = QTabWidget()
+        self.detail_tabs = detail_tabs
         self.instance_raw = QPlainTextEdit()
         self.instance_raw.setReadOnly(True)
         detail_tabs.addTab(self.details, "Contract details")
         detail_tabs.addTab(self.instance_raw, "Raw instance evidence")
+        spec_tab = QWidget()
+        spec_layout = QVBoxLayout(spec_tab)
+        self.spec_load = QPushButton("Load specification (read only)")
+        self.spec_load.clicked.connect(self.start_specification)
+        self.spec_details = QPlainTextEdit()
+        self.spec_details.setReadOnly(True)
+        self.spec_details.setMinimumHeight(120)
+        self.spec_load.setMinimumHeight(28)
+        self.spec_export = ExportControls(self.specification_document)
+        self.spec_export.setMinimumHeight(28)
+        spec_layout.addWidget(self.spec_load)
+        spec_layout.addWidget(self.spec_details)
+        spec_layout.addWidget(self.spec_export)
+        detail_tabs.addTab(spec_tab, "Specification")
         split.addWidget(detail_tabs)
         self.table = QTableWidget(0, 4)
         self.table.setHorizontalHeaderLabels(
@@ -78,6 +94,7 @@ class ContractView(QWidget):
         self.raw = QPlainTextEdit()
         self.raw.setReadOnly(True)
         split.addWidget(self.raw)
+        detail_tabs.currentChanged.connect(self.show_detail_tab)
         layout.addWidget(split, 1)
         actions = QHBoxLayout()
         self.more = QPushButton("Load events (oldest first)")
@@ -97,6 +114,12 @@ class ContractView(QWidget):
         """Invalidate old requests and clear every exportable snapshot on context changes."""
         self.cancel_request()
         self.snapshot = None
+        self.specification = None
+        self.spec_load.setEnabled(False)
+        self.spec_export.setEnabled(False)
+        self.spec_details.setPlainText(
+            "Load the inspected executable's declared interface explicitly. No functions are executed."
+        )
         self.events = []
         self.pages = []
         self.cursor = None
@@ -126,6 +149,7 @@ class ContractView(QWidget):
         self.cancel.setEnabled(False)
         self.status.setText("Request cancelled; previously loaded evidence retained.")
         if hasattr(self, "snapshot"):
+            self.spec_load.setEnabled(self.snapshot is not None)
             self.more.setEnabled(
                 self.snapshot is not None and not self.done and len(self.pages) < MAX_EVENT_PAGES
             )
@@ -154,6 +178,7 @@ class ContractView(QWidget):
         self.task.add_done_callback(self.tasks.discard)
         self.cancel.setEnabled(True)
         self.more.setEnabled(False)
+        self.spec_load.setEnabled(False)
 
     async def load(self, contract, network, start, generation):
         """Accept an instance only for the requested contract/network and retained ledger window."""
@@ -211,6 +236,7 @@ class ContractView(QWidget):
                 self.task = None
                 self.cancel.setEnabled(False)
                 self.more.setEnabled(self.snapshot is not None)
+                self.spec_load.setEnabled(self.snapshot is not None)
 
     def start_events(self):
         """Request one page using the frozen contract, network and initial ledger window."""
@@ -297,14 +323,34 @@ class ContractView(QWidget):
                 self.task = None
                 self.cancel.setEnabled(False)
                 self.more.setEnabled(not self.done and len(self.pages) < MAX_EVENT_PAGES)
+                self.spec_load.setEnabled(self.snapshot is not None)
 
     def show_event(self):
         """Show decoded topics/values and original RPC evidence for the selected event."""
         row = self.table.currentRow()
         valid = 0 <= row < len(self.events)
-        self.raw.setPlainText(
-            json.dumps(self.events[row], ensure_ascii=False, indent=2) if valid else ""
-        )
+        if valid:
+            event = self.events[row]
+            candidate = interpret(event, self.specification)
+            lines = [f"Event interpretation: {candidate['status']} • {candidate.get('name', '')}"]
+            for field in candidate.get("fields", []):
+                lines.append(
+                    f"{field['name']} ({field['location']}): "
+                    + json.dumps(field["value"], ensure_ascii=False)
+                )
+            lines += [
+                candidate["note"],
+                candidate.get("call_status", ""),
+                "",
+                "ORIGINAL EVENT EVIDENCE",
+                json.dumps(event, ensure_ascii=False, indent=2),
+                "",
+                "INTERPRETATION EVIDENCE",
+                json.dumps(candidate, ensure_ascii=False, indent=2),
+            ]
+            self.raw.setPlainText("\n".join(lines))
+        else:
+            self.raw.clear()
         value = self.events[row].get("transaction_hash") if valid else None
         self.open_transaction.setEnabled(
             isinstance(value, str) and re.fullmatch(r"[0-9a-fA-F]{64}", value) is not None
@@ -326,11 +372,81 @@ class ContractView(QWidget):
                 "start_ledger": self.begin,
                 "end_ledger": self.end,
                 "pages": self.pages,
+                "specification": {
+                    key: value for key, value in self.specification.items() if key != "entries"
+                }
+                if self.specification
+                else None,
                 "events_queried": bool(self.pages),
                 "query_complete": self.done,
                 "page_limit": MAX_EVENT_PAGES,
                 "coverage": "Loaded contract events only; provider retention and a fixed "
                 "ledger window apply. No decimal or application semantics inferred.",
             },
-            self.events,
+            [
+                {**event, "interpretation": interpret(event, self.specification)}
+                for event in self.events
+            ],
+        )
+
+    def show_detail_tab(self, index):
+        """Give long interface declarations the event pane space without discarding loaded event state."""
+        is_specification = index == 2
+        self.table.setVisible(not is_specification)
+        self.raw.setVisible(not is_specification)
+
+    def start_specification(self):
+        """Capture the existing inspection before issuing an explicit optional code/specification read."""
+        if self.task is not None or self.snapshot is None:
+            return
+        self.status.setText("Loading declared specification for the inspected executable…")
+        self.launch(self.load_specification(self.snapshot, self.context_network, self.generation))
+
+    async def load_specification(self, snapshot, network, generation):
+        """Accept only the pinned contract/network/hash; failures and cancellation retain earlier evidence."""
+        try:
+            result = await self.provider.specification(snapshot, network)
+            if generation != self.generation:
+                return
+            if (result["contract"], result["network"], result["wasm_hash"]) != (
+                snapshot["contract"],
+                network.value,
+                snapshot.get("wasm_hash"),
+            ):
+                raise AccountError("Specification belongs to another inspection.")
+            # Render/validate optional metadata before replacing accepted state;
+            # malformed future/provider descriptions must preserve the prior spec.
+            preview = readable(result)
+            self.specification = result
+            self.spec_details.setPlainText(preview)
+            self.spec_export.setEnabled(True)
+            self.show_event()
+            self.status.setText(
+                f"Specification: {result['status']}. Event interpretations use this executable only; historical compatibility is unverified."
+            )
+        except asyncio.CancelledError:
+            return
+        except Exception as exc:  # noqa: BLE001 -- Optional metadata failures must preserve useful instance/events.
+            if generation == self.generation:
+                self.status.setText(
+                    (str(exc) if isinstance(exc, AccountError) else "Unable to load specification.")
+                    + " Previous specification and events retained."
+                )
+        finally:
+            if generation == self.generation:
+                self.task = None
+                self.cancel.setEnabled(False)
+                self.spec_load.setEnabled(self.snapshot is not None)
+                self.more.setEnabled(
+                    self.snapshot is not None
+                    and not self.done
+                    and len(self.pages) < MAX_EVENT_PAGES
+                )
+
+    def specification_document(self):
+        """Export the interface once as a separate artifact, avoiding large repeated event CSV metadata."""
+        return document(
+            "contract_specification",
+            {key: value for key, value in self.specification.items() if key != "entries"},
+            self.specification["entries"],
         )

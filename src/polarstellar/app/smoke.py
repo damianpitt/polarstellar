@@ -89,6 +89,62 @@ def validate_result_enrichment(address, destination):
     assert not parsed.result_warning
 
 
+def validate_contract_specification():
+    """Parse a local declared event interface and interpret an exact integer without executing WASM or RPC."""
+    import hashlib
+
+    from stellar_sdk import xdr
+
+    from polarstellar.stellar.contract_specs import extract, interpret
+    from polarstellar.stellar.contracts import decoded_value
+
+    entry = xdr.SCSpecEntry(
+        xdr.SCSpecEntryKind.SC_SPEC_ENTRY_EVENT_V0,
+        event_v0=xdr.SCSpecEventV0(
+            b"Local fixture",
+            b"",
+            xdr.SCSymbol(b"Changed"),
+            [xdr.SCSymbol(b"change")],
+            [
+                xdr.SCSpecEventParamV0(
+                    b"No implied units",
+                    b"quantity",
+                    xdr.SCSpecTypeDef(xdr.SCSpecType.SC_SPEC_TYPE_I128),
+                    xdr.SCSpecEventParamLocationV0.SC_SPEC_EVENT_PARAM_LOCATION_DATA,
+                )
+            ],
+            xdr.SCSpecEventDataFormat.SC_SPEC_EVENT_DATA_FORMAT_SINGLE_VALUE,
+        ),
+    )
+    name = b"contractspecv0"
+    payload = bytes([len(name)]) + name + entry.to_xdr_bytes()
+    remaining, length = len(payload), bytearray()
+    while True:
+        part = remaining & 127
+        remaining >>= 7
+        length.append(part | (128 if remaining else 0))
+        if not remaining:
+            break
+    wasm = b"\0asm\1\0\0\0\0" + bytes(length) + payload
+    contract = StrKey.encode_contract(bytes(32))
+    specification = {
+        **extract(wasm),
+        "wasm_hash": hashlib.sha256(wasm).hexdigest(),
+        "contract": contract,
+    }
+    candidate = interpret(
+        {
+            "contract": contract,
+            "topics": [decoded_value(scval.to_symbol("change").to_xdr())],
+            "value": decoded_value(scval.to_int128(2**100).to_xdr()),
+            "successful_call": True,
+        },
+        specification,
+    )
+    assert candidate["status"] == "Candidate match"
+    assert candidate["fields"][0]["value"]["value"] == str(2**100)
+
+
 async def validate(window, root, screenshot=None):
     """Exercise bundled dependencies and Qt navigation without contacting any public endpoint.
 
@@ -177,6 +233,7 @@ async def validate(window, root, screenshot=None):
     value = decoded_value(scval.to_int128(2**100).to_xdr())
     assert value["value"] == str(2**100)
     validate_result_enrichment(address, issuer)
+    validate_contract_specification()
     checks.append("stellar_sdk_xdr_exact_integer")
     graph = nx.DiGraph([(address, issuer)])
     assert nx.shortest_path(graph, address, issuer) == [address, issuer]

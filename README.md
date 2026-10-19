@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.18 · Pre-alpha**
+**Current version: 0.0.19 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.18 |
+| Area | Available in 0.0.19 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -40,7 +40,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
 | Relationship graph | Bounded multi-hop expansion, local time/type filters, direct-transfer routes, separate path/merge evidence and chronological timelines |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
-| Contracts | Read-only instance details, raw XDR, and paginated RPC contract events |
+| Contracts | Read-only instances, pinned declared specifications, candidate event fields and paginated RPC events |
 | Assets | Issued-asset discovery with exact filters/pagination, statistics, inspector shortcuts, and native XLM details |
 | Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
 | Watchlists | Local resource lists, combined offline filters, portable JSON import/export, annotations and manual refresh |
@@ -48,7 +48,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Networks | Separate Mainnet and Testnet investigations |
 
 > **Pre-alpha:** native portable builds are unsigned preview applications. System installers,
-> signing/notarization, and advanced contract analysis remain planned.
+> signing/notarization, storage-key discovery and source-code verification remain planned.
 
 ## Getting started
 
@@ -60,7 +60,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.18; previously validated native artifacts are 0.0.11.
+The current source version is 0.0.19; previously validated native artifacts are 0.0.11.
 New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
@@ -526,11 +526,61 @@ RPC requests use the public Gateway Mainnet endpoint and SDF Testnet endpoint li
 [Stellar's provider directory](https://developers.stellar.org/docs/data/apis/rpc/providers).
 Queries disclose the public contract ID and ledger range to that provider. Contract data
 loads live and is not stored in the optional response cache. There are no contract calls,
-transaction simulations/submissions, source-code verification, WASM downloads, arbitrary
-storage enumeration, or automatic function discovery in this slice. See the official
+transaction simulations/submissions, source-code verification, WASM execution or arbitrary
+storage enumeration. Declared interfaces load only through the explicit action below. See the official
 [getLedgerEntries](https://developers.stellar.org/docs/data/apis/rpc/api-reference/methods/getLedgerEntries)
 and [getEvents](https://developers.stellar.org/docs/data/apis/rpc/api-reference/methods/getEvents)
 references for the underlying data coverage.
+
+### Declared contract specifications and richer event fields
+
+After inspecting a contract, open **Specification** and choose **Load specification
+(read only)**. The initial inspection and event requests do not fetch code automatically.
+The optional lookup verifies the RPC network and reads the instance/code together,
+refusing an executable change, missing/archived entries, wrong ledger keys or a WASM
+content hash that differs from the inspected hash. Refresh the inspection if code changed.
+Native Stellar Asset Contracts and absent instances have an explicit unavailable status;
+no built-in interface is fabricated for them.
+
+The view shows **author-declared** function signatures, named inputs/outputs and docs,
+struct/union/enum/error definitions, and event prefixes, layouts and field locations.
+WASM bytes are read to extract `contractspecv0`; they are never compiled or executed.
+Declared interfaces/docs are not proof of behavior, exported-function correctness, source
+code or ownership. A missing/empty specification is distinct from an invalid or unsupported
+one. Unknown future SDK/XDR formats remain unavailable while instance/events stay usable.
+
+Parsing is limited to **2,000,000 WASM bytes**, **256 KiB of specification bytes** and
+**256 entries**, with bounded sections and recursion. Event interpretation accepts up to
+four topics and 64 KiB per ScVal, with shared work/depth limits. Oversized or malformed
+optional metadata cannot replace accepted evidence; Cancel/network changes reject late
+responses. No additional dependency, disk cache or automatic crawling is introduced.
+
+When exactly one supported event shape matches, selecting/exporting an event adds
+**Candidate match** fields with declared names and topic/data locations. Matching follows
+prefix topics (symbols or compatible strings), exact counts and single-value/vector/map
+data layouts. Common scalar and supported option/vector/map/tuple/fixed-byte/named-struct/
+U32-enum shapes retain exact values. Large integers remain strings and have **no inferred
+token decimals**. Generic values remain raw XDR; unsupported result/union/muxed-address
+shapes, unknown user types, mismatches, malformed data or ambiguous definitions remain
+**Raw only**. Failed/unknown call status stays explicit and is not proof of applied changes.
+
+Interpretations are bound to this contract and the loaded WASM/specification digests.
+They describe compatibility with the **inspected executable's declarations**, not proof
+that the same version emitted an older event. Event history may span upgrades, and matching
+shapes do not establish historical ABI compatibility or financial meaning. Original RPC
+fields, topics/value XDR and pagination/conflict checks remain unchanged. No events enter
+payment totals, routes or balances through this interpretation.
+
+The specification tab has its own **Export CSV / JSON** artifact, `contract_specification`,
+containing readable declarations and each entry's exact XDR. Contract-event exports carry
+only a compact specification summary plus per-event interpretations, avoiding repetition
+of every declaration in every CSV event row. **Save resource** keeps the contract/event
+snapshot and one separate full specification document in the selected investigation.
+They reopen offline as frozen JSON. WASM binaries are not saved in these artifacts;
+previous saved snapshots remain unchanged. Cache/SQLite schemas, TTL and dependencies
+are unchanged; native builds/uploads remain paused.
+
+The format follows Stellar's [contract interface specification (SEP-48)](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0048.md).
 
 ### Saved investigations, notes, and labels
 
@@ -751,11 +801,11 @@ Portable native packaging is implemented. Further planned areas include:
 - Broader asset metadata and contract-token discovery.
 - Watchlist batch refresh/change comparison and expanded investigation organization.
 - Deeper evidence comparison and additional result/effect payload interpretation.
-- Advanced contract specifications, storage-key discovery, and richer event interpretation.
+- Contract storage-key inspection and broader event/type compatibility.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.18. The detailed release
+These are **planned capabilities**, not features available in 0.0.19. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks
