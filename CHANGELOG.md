@@ -74,8 +74,12 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   checks pass; source archive and wheel builds succeed. Contract/specification and event screens
   were reviewed at 1180 × 760 with local fixtures.
 - Source startup smoke now extracts a local declared event interface and checks an exact
-  candidate integer without network access or WASM execution. Cross-platform source CI results
-  are pending. No native 0.0.19 artifacts are built/uploaded.
+  candidate integer without network access or WASM execution.
+- [Source CI run 39300757427](https://github.com/damianpitt/polarstellar/actions/runs/39300757427)
+  passed on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows (`windows-latest`):
+  all 338 tests on each platform, Ruff checks, locked dependency/version checks and source
+  archive/wheel builds. These are source validation results; no native 0.0.19 artifacts
+  are built/uploaded.
 
 ## [0.0.18] - 2026-10-14
 
