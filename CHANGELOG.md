@@ -66,8 +66,11 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   exports and offline saves. The earlier error-enum fixture now uses real contract-error XDR.
 - Ruff formatting/lint, locked dependency checks and source archive/wheel builds pass. The
   nested union/Result event display was reviewed at 1180 × 760; local startup smoke passes
-  without network access. Cross-platform source CI results will be recorded after the push.
-  No native 0.0.21 artifacts were built/uploaded.
+  without network access.
+- [Source CI run 39466077596](https://github.com/damianpitt/polarstellar/actions/runs/39466077596)
+  passed on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows (`windows-latest`):
+  all 431 tests on each platform, Ruff, locked dependency/version checks and source archive/wheel
+  builds. These are source validation results; no native 0.0.21 artifacts were built/uploaded.
 
 ## [0.0.20] - 2026-10-20
 
