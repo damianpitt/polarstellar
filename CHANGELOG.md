@@ -10,6 +10,68 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.20] - 2026-10-20
+
+### Added — explicitly supplied contract storage keys
+
+- In **Contracts → Storage key**, inspect a contract, enter a **Symbol** or base64 **ScVal XDR**
+  key, choose **Persistent** or **Temporary**, then **Read key / refresh**. Each action reads
+  exactly one key for the inspected contract. Composite keys can be supplied as XDR; a full
+  LedgerKey is not accepted in that field. Editing the address requires another inspection
+  to change contract context. No storage enumeration or alternative-durability probing occurs.
+- Verify the selected RPC network passphrase on every read. Match the returned outer LedgerKey
+  and inner entry type, contract, exact ScVal and durability before accepting evidence. Reject
+  duplicates, malformed payloads and inconsistent ledger metadata; errors leave accepted
+  storage, instance, specification and event state intact.
+- Show accepted key/contract/network/durability, fixed endpoint and retrieval time, RPC latest
+  ledger, entry modification ledger and optional live-until ledger. Distinguish live at the
+  reported ledger, expired TTL, unknown TTL and **No entry returned**. Missing data may be absent,
+  expired, archived or unavailable; it is not proof of nonexistence. No consensus proof is claimed.
+- Preserve exact common scalar values, large integer strings, original LedgerEntryData XDR
+  and original RPC entry fields. No token units, decimals or application meaning are inferred.
+  Reads describe current RPC state, independently of the previously captured event window and
+  instance snapshot; they are not historical state or evidence of state at an event's ledger.
+- Bound keys to 4096 decoded bytes / depth 16 / 512 nodes, entries to 256 KiB with bounded XDR
+  parsing, and use canonical base64 plus full/canonical XDR round trips. Symbol input requires
+  1–32 ASCII letters/digits/underscores. Reserved instance/nonce values, duplicate map keys,
+  malformed/trailing/oversized input and non-uint32 ledger metadata are refused before acceptance.
+
+### Export, offline investigations and UI behavior
+
+- The storage tab's separate **Export CSV / JSON** freezes the last accepted lookup as
+  `contract_storage`. Missing entries produce zero records with explicit request/status metadata.
+  Editing key/durability inputs does not change export identities. A successful new lookup
+  replaces the previous in-memory observation; save/export first when retaining several keys.
+- **Save resource to selected investigation** includes storage as one separate full artifact,
+  alongside contract/events and any loaded specification. Evidence reopens offline as frozen
+  JSON; old saved artifacts remain unchanged. Main contract/event exports include compact
+  storage request context, while storage value/raw evidence belongs to the separate artifact.
+- The storage tab uses the available details pane without discarding event state. Reads share
+  explicit Cancel behavior with other contract requests. Network/reset generations reject late
+  cancellation-resistant responses; optional read failures retain previous exportable evidence.
+
+### Privacy, compatibility and documentation
+
+- Supplied keys are sent to the selected public RPC endpoint. Storage reads stay live outside
+  the optional cache; they are not automatically persisted to disk. Export/save remain explicit.
+  No restoration, TTL extension, contract calls, simulation or transaction submission is added.
+- Package, lockfile, header, README, scope and release documentation align at **0.0.20**.
+  Dependencies, SQLite schemas, cache revision/TTL and prior snapshots remain unchanged.
+  Added plain-English function documentation and comments explaining request/evidence boundaries.
+- Startup smoke validates a local key/entry identity and an exact large integer without RPC.
+  Native builds/uploads remain paused, and Mac Intel stays excluded from development targets.
+
+### Validation
+
+- All 380 local tests pass, including 42 new storage cases covering symbols/composite XDR,
+  malformed and reserved keys, key/entry bounds, network routing and passphrase verification,
+  inner/outer identity mismatches, ledger/TTL limits, exact integers, missing-entry export,
+  saved evidence, input edits, failed/foreign results, cancellation and network/context reset.
+- Ruff formatting/lint, locked dependency validation and source archive/wheel builds pass.
+  The storage screen was reviewed at 1180 × 760 with local fixtures; decoded value and ledger/TTL
+  details precede long raw evidence. Source startup smoke passes without network access.
+  Cross-platform source CI results will be recorded after the push. No native builds/uploads.
+
 ## [0.0.19] - 2026-10-20
 
 ### Added — explicit declared contract interface inspection

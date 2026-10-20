@@ -7,6 +7,7 @@ import re
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QComboBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -21,7 +22,9 @@ from PySide6.QtWidgets import (
 )
 
 from polarstellar.stellar.contract_specs import interpret, readable
-from polarstellar.stellar.contracts import MAX_EVENT_PAGES, validate_contract
+from polarstellar.stellar.contract_storage import entered_key, storage_key
+from polarstellar.stellar.contract_storage import readable as readable_storage
+from polarstellar.stellar.contracts import ENDPOINTS, MAX_EVENT_PAGES, validate_contract
 from polarstellar.stellar.providers import AccountError
 from polarstellar.storage.export import document
 from polarstellar.ui.export_controls import ExportControls
@@ -81,6 +84,45 @@ class ContractView(QWidget):
         spec_layout.addWidget(self.spec_details)
         spec_layout.addWidget(self.spec_export)
         detail_tabs.addTab(spec_tab, "Specification")
+        storage_tab = QWidget()
+        storage_layout = QVBoxLayout(storage_tab)
+        storage_help = QLabel(
+            "Read one supplied key from the inspected contract. Symbol or base64 ScVal XDR; "
+            "persistent and temporary are separate key spaces. Current state only; no enumeration."
+        )
+        storage_help.setWordWrap(True)
+        storage_layout.addWidget(storage_help)
+        storage_form = QHBoxLayout()
+        self.storage_mode = QComboBox()
+        self.storage_mode.addItems(["Symbol", "ScVal XDR"])
+        self.storage_mode.setAccessibleName("Storage key format")
+        self.storage_key = QLineEdit()
+        self.storage_key.setMaxLength(5500)
+        self.storage_key.setPlaceholderText("Exact symbol, e.g. COUNTER; or select ScVal XDR")
+        self.storage_key.setAccessibleName("Explicit contract storage key")
+        self.storage_durability = QComboBox()
+        self.storage_durability.addItems(["Persistent", "Temporary"])
+        self.storage_durability.setAccessibleName("Storage durability")
+        self.storage_load = QPushButton("Read key / refresh")
+        self.storage_load.clicked.connect(self.start_storage)
+        self.storage_key.returnPressed.connect(self.start_storage)
+        for widget in (
+            self.storage_mode,
+            self.storage_key,
+            self.storage_durability,
+            self.storage_load,
+        ):
+            storage_form.addWidget(widget)
+        storage_form.setStretch(1, 1)
+        storage_layout.addLayout(storage_form)
+        self.storage_details = QPlainTextEdit()
+        self.storage_details.setReadOnly(True)
+        self.storage_details.setMinimumHeight(120)
+        storage_layout.addWidget(self.storage_details)
+        self.storage_export = ExportControls(self.storage_document)
+        self.storage_export.setMinimumHeight(28)
+        storage_layout.addWidget(self.storage_export)
+        detail_tabs.addTab(storage_tab, "Storage key")
         split.addWidget(detail_tabs)
         self.table = QTableWidget(0, 4)
         self.table.setHorizontalHeaderLabels(
@@ -114,6 +156,16 @@ class ContractView(QWidget):
         """Invalidate old requests and clear every exportable snapshot on context changes."""
         self.cancel_request()
         self.snapshot = None
+        self.storage_result = None
+        self.storage_load.setEnabled(False)
+        self.storage_export.setEnabled(False)
+        self.storage_key.clear()
+        self.storage_mode.setCurrentIndex(0)
+        self.storage_durability.setCurrentIndex(0)
+        self.storage_details.setPlainText(
+            "Inspect a contract, supply a key, then choose Read key / refresh. "
+            "The last accepted lookup is retained until another succeeds or the inspection resets."
+        )
         self.specification = None
         self.spec_load.setEnabled(False)
         self.spec_export.setEnabled(False)
@@ -150,6 +202,7 @@ class ContractView(QWidget):
         self.status.setText("Request cancelled; previously loaded evidence retained.")
         if hasattr(self, "snapshot"):
             self.spec_load.setEnabled(self.snapshot is not None)
+            self.storage_load.setEnabled(self.snapshot is not None)
             self.more.setEnabled(
                 self.snapshot is not None and not self.done and len(self.pages) < MAX_EVENT_PAGES
             )
@@ -179,6 +232,7 @@ class ContractView(QWidget):
         self.cancel.setEnabled(True)
         self.more.setEnabled(False)
         self.spec_load.setEnabled(False)
+        self.storage_load.setEnabled(False)
 
     async def load(self, contract, network, start, generation):
         """Accept an instance only for the requested contract/network and retained ledger window."""
@@ -237,6 +291,7 @@ class ContractView(QWidget):
                 self.cancel.setEnabled(False)
                 self.more.setEnabled(self.snapshot is not None)
                 self.spec_load.setEnabled(self.snapshot is not None)
+                self.storage_load.setEnabled(self.snapshot is not None)
 
     def start_events(self):
         """Request one page using the frozen contract, network and initial ledger window."""
@@ -324,6 +379,7 @@ class ContractView(QWidget):
                 self.cancel.setEnabled(False)
                 self.more.setEnabled(not self.done and len(self.pages) < MAX_EVENT_PAGES)
                 self.spec_load.setEnabled(self.snapshot is not None)
+                self.storage_load.setEnabled(self.snapshot is not None)
 
     def show_event(self):
         """Show decoded topics/values and original RPC evidence for the selected event."""
@@ -378,6 +434,11 @@ class ContractView(QWidget):
                 if self.specification
                 else None,
                 "events_queried": bool(self.pages),
+                "storage_lookup": {
+                    key: value for key, value in self.storage_result.items() if key != "entry"
+                }
+                if self.storage_result
+                else None,
                 "query_complete": self.done,
                 "page_limit": MAX_EVENT_PAGES,
                 "coverage": "Loaded contract events only; provider retention and a fixed "
@@ -390,10 +451,9 @@ class ContractView(QWidget):
         )
 
     def show_detail_tab(self, index):
-        """Give long interface declarations the event pane space without discarding loaded event state."""
-        is_specification = index == 2
-        self.table.setVisible(not is_specification)
-        self.raw.setVisible(not is_specification)
+        """Give specification/storage details the full pane without discarding loaded events."""
+        self.table.setVisible(index < 2)
+        self.raw.setVisible(index < 2)
 
     def start_specification(self):
         """Capture the existing inspection before issuing an explicit optional code/specification read."""
@@ -437,6 +497,7 @@ class ContractView(QWidget):
                 self.task = None
                 self.cancel.setEnabled(False)
                 self.spec_load.setEnabled(self.snapshot is not None)
+                self.storage_load.setEnabled(self.snapshot is not None)
                 self.more.setEnabled(
                     self.snapshot is not None
                     and not self.done
@@ -449,4 +510,80 @@ class ContractView(QWidget):
             "contract_specification",
             {key: value for key, value in self.specification.items() if key != "entries"},
             self.specification["entries"],
+        )
+
+    def start_storage(self):
+        """Freeze the supplied key/durability and inspected context before any network access."""
+        if self.task is not None or self.snapshot is None:
+            return
+        try:
+            key_xdr = entered_key(self.storage_key.text(), self.storage_mode.currentText())
+            durability = self.storage_durability.currentText()
+            # Validate the complete request before launching; edits during a read cannot
+            # change its captured identity or relabel the last accepted export.
+            storage_key(self.snapshot["contract"], key_xdr, durability)
+        except AccountError as exc:
+            self.status.setText(str(exc) + " Previous storage result retained.")
+            return
+        self.status.setText("Reading one supplied storage key from the inspected contract…")
+        self.launch(
+            self.load_storage(
+                self.snapshot["contract"],
+                self.context_network,
+                key_xdr,
+                durability,
+                self.generation,
+            )
+        )
+
+    async def load_storage(self, contract, network, key_xdr, durability, generation):
+        """Accept one matching read atomically; failures, cancellation and late results retain evidence."""
+        try:
+            result = await self.provider.storage(contract, network, key_xdr, durability)
+            if generation != self.generation:
+                return
+            expected = storage_key(contract, key_xdr, durability).to_xdr()
+            if (
+                result["contract"],
+                result["network"],
+                result["source"],
+                result["requested_key_xdr"],
+                result["durability"],
+                result["ledger_key_xdr"],
+            ) != (contract, network.value, ENDPOINTS[network], key_xdr, durability, expected):
+                raise AccountError("Storage result belongs to another key, contract or network.")
+            preview = readable_storage(result)
+            self.storage_result = result
+            self.storage_details.setPlainText(preview)
+            self.storage_export.setEnabled(True)
+            self.status.setText(
+                f"Storage: {result['status']} • {network.value} • {durability} • "
+                f"RPC ledger {result['latest_ledger']}. One supplied key; not historical/event state."
+            )
+        except asyncio.CancelledError:
+            return
+        except Exception as exc:  # noqa: BLE001 -- Optional reads must retain accepted instance/events/spec/storage.
+            if generation == self.generation:
+                self.status.setText(
+                    (str(exc) if isinstance(exc, AccountError) else "Unable to read storage key.")
+                    + " Previous storage result retained."
+                )
+        finally:
+            if generation == self.generation:
+                self.task = None
+                self.cancel.setEnabled(False)
+                self.storage_load.setEnabled(self.snapshot is not None)
+                self.spec_load.setEnabled(self.snapshot is not None)
+                self.more.setEnabled(
+                    self.snapshot is not None
+                    and not self.done
+                    and len(self.pages) < MAX_EVENT_PAGES
+                )
+
+    def storage_document(self):
+        """Freeze the last accepted lookup, including an explicit missing result with zero rows."""
+        return document(
+            "contract_storage",
+            {key: value for key, value in self.storage_result.items() if key != "entry"},
+            [self.storage_result["entry"]] if self.storage_result["entry"] is not None else [],
         )

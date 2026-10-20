@@ -314,7 +314,7 @@ class MainWindow(QMainWindow):
             )
 
     def save_resource(self):
-        """Save the displayed resource with its loaded activity, graph or separate contract interface evidence."""
+        """Save resource/activity evidence plus separate loaded contract interface and storage snapshots."""
         if self.investigations is None:
             return
         if self.pages.currentIndex() == 6 and self.contracts.snapshot is not None:
@@ -327,6 +327,11 @@ class MainWindow(QMainWindow):
                 + (
                     [self.contracts.specification_document()]
                     if self.contracts.specification
+                    else []
+                )
+                + (
+                    [self.contracts.storage_document()]
+                    if self.contracts.storage_result is not None
                     else []
                 ),
             }

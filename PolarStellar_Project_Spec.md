@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.19 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations and candidate event interpretations, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.20 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations and explicit storage-key reads, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -1999,3 +1999,42 @@ SQLite/cache schemas/TTL and dependencies remain unchanged. Source smoke parses 
 and exact event value without RPC/execution. Native builds/uploads stay paused; Mac Intel stays
 excluded. The planned next slice is explicit contract storage-key inspection with raw/XDR key
 validation, snapshot provenance and no claims of automatic storage enumeration.
+
+## V0.0.20 implemented slice — explicit contract storage-key reads
+
+Contracts → Storage key reads one explicitly supplied ScVal key at a time for the inspected
+contract. Symbol input accepts 1–32 ASCII letters/digits/underscores; ScVal XDR supports
+composite keys without guessing their application meaning. Persistent and Temporary are
+separate explicit choices. No automatic lookup, alternative-durability fallback, enumeration,
+source-code inference, archive restoration, TTL extension or contract execution is performed.
+
+Provider validation precedes I/O: checksum-valid C-address, canonical/full-consumption key
+XDR (4096 decoded bytes), depth 16 / 512 nodes, no internal instance/nonce values or duplicate
+map keys. Every explicit request verifies the endpoint's network passphrase, then sends one
+LedgerKey to getLedgerEntries. Response checks require matching outer key and inner entry
+type/contract/key/durability, bounded canonical entry XDR (256 KiB, parse depth 32), real uint32
+ledger metadata and modification ledger no later than RPC latest. Response envelopes retain
+the existing 5,000,000-byte cap and read-only method allowlist.
+
+Accepted evidence includes the exact requested ScVal/LedgerKey XDR, contract, network, fixed
+RPC endpoint, retrieval time, latest ledger, modification and optional live-until ledger,
+decoded common scalar/exact integer values, original entry XDR and RPC entry fields. Missing,
+expired, unknown-TTL and live-at-reported-ledger results are distinct. Missing is not proof
+of nonexistence; RPC data is not independently verified consensus. No monetary units, balances
+or storage meaning are inferred. Reads are current-state observations, not historical state
+or state at an event's ledger. They may differ from the earlier inspected instance/event window.
+
+The dedicated CSV/JSON contract_storage artifact retains the last accepted lookup, including
+zero-record missing-entry observations. Main contract exports carry compact storage context;
+the separate artifact contains the value/raw evidence. Save resource stores that artifact
+once alongside contract/events and any specification, reopening as frozen offline JSON.
+Form edits, failures and cancellation cannot relabel accepted evidence; reset/network changes
+clear it and generation checks reject late results. A successful new lookup replaces only
+the in-memory storage observation: save/export before moving to another key to retain both.
+
+No new dependencies, cache revision/TTL or SQLite schema changes. Storage bypasses the optional
+cache; keys are disclosed to the selected public RPC provider, with disk persistence only
+through explicit export/save. Startup smoke checks a local supplied-key/entry fixture and
+exact integer without RPC. Native builds/uploads remain paused; Mac Intel stays excluded.
+The next planned contract slice is broader event/type compatibility, starting with supported
+named union/result shapes while retaining raw evidence, ambiguity checks and coverage limits.

@@ -299,6 +299,22 @@ class ContractProvider:
                 "Specification unavailable, oversized, invalid or executable changed. Existing instance/events retained; inspect again if code changed."
             ) from exc
 
+    async def storage(self, contract, network, key_xdr, durability):
+        """Read exactly one supplied storage key after checking the endpoint's network.
+
+        This is a fresh current-state lookup, separate from the captured event window
+        and optional cache. Validation happens before I/O. It neither discovers keys
+        nor restores archived entries or invokes any contract function.
+        """
+        from polarstellar.stellar.contract_storage import result_document, storage_key
+
+        contract = validate_contract(contract)
+        key = storage_key(contract, key_xdr, durability)
+        async with httpx.AsyncClient(transport=self.transport, timeout=20) as client:
+            await self.verify(client, network)
+            data = await self.request(client, network, "getLedgerEntries", {"keys": [key.to_xdr()]})
+        return result_document(data, contract, network.value, ENDPOINTS[network], key, durability)
+
     async def events(self, contract, network, start, end, cursor=None):
         """Fetch one ascending page and retain a fixed ledger boundary despite moving chain state."""
         contract = validate_contract(contract)

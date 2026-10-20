@@ -145,6 +145,44 @@ def validate_contract_specification():
     assert candidate["fields"][0]["value"]["value"] == str(2**100)
 
 
+def validate_contract_storage():
+    """Check a supplied persistent key and exact local entry evidence without contacting RPC."""
+    from stellar_sdk import xdr
+
+    from polarstellar.stellar.contract_storage import entered_key, result_document, storage_key
+
+    contract = StrKey.encode_contract(bytes(32))
+    key = storage_key(contract, entered_key("COUNTER", "Symbol"), "Persistent")
+    body = xdr.ContractDataEntry(
+        xdr.ExtensionPoint(0),
+        key.contract_data.contract,
+        key.contract_data.key,
+        key.contract_data.durability,
+        scval.to_int128(2**100),
+    )
+    entry = xdr.LedgerEntryData(xdr.LedgerEntryType.CONTRACT_DATA, contract_data=body)
+    result = result_document(
+        {
+            "latestLedger": 100,
+            "entries": [
+                {
+                    "key": key.to_xdr(),
+                    "xdr": entry.to_xdr(),
+                    "lastModifiedLedgerSeq": 90,
+                    "liveUntilLedgerSeq": 200,
+                }
+            ],
+        },
+        contract,
+        "Testnet",
+        "local fixture",
+        key,
+        "Persistent",
+    )
+    assert result["entry"]["value"]["value"] == str(2**100)
+    assert result["status"] == "Returned; live at reported ledger"
+
+
 async def validate(window, root, screenshot=None):
     """Exercise bundled dependencies and Qt navigation without contacting any public endpoint.
 
@@ -234,6 +272,7 @@ async def validate(window, root, screenshot=None):
     assert value["value"] == str(2**100)
     validate_result_enrichment(address, issuer)
     validate_contract_specification()
+    validate_contract_storage()
     checks.append("stellar_sdk_xdr_exact_integer")
     graph = nx.DiGraph([(address, issuer)])
     assert nx.shortest_path(graph, address, issuer) == [address, issuer]

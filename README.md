@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.19 · Pre-alpha**
+**Current version: 0.0.20 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.19 |
+| Area | Available in 0.0.20 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -40,7 +40,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
 | Relationship graph | Bounded multi-hop expansion, local time/type filters, direct-transfer routes, separate path/merge evidence and chronological timelines |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
-| Contracts | Read-only instances, pinned declared specifications, candidate event fields and paginated RPC events |
+| Contracts | Read-only instances, explicit storage-key reads, pinned declared specifications, candidate event fields and paginated RPC events |
 | Assets | Issued-asset discovery with exact filters/pagination, statistics, inspector shortcuts, and native XLM details |
 | Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
 | Watchlists | Local resource lists, combined offline filters, portable JSON import/export, annotations and manual refresh |
@@ -60,7 +60,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.19; previously validated native artifacts are 0.0.11.
+The current source version is 0.0.20; previously validated native artifacts are 0.0.11.
 New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
@@ -524,7 +524,7 @@ single-resource refresh button; inspect again in Contracts and save a new snapsh
 
 RPC requests use the public Gateway Mainnet endpoint and SDF Testnet endpoint listed in
 [Stellar's provider directory](https://developers.stellar.org/docs/data/apis/rpc/providers).
-Queries disclose the public contract ID and ledger range to that provider. Contract data
+Queries disclose the public contract ID, requested storage key/durability or ledger range to that provider. Contract data
 loads live and is not stored in the optional response cache. There are no contract calls,
 transaction simulations/submissions, source-code verification, WASM execution or arbitrary
 storage enumeration. Declared interfaces load only through the explicit action below. See the official
@@ -581,6 +581,53 @@ previous saved snapshots remain unchanged. Cache/SQLite schemas, TTL and depende
 are unchanged; native builds/uploads remain paused.
 
 The format follows Stellar's [contract interface specification (SEP-48)](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0048.md).
+
+### Explicit contract storage-key inspection
+
+After inspecting a contract, open **Contracts → Storage key**. Select **Symbol** for a
+simple key such as `COUNTER`, or **ScVal XDR** for a base64-encoded ScVal containing the
+exact key (including composite keys). This is a **ScVal**, not a full LedgerKey. Choose
+**Persistent** or **Temporary**, then **Read key / refresh**. These durabilities form
+separate key spaces; the app never tries the other one automatically. Each click reads
+exactly one supplied key from the **inspected contract**, even if the address field has
+since been edited. Inspect again to change the contract.
+
+The RPC network passphrase is checked before reading. Outer LedgerKey and inner
+contract/key/durability must all match the request. Results show the accepted key,
+contract, network, endpoint, retrieval time, RPC latest ledger, last modification ledger,
+and live-until ledger when provided. **Returned; live at reported ledger**, **TTL expired**,
+**TTL unknown**, and **No entry returned** remain distinct. Missing data may be absent,
+expired, archived or unavailable; it does not prove a key never existed. Returned values
+and TTL are RPC-reported evidence, not an independent consensus proof.
+
+This is a fresh **current-state** read, separate from the earlier instance and captured
+event window. It is not a historical state query or proof of state when an event occurred.
+Common scalar values retain exact strings for large integers, with no inferred units,
+token decimals or application semantics. Complex values and original RPC entries retain
+raw XDR. There is no automatic key discovery/enumeration, code-driven storage inference,
+archive restoration, TTL extension, contract invocation or transaction submission.
+
+Symbol entry accepts 1–32 ASCII letters, digits or underscores. XDR keys are limited to
+**4096 decoded bytes**, depth 16 and 512 value nodes; reserved instance/nonce values and
+duplicate map keys are refused. Entry payloads are limited to **256 KiB**, with bounded
+XDR decoding and canonical/full-input checks. Malformed or mismatched reads fail without
+replacing the last accepted lookup. Cancel and context changes reject stale responses.
+
+The tab's **Export CSV / JSON** captures the **last accepted lookup**, including its
+original key/entry XDR and provenance. Editing inputs does not relabel that evidence.
+A missing entry exports zero records with explicit request/status metadata. Only one
+accepted storage lookup is held at a time; save/export it before reading a different key
+if you need both observations. **Save resource to selected investigation** stores one
+separate `contract_storage` document alongside the contract/events and any loaded
+specification. It reopens offline as frozen JSON, including missing-entry observations.
+Main contract/event exports include storage request context; the separate storage export
+contains the value. Previous saved snapshots are unchanged.
+
+Storage reads bypass the optional cache and transmit the supplied key to the selected
+public RPC provider. They are not automatically saved to disk: use export or save resource.
+Dependencies, cache/SQLite schemas and retention settings are unchanged. Native bundles
+and uploads remain deferred. The underlying method is documented in Stellar's
+[getLedgerEntries reference](https://developers.stellar.org/docs/data/apis/rpc/api-reference/methods/getLedgerEntries).
 
 ### Saved investigations, notes, and labels
 
@@ -801,11 +848,11 @@ Portable native packaging is implemented. Further planned areas include:
 - Broader asset metadata and contract-token discovery.
 - Watchlist batch refresh/change comparison and expanded investigation organization.
 - Deeper evidence comparison and additional result/effect payload interpretation.
-- Contract storage-key inspection and broader event/type compatibility.
+- Broader contract event/type compatibility, including conservative union/result interpretation.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.19. The detailed release
+These are **planned capabilities**, not features available in 0.0.20. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks
