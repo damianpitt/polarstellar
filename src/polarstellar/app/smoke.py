@@ -90,7 +90,7 @@ def validate_result_enrichment(address, destination):
 
 
 def validate_contract_specification():
-    """Parse a local declared event interface and interpret an exact integer without executing WASM or RPC."""
+    """Parse local union/Result event specs and exact payloads without executing WASM or RPC."""
     import hashlib
 
     from stellar_sdk import xdr
@@ -109,15 +109,41 @@ def validate_contract_specification():
                 xdr.SCSpecEventParamV0(
                     b"No implied units",
                     b"quantity",
-                    xdr.SCSpecTypeDef(xdr.SCSpecType.SC_SPEC_TYPE_I128),
+                    xdr.SCSpecTypeDef(
+                        xdr.SCSpecType.SC_SPEC_TYPE_RESULT,
+                        result=xdr.SCSpecTypeResult(
+                            xdr.SCSpecTypeDef(
+                                xdr.SCSpecType.SC_SPEC_TYPE_UDT, udt=xdr.SCSpecTypeUDT(b"State")
+                            ),
+                            xdr.SCSpecTypeDef(xdr.SCSpecType.SC_SPEC_TYPE_ERROR),
+                        ),
+                    ),
                     xdr.SCSpecEventParamLocationV0.SC_SPEC_EVENT_PARAM_LOCATION_DATA,
                 )
             ],
             xdr.SCSpecEventDataFormat.SC_SPEC_EVENT_DATA_FORMAT_SINGLE_VALUE,
         ),
     )
+    union = xdr.SCSpecEntry(
+        xdr.SCSpecEntryKind.SC_SPEC_ENTRY_UDT_UNION_V0,
+        udt_union_v0=xdr.SCSpecUDTUnionV0(
+            b"Local fixture",
+            b"",
+            b"State",
+            [
+                xdr.SCSpecUDTUnionCaseV0(
+                    xdr.SCSpecUDTUnionCaseV0Kind.SC_SPEC_UDT_UNION_CASE_TUPLE_V0,
+                    tuple_case=xdr.SCSpecUDTUnionCaseTupleV0(
+                        b"Exact integer",
+                        b"Count",
+                        [xdr.SCSpecTypeDef(xdr.SCSpecType.SC_SPEC_TYPE_I128)],
+                    ),
+                )
+            ],
+        ),
+    )
     name = b"contractspecv0"
-    payload = bytes([len(name)]) + name + entry.to_xdr_bytes()
+    payload = bytes([len(name)]) + name + union.to_xdr_bytes() + entry.to_xdr_bytes()
     remaining, length = len(payload), bytearray()
     while True:
         part = remaining & 127
@@ -136,13 +162,34 @@ def validate_contract_specification():
         {
             "contract": contract,
             "topics": [decoded_value(scval.to_symbol("change").to_xdr())],
-            "value": decoded_value(scval.to_int128(2**100).to_xdr()),
+            "value": decoded_value(
+                scval.to_vec([scval.to_symbol("Count"), scval.to_int128(2**100)]).to_xdr()
+            ),
             "successful_call": True,
         },
         specification,
     )
     assert candidate["status"] == "Candidate match"
-    assert candidate["fields"][0]["value"]["value"] == str(2**100)
+    decoded = candidate["fields"][0]["value"]
+    assert decoded["branch"] == "Ok" and decoded["value"]["case"] == "Count"
+    assert decoded["value"]["values"][0]["value"] == str(2**100)
+    # A Result error is payload evidence, independent of a successful call flag.
+    candidate = interpret(
+        {
+            "contract": contract,
+            "topics": [decoded_value(scval.to_symbol("change").to_xdr())],
+            "value": decoded_value(
+                xdr.SCVal(
+                    xdr.SCValType.SCV_ERROR,
+                    error=xdr.SCError(xdr.SCErrorType.SCE_CONTRACT, contract_code=xdr.Uint32(1)),
+                ).to_xdr()
+            ),
+            "successful_call": True,
+        },
+        specification,
+    )
+    assert candidate["fields"][0]["value"]["branch"] == "Err"
+    assert candidate["call_status"] == "Successful call"
 
 
 def validate_contract_storage():

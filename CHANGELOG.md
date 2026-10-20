@@ -10,6 +10,65 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.21] - 2026-10-21
+
+### Added — named union and Result event fields
+
+- After **Contracts → Specification → Load specification (read only)**, selecting events can
+  show supported named-union case names and ordered tuple values. Require a symbol-first
+  vector, a known case, exact arity and matching payload types. Empty variants have no payload;
+  string tags, missing/extra fields, unknown cases and mismatched types remain **Raw only**.
+- Support Result fields with **Ok** for matching non-error values and **Err** for matching
+  ScErrors. These values are unwrapped; an invented Ok/Err vector is not accepted. Error arms
+  must be generic Error or a uniquely resolved declared error enum, including on Ok payloads.
+- Nested unions/Results work through supported composites, named structs and topic/data layouts.
+  Positional variant fields keep their order; large integers remain exact strings, without
+  inferred token decimals, financial units, balances or application-specific meaning.
+- Decode generic ScErrors with distinct contract/host categories, exact numeric codes and
+  SDK-known host code names. Named contract errors show declared case names only for known
+  contract codes. Unknown named codes and host errors cannot be assigned a contract error name.
+- Call/transaction outcomes remain separate from Result payloads. An Err payload can accompany
+  a successful call; Ok cannot prove success or applied changes. Event details and exported
+  annotations explain this distinction and retain the original call status.
+
+### Fixed — error enum identity and conservative ambiguity handling
+
+- Correct prior declared error-enum decoding: error enums require a contract ScError rather
+  than U32. Ordinary enums still require U32. New live readings that previously labeled U32 as
+  a named error now stay raw; valid contract-error payloads can receive a declared case label.
+  Older saved JSON and its software-version/annotation evidence are never rewritten.
+- Reject ambiguous named types, duplicate union case names, and duplicate enum names/codes.
+  Unsupported potentially matching definitions cannot be discarded to manufacture uniqueness;
+  overlapping supported definitions remain ambiguous instead of preferring a richer type.
+- Share a 4096-step budget across candidates, decoded fields and named-type/case scans. Depth
+  stays limited to 16; reaching a work/depth limit now makes the entire event raw, even if a
+  different candidate matched earlier. Existing bounded XDR/spec/value/topic limits remain.
+
+### Evidence, compatibility and documentation
+
+- Existing event detail, CSV/JSON export and saved investigation flows retain nested type/case/
+  branch/error annotations alongside original RPC fields/XDR. Contract/WASM/specification
+  identity, historical-executable uncertainty, raw fallback and retained event-window coverage
+  remain unchanged. No independent verification, financial meaning or fund continuity is claimed.
+- No added RPC methods, automatic lookups, dependencies, cache revision/TTL, SQLite or export
+  schema changes. Interpretation runs locally after the existing explicit specification read.
+  Startup smoke checks actual local union/Result specification XDR and exact success/error
+  payloads without network requests or WASM execution. Native builds/uploads remain paused;
+  Mac Intel remains excluded.
+- Align package/header, pyproject, lockfile, README, scope and release documentation at 0.0.21.
+  Document supported encodings, limitations and the error-enum correction in plain English.
+
+### Validation
+
+- All 431 local tests pass, including 51 new cases covering exact union/Result/error encodings,
+  all SDK-known error categories, nesting/layouts, malformed payloads, ambiguous types/cases/
+  codes, depth/shared work limits, independent call status, original RPC evidence, CSV/JSON
+  exports and offline saves. The earlier error-enum fixture now uses real contract-error XDR.
+- Ruff formatting/lint, locked dependency checks and source archive/wheel builds pass. The
+  nested union/Result event display was reviewed at 1180 × 760; local startup smoke passes
+  without network access. Cross-platform source CI results will be recorded after the push.
+  No native 0.0.21 artifacts were built/uploaded.
+
 ## [0.0.20] - 2026-10-20
 
 ### Added — explicitly supplied contract storage keys

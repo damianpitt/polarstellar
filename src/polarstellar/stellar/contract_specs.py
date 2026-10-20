@@ -15,6 +15,78 @@ class UnsupportedShape(ValueError):
     """A potentially matching declaration cannot be safely interpreted with this decoder."""
 
 
+class InterpretationLimit(ValueError):
+    """A work/depth limit prevents comparing every candidate; the entire event must remain raw."""
+
+
+def spend(budget, count=1):
+    """Charge shared interpretation work before scanning declarations or decoding more fields."""
+    budget[0] -= count
+    if budget[0] < 0:
+        raise InterpretationLimit("Event interpretation complexity limit")
+
+
+def declared_type(name, declarations, budget):
+    """Resolve exactly one named type, counting the scan and refusing duplicate/missing declarations."""
+    spend(budget, len(declarations))
+    choices = [
+        item for item in declarations if item["kind"].startswith("UDT_") and item["name"] == name
+    ]
+    if len(choices) != 1:
+        raise UnsupportedShape("Unknown/ambiguous user type")
+    return choices[0]
+
+
+def error_value(value):
+    """Describe a real ScError without confusing contract codes with host error codes or call status."""
+    if value.type != xdr.SCValType.SCV_ERROR or value.error is None:
+        raise ValueError("Expected ScError")
+    error = value.error
+    if error.type == xdr.SCErrorType.SCE_CONTRACT:
+        return {"type": "ERROR", "category": "CONTRACT", "code": str(error.contract_code.uint32)}
+    return {
+        "type": "ERROR",
+        "category": error.type.name.removeprefix("SCE_"),
+        "code": str(error.code.value),
+        "code_name": error.code.name.removeprefix("SCEC_"),
+    }
+
+
+def enum_cases(declaration, budget):
+    """Check enum names/codes even when a Result's Ok payload does not carry an error code."""
+    cases = declaration["cases"]
+    spend(budget, len(cases))
+    if len({case["name"] for case in cases}) != len(cases) or len(
+        {case["value"] for case in cases}
+    ) != len(cases):
+        raise UnsupportedShape("Ambiguous enum names/codes")
+    return cases
+
+
+def enum_value(value, declaration, budget):
+    """Decode ordinary enums from U32 and declared error enums only from contract ScErrors.
+
+    Identical numbers in these encodings are different evidence. Duplicate case names
+    or codes are ambiguous declarations and cannot be discarded to choose another event.
+    """
+    cases = enum_cases(declaration, budget)
+    is_error = declaration["kind"] == "UDT_ERROR_ENUM_V0"
+    if is_error:
+        decoded = error_value(value)
+        if decoded["category"] != "CONTRACT":
+            raise ValueError("Host error cannot identify a declared contract error")
+        number = value.error.contract_code.uint32
+    else:
+        if value.type != xdr.SCValType.SCV_U32:
+            raise ValueError("Enum encoding mismatch")
+        number = value.u32.uint32
+        decoded = {"value": str(number)}
+    matches = [case for case in cases if case["value"] == number]
+    if len(matches) != 1:
+        raise ValueError("Unknown enum code")
+    return {**decoded, "type": declaration["name"], "case": matches[0]["name"]}
+
+
 def leb(data, position):
     """Read one bounded unsigned WASM section length, refusing overflow and truncated bytes."""
     result = 0
@@ -184,9 +256,9 @@ def sc_value(encoded):
 
 def typed(value, definition, declarations, budget, depth=0):
     """Match supported declared shapes and preserve exact integers; refuse unknown or ambiguous encodings."""
-    budget[0] -= 1
-    if depth > 16 or budget[0] < 0:
-        raise ValueError("Interpretation complexity limit")
+    spend(budget)
+    if depth > 16:
+        raise InterpretationLimit("Interpretation nesting limit")
     kind = definition["kind"]
     actual = value.type.name.removeprefix("SCV_")
 
@@ -200,6 +272,23 @@ def typed(value, definition, declarations, budget, depth=0):
             "xdr": value.to_xdr(),
             "note": "Generic value; no application meaning inferred",
         }
+    if kind == "ERROR":
+        return error_value(value)
+    if kind == "RESULT":
+        # Result has no Ok/Err vector wrapper. A top-level ScError selects Err;
+        # any other value selects Ok. Validate the declared error arm even for Ok,
+        # so an unsupported declaration cannot manufacture a unique candidate.
+        error_shape = definition["error"]
+        if error_shape["kind"] == "UDT":
+            declaration = declared_type(error_shape["name"], declarations, budget)
+            if declaration["kind"] != "UDT_ERROR_ENUM_V0":
+                raise UnsupportedShape("Result error arm must name an error enum")
+            enum_cases(declaration, budget)
+        elif error_shape["kind"] != "ERROR":
+            raise UnsupportedShape("Unsupported Result error arm")
+        branch = "Err" if actual == "ERROR" else "Ok"
+        shape = error_shape if branch == "Err" else definition["ok"]
+        return {"type": "RESULT", "branch": branch, "value": nested(value, shape)}
     if kind in (
         "BOOL",
         "VOID",
@@ -217,7 +306,6 @@ def typed(value, definition, declarations, budget, depth=0):
         "SYMBOL",
         "ADDRESS",
         "BYTES",
-        "ERROR",
     ):
         if actual != kind:
             raise ValueError("Declared scalar type mismatch")
@@ -268,24 +356,31 @@ def typed(value, definition, declarations, budget, depth=0):
             ],
         }
     if kind == "UDT":
-        choices = [
-            item
-            for item in declarations
-            if item["kind"].startswith("UDT_") and item["name"] == definition["name"]
-        ]
-        if len(choices) != 1:
-            raise UnsupportedShape("Unknown/ambiguous user type")
-        declaration = choices[0]
+        declaration = declared_type(definition["name"], declarations, budget)
         if declaration["kind"] in ("UDT_ENUM_V0", "UDT_ERROR_ENUM_V0"):
-            if actual != "U32":
-                raise ValueError("Enum encoding mismatch")
-            cases = [item for item in declaration["cases"] if item["value"] == value.u32.uint32]
-            if len(cases) != 1:
-                raise ValueError("Unknown/ambiguous enum case")
+            return enum_value(value, declaration, budget)
+        if declaration["kind"] == "UDT_UNION_V0":
+            if actual != "VEC" or value.vec is None or not value.vec.sc_vec:
+                raise ValueError("Union must be a nonempty vector")
+            tag, *values = value.vec.sc_vec
+            if tag.type != xdr.SCValType.SCV_SYMBOL:
+                raise ValueError("Union tag must be a symbol, not a string or integer")
+            cases = declaration["cases"]
+            spend(budget, len(cases))
+            if len({case["name"] for case in cases}) != len(cases):
+                raise UnsupportedShape("Ambiguous union variant names")
+            matches = [case for case in cases if case["name"] == text(tag.sym.sc_symbol)]
+            if len(matches) != 1 or len(values) != len(matches[0]["types"]):
+                raise ValueError("Unknown union tag or incorrect payload length")
+            # Variant tuple fields have positions rather than invented field names.
+            # Exact arity also prevents silently ignoring trailing evidence.
             return {
                 "type": definition["name"],
-                "case": cases[0]["name"],
-                "value": str(value.u32.uint32),
+                "case": matches[0]["name"],
+                "values": [
+                    nested(item, shape)
+                    for item, shape in zip(values, matches[0]["types"], strict=True)
+                ],
             }
         if declaration["kind"] == "UDT_STRUCT_V0":
             fields = declaration["fields"]
@@ -358,9 +453,7 @@ def interpret(event, specification):
         value = sc_value(event["value"]["xdr"])
         matches, unsupported, budget = [], False, [4096]
         for declaration in specification["entries"]:
-            budget[0] -= 1
-            if budget[0] < 0:
-                raise ValueError("Event interpretation complexity limit")
+            spend(budget)
             if declaration["kind"] != "EVENT_V0":
                 continue
             try:
@@ -417,6 +510,10 @@ def interpret(event, specification):
                         }
                     )
                 matches.append({"name": declaration["name"], "fields": fields})
+            except InterpretationLimit:
+                # Reaching a limit is not evidence of a mismatch: some alternatives
+                # were never fully checked. Do not accept another partial match.
+                raise
             except UnsupportedShape:
                 unsupported = True
                 continue
@@ -434,7 +531,7 @@ def interpret(event, specification):
                 **base,
                 "status": "Candidate match",
                 **matches[0],
-                "note": "Shape matches the inspected executable's declared specification. Historical compatibility, author claims, token decimals and financial meaning are unverified.",
+                "note": "Shape matches the inspected executable's declared specification. Historical compatibility, author claims, token decimals and financial meaning are unverified. Result Ok/Err and error names describe payloads, not call or transaction outcomes.",
             }
         base["note"] = (
             "Ambiguous matching event declarations; raw evidence retained."

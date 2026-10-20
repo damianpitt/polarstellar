@@ -124,8 +124,8 @@ def observed(value=None, topics=None, **changes):
     }
 
 
-def rpc_fixture(wasm=None, changed=False, corrupt=False):
-    """Serve pinned instance/code entries through the real read-only RPC provider and record all methods."""
+def rpc_fixture(wasm=None, changed=False, corrupt=False, event_value=None):
+    """Serve pinned code and optional exact event payload XDR through the real provider; record all methods."""
     wasm = module() if wasm is None else wasm
     digest = hashlib.sha256(wasm).digest()
     instance = instance_result()
@@ -173,7 +173,14 @@ def rpc_fixture(wasm=None, changed=False, corrupt=False):
                 }
         elif method == "getEvents":
             result = {
-                "events": [event(topic=[scval.to_symbol("change").to_xdr()])],
+                "events": [
+                    event(
+                        topic=[scval.to_symbol("change").to_xdr()],
+                        value=(
+                            event_value if event_value is not None else scval.to_int128(2**100)
+                        ).to_xdr(),
+                    )
+                ],
                 "cursor": "next",
                 "oldestLedger": 100,
                 "latestLedger": 2001,
@@ -556,7 +563,10 @@ def test_supported_compound_event_values(kind):
         definition = xdr.SCSpecTypeDef(
             xdr.SCSpecType.SC_SPEC_TYPE_UDT, udt=xdr.SCSpecTypeUDT(b"Errors")
         )
-        value = scval.to_uint32(1)
+        value = xdr.SCVal(
+            xdr.SCValType.SCV_ERROR,
+            error=xdr.SCError(xdr.SCErrorType.SCE_CONTRACT, contract_code=xdr.Uint32(1)),
+        )
     entries[-1].event_v0.params[0].type = definition
     result = interpret(observed(value), specification(entries))
     assert result["status"] == "Candidate match"

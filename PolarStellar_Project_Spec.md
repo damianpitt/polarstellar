@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.20 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations and explicit storage-key reads, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.21 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and explicit storage-key reads, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2038,3 +2038,39 @@ through explicit export/save. Startup smoke checks a local supplied-key/entry fi
 exact integer without RPC. Native builds/uploads remain paused; Mac Intel stays excluded.
 The next planned contract slice is broader event/type compatibility, starting with supported
 named union/result shapes while retaining raw evidence, ambiguity checks and coverage limits.
+
+## V0.0.21 implemented slice — broader event/type compatibility
+
+Pinned contract specifications now interpret supported named union variants, unwrapped Result
+values and generic/declared errors in event topic/data fields, recursively within supported
+composites. Union values must be nonempty vectors with an exact symbol case tag, followed
+by exactly the declared positional payload types. Empty variants have no trailing values.
+Unknown/string tags, wrong arity/types, duplicate case names or duplicate named declarations
+remain raw or ambiguous; no coercion or discarded trailing evidence is allowed.
+
+Result selects Err only for ScError, otherwise Ok; neither branch has a wrapper vector. The
+error declaration must be ERROR or a uniquely named error enum, including when reading Ok.
+Named error enums now require SCE_CONTRACT with a known, unique case/code. Prior error-enum
+interpretation incorrectly accepted U32; that is corrected. Ordinary enums still require U32.
+Generic Error retains the exact contract/host category and numeric code, plus SDK-known host
+code names. Host errors cannot identify a contract's named case. Unsupported/unknown/ambiguous
+types retain raw evidence rather than manufacturing a unique matching event.
+
+Payload Ok/Err, variant names and author-declared error names are separate from actual call
+or transaction outcome. Original successful/failed/unknown call status and RPC topic/value
+XDR remain intact, as do contract/WASM/spec provenance and historical-ABI uncertainty. No
+financial semantics, ownership, token units, applied changes or independent consensus are inferred.
+
+The shared 4096-step work budget now includes named-type/case scans, with depth 16. Reaching
+either limit invalidates all candidates, even if another match was already decoded. Existing
+value-size, topic, spec and XDR parse limits remain. Unsupported muxed-address shapes remain raw.
+
+Live event displays and CSV/JSON exports carry nested cases/branches/errors in their existing
+interpretation fields. Save resource freezes them alongside raw events and the separate spec
+document. Older saved JSON is unchanged, including its software version and earlier annotations.
+No RPC methods/requests, dependencies, cache key revision/TTL, SQLite or export schema changes.
+Local startup smoke exercises a real union/Result spec and exact integer/error fixtures without
+RPC, WASM execution, calls or submissions. Native builds/uploads stay paused; Mac Intel excluded.
+
+The next planned contract slice is muxed-address event compatibility: preserve full address
+identity, underlying account and exact routing IDs without ownership or fund-flow inference.

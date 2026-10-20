@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.20 · Pre-alpha**
+**Current version: 0.0.21 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.20 |
+| Area | Available in 0.0.21 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -60,7 +60,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.20; previously validated native artifacts are 0.0.11.
+The current source version is 0.0.21; previously validated native artifacts are 0.0.11.
 New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
@@ -559,10 +559,38 @@ When exactly one supported event shape matches, selecting/exporting an event add
 **Candidate match** fields with declared names and topic/data locations. Matching follows
 prefix topics (symbols or compatible strings), exact counts and single-value/vector/map
 data layouts. Common scalar and supported option/vector/map/tuple/fixed-byte/named-struct/
-U32-enum shapes retain exact values. Large integers remain strings and have **no inferred
-token decimals**. Generic values remain raw XDR; unsupported result/union/muxed-address
-shapes, unknown user types, mismatches, malformed data or ambiguous definitions remain
+ordinary-U32-enum, named-union, Result and error shapes retain exact values. Large integers
+remain strings and have **no inferred token decimals**. Generic values remain raw XDR;
+unsupported muxed-address shapes, unknown user types, mismatches, malformed data or ambiguous definitions remain
 **Raw only**. Failed/unknown call status stays explicit and is not proof of applied changes.
+
+**Named unions** show the declared case and its positional tuple values. Their encoding is
+a vector whose first element is a symbol identifying the case; empty cases have no remaining
+values. Unknown tags, string tags, wrong payload types and missing/extra values remain raw.
+Unions and Results can nest within supported fields and topic/data layouts, subject to limits.
+
+**Result** fields show **Ok** for a matching non-error payload, or **Err** for a matching
+ScError. There is no extra `Ok`/`Err` vector wrapper. The declared error arm must be a generic
+Error or a uniquely resolved declared error enum. Named error enums require a **contract**
+ScError with a known case code; ordinary enums require U32. Generic errors show their
+contract/host category and exact code, with SDK-known host code names where available.
+Unknown named error codes and host errors cannot be relabeled as a declared contract error.
+
+**Payload branches are separate from call/transaction outcomes.** An event's `Err` payload
+does not mean its call failed; `Ok` does not prove the call or transaction succeeded. The
+original successful/failed/unknown call flag remains visible. Error names are author-declared,
+and neither they nor variant names establish applied changes or financial meaning.
+
+Duplicate named types, union cases, enum names/codes and overlapping event definitions remain
+ambiguous. Unsupported potentially matching types cannot be discarded to pick another event.
+Interpretation shares a 4096-step budget across candidates, fields and named-type/case scans,
+with depth 16. Reaching either limit makes the whole event raw; a partial earlier match is
+never accepted. XDR parsing, value/topic sizes and the other bounds above still apply.
+
+Version 0.0.21 corrects earlier error-enum handling: U32 values no longer receive declared
+error-enum labels. Existing saved investigation JSON is not rewritten; its software version
+and stored annotations remain frozen. New live interpretations/exports use the corrected
+mapping and include union/Result/error fields without extra network requests.
 
 Interpretations are bound to this contract and the loaded WASM/specification digests.
 They describe compatibility with the **inspected executable's declarations**, not proof
@@ -848,11 +876,11 @@ Portable native packaging is implemented. Further planned areas include:
 - Broader asset metadata and contract-token discovery.
 - Watchlist batch refresh/change comparison and expanded investigation organization.
 - Deeper evidence comparison and additional result/effect payload interpretation.
-- Broader contract event/type compatibility, including conservative union/result interpretation.
+- Further contract event/type compatibility, starting with muxed-address identity and routing IDs.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.20. The detailed release
+These are **planned capabilities**, not features available in 0.0.21. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks
