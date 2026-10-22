@@ -66,8 +66,11 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   Mainnet/Testnet exports/saves and pagination conflicts.
 - Ruff formatting/lint, locked dependency validation and source archive/wheel builds pass.
   The muxed-event display was reviewed at 1180 × 760 with local fixtures; source startup smoke
-  passes without network access. Platform source CI results will be recorded after the push.
-  No native 0.0.22 artifacts were built/uploaded.
+  passes without network access.
+- [Source CI run 39754763649](https://github.com/damianpitt/polarstellar/actions/runs/39754763649)
+  passed on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows (`windows-latest`):
+  all 477 tests on each platform, Ruff, locked dependency/version checks and source archive/wheel
+  builds. These are source validation results; no native 0.0.22 artifacts were built/uploaded.
 
 ## [0.0.21] - 2026-10-21
 
