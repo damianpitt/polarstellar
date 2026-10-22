@@ -10,6 +10,65 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.22] - 2026-10-22
+
+### Added — full muxed account identity in contract events
+
+- Selecting an event in **Contracts** now shows supported scalar address kind and full value.
+  M-addresses retain their underlying G-account plus exact unsigned routing ID. This structural
+  evidence does not require loading author metadata; typed event names/fields still require
+  **Specification → Load specification (read only)** and a uniquely matching pinned definition.
+- Add declared **MuxedAddress** support for G/C/M ScAddress values, including supported nested
+  composites, named structs/unions, Result branches and topic/data layouts. Keep ordinary
+  **Address** limited to G/C. Plain values have no invented routing ID, and G/C events matching
+  both ordinary/muxed definitions remain ambiguous rather than preferring one declaration.
+- Preserve routing IDs as decimal strings, including `0`, values beyond JavaScript's exact
+  number range and uint64 maximum `18446744073709551615`. Full M-addresses round-trip through
+  SDK/XDR and remain distinct for different routing IDs, even with the same underlying account.
+- Explain that addresses/routing IDs provide structural routing information only. They are not
+  proof of ownership, person identity, balances, successful payments or fund continuity. Call
+  status and historical executable uncertainty remain separate; events do not add graph edges.
+
+### Fixed — address type validation and storage-key boundaries
+
+- Correct the former generic SDK path that could label an M-address as an ordinary Address.
+  M-addresses require a compatible declared MuxedAddress (or remain raw/generic evidence).
+  Strings/bytes containing encoded addresses are never coerced into ScAddress values.
+- Address payloads with trailing/noncanonical encoding cannot gain decoded identity fields.
+  Unsupported address variants stay raw, including SDK-recognized claimable-balance/pool address
+  kinds that do not satisfy the contract G/C/M rule. Newer muxed-contract formats are outside
+  locked SDK 16.1.0 support and are not fabricated or silently converted.
+- Refuse supplied muxed-account storage keys locally, including nested map keys/values and
+  vector elements, in accordance with the host key restriction. Do not remove routing IDs or
+  query an underlying-account alias. Returned storage **values** can retain M-address details.
+  Existing storage byte/node/depth limits remain unchanged.
+
+### Evidence, compatibility and documentation
+
+- Existing CSV/JSON exports and saved investigation snapshots retain full M/G/routing details,
+  original RPC/value/topic XDR and network/ledger/WASM/spec context. Existing saved JSON and its
+  software version are unchanged. Pagination conflicts compare full evidence; changing only
+  the routing ID for a repeated event ID cannot merge or replace accepted rows.
+- Leave separate account/`to_muxed_id` fields separate rather than synthesizing an M-address or
+  payment. Do not fetch underlying accounts automatically or change account-search/watchlist
+  identifier rules. Mainnet and Testnet remain distinct throughout live reads, exports and saves.
+- No new RPC methods/requests, dependencies, cache revision/TTL, export or SQLite schema changes.
+  Align package/header, pyproject, lockfile, README, project scope and release docs at 0.0.22.
+  Add plain-English helper documentation and comments explaining identity/precision safeguards.
+- Extend offline startup smoke with zero/maximum routing IDs, complete address round trips and
+  ordinary-vs-muxed type separation. Native builds/uploads remain paused; Mac Intel excluded.
+
+### Validation
+
+- All 477 local tests pass, including 46 new cases covering zero/large/maximum routing IDs,
+  distinct full identities, allowed address kinds, ambiguity, malformed/unknown encodings,
+  nesting/layouts, independent call status, prohibited storage keys, returned storage values,
+  Mainnet/Testnet exports/saves and pagination conflicts.
+- Ruff formatting/lint, locked dependency validation and source archive/wheel builds pass.
+  The muxed-event display was reviewed at 1180 × 760 with local fixtures; source startup smoke
+  passes without network access. Platform source CI results will be recorded after the push.
+  No native 0.0.22 artifacts were built/uploaded.
+
 ## [0.0.21] - 2026-10-21
 
 ### Added — named union and Result event fields

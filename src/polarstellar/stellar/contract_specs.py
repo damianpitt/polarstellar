@@ -6,6 +6,8 @@ import hashlib
 from stellar_sdk import scval, xdr
 from xdrlib3 import Unpacker
 
+from polarstellar.stellar.contract_addresses import address_fields
+
 MAX_WASM = 2_000_000
 MAX_SPEC = 262_144
 MAX_ENTRIES = 256
@@ -274,6 +276,15 @@ def typed(value, definition, declarations, budget, depth=0):
         }
     if kind == "ERROR":
         return error_value(value)
+    if kind in ("ADDRESS", "MUXED_ADDRESS"):
+        if actual != "ADDRESS":
+            raise ValueError("Declared address must contain ScAddress, not an encoded string")
+        fields = address_fields(value.address)
+        # MuxedAddress is a wider declared type: G/C/M can match it. Ordinary Address
+        # only accepts G/C, even if the SDK can parse M as a generic address object.
+        if kind == "ADDRESS" and fields["address_kind"] == "MUXED_ACCOUNT":
+            raise ValueError("Muxed account cannot match ordinary Address")
+        return {"type": kind, **fields}
     if kind == "RESULT":
         # Result has no Ok/Err vector wrapper. A top-level ScError selects Err;
         # any other value selects Ok. Validate the declared error arm even for Ok,
@@ -304,7 +315,6 @@ def typed(value, definition, declarations, budget, depth=0):
         "DURATION",
         "STRING",
         "SYMBOL",
-        "ADDRESS",
         "BYTES",
     ):
         if actual != kind:

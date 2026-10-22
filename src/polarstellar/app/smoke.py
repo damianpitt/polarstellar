@@ -192,6 +192,31 @@ def validate_contract_specification():
     assert candidate["call_status"] == "Successful call"
 
 
+def validate_muxed_event_addresses():
+    """Check full M-address/base-account/uint64 routing identity locally, without fetching accounts."""
+    from stellar_sdk import MuxedAccount
+
+    from polarstellar.stellar.contract_specs import typed
+
+    account = StrKey.encode_ed25519_public_key(bytes([8]) * 32)
+    for identifier in (0, 2**64 - 1):
+        full = MuxedAccount(account, identifier).account_muxed
+        value = scval.to_address(full)
+        fields = typed(value, {"kind": "MUXED_ADDRESS"}, [], [4096])
+        assert fields["value"] == full and fields["account"] == account
+        assert fields["routing_id"] == str(identifier)
+        normalized = decoded_value(value.to_xdr())
+        assert normalized["value"] == full and normalized["xdr"] == value.to_xdr()
+        # Ordinary Address must not accept a wider muxed identity just because the
+        # generic SDK address parser recognizes the M-address encoding.
+        try:
+            typed(value, {"kind": "ADDRESS"}, [], [4096])
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Muxed account incorrectly matched ordinary Address")
+
+
 def validate_contract_storage():
     """Check a supplied persistent key and exact local entry evidence without contacting RPC."""
     from stellar_sdk import xdr
@@ -319,6 +344,7 @@ async def validate(window, root, screenshot=None):
     assert value["value"] == str(2**100)
     validate_result_enrichment(address, issuer)
     validate_contract_specification()
+    validate_muxed_event_addresses()
     validate_contract_storage()
     checks.append("stellar_sdk_xdr_exact_integer")
     graph = nx.DiGraph([(address, issuer)])

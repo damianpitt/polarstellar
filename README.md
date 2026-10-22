@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.21 · Pre-alpha**
+**Current version: 0.0.22 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.21 |
+| Area | Available in 0.0.22 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -60,7 +60,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.21; previously validated native artifacts are 0.0.11.
+The current source version is 0.0.22; previously validated native artifacts are 0.0.11.
 New native bundles and release uploads are deferred until explicitly requested.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
@@ -559,10 +559,37 @@ When exactly one supported event shape matches, selecting/exporting an event add
 **Candidate match** fields with declared names and topic/data locations. Matching follows
 prefix topics (symbols or compatible strings), exact counts and single-value/vector/map
 data layouts. Common scalar and supported option/vector/map/tuple/fixed-byte/named-struct/
-ordinary-U32-enum, named-union, Result and error shapes retain exact values. Large integers
+ordinary-U32-enum, named-union, Result, error and supported address shapes retain exact values. Large integers
 remain strings and have **no inferred token decimals**. Generic values remain raw XDR;
-unsupported muxed-address shapes, unknown user types, mismatches, malformed data or ambiguous definitions remain
+unknown address variants/user types, mismatches, malformed data or ambiguous definitions remain
 **Raw only**. Failed/unknown call status stays explicit and is not proof of applied changes.
+
+**Muxed account addresses** retain the complete **M-address**, its underlying **G-account**
+and exact unsigned **routing ID** in both decoded scalar evidence and matching typed fields.
+Routing IDs are decimal strings, including `0` and the maximum uint64 value
+`18446744073709551615`; they are never converted to floating point. Different M-addresses
+remain distinct even when they contain the same G-account. These details describe encoded
+routing information; they do not identify an owner, a real-world person, balances or fund flow.
+
+A declared **MuxedAddress** can match G-, C- or M-address ScVals. Ordinary **Address** only
+matches G/C: an M-address no longer gains an ordinary Address label merely because the SDK
+recognizes its encoding. When G/C matches both declarations, ambiguity is preserved. Plain
+G/C values have no invented routing ID. Strings/bytes containing an M-address are not coerced
+into address values. Supported composites, union/Result fields and dynamic topics retain the
+same identity. Separate `to` / `to_muxed_id` fields remain separate; the app does not synthesize
+an M-address from them or infer a payment.
+
+Select a loaded event in **Contracts** to view these details; matching typed fields require
+the existing explicit specification load. CSV/JSON exports and **Save resource** include full
+addresses, routing details, original RPC/XDR evidence and network/spec provenance. Earlier saved
+JSON is unchanged. Pagination conflicts still compare complete evidence, including routing IDs.
+No underlying account is fetched automatically, no graph relationship is added, and the main
+account search/watchlists retain their existing supported identifier rules.
+
+This slice supports muxed **accounts** with the locked SDK 16.1.0. Other/future address variants,
+including muxed-contract formats outside that SDK, retain raw XDR rather than being coerced.
+Address payloads with trailing/noncanonical encoding cannot gain decoded identity fields.
+Dependencies and parse/work/depth bounds are unchanged; no additional RPC calls are made.
 
 **Named unions** show the declared case and its positional tuple values. Their encoding is
 a vector whose first element is a symbol identifying the case; empty cases have no remaining
@@ -638,7 +665,11 @@ archive restoration, TTL extension, contract invocation or transaction submissio
 Symbol entry accepts 1–32 ASCII letters, digits or underscores. XDR keys are limited to
 **4096 decoded bytes**, depth 16 and 512 value nodes; reserved instance/nonce values and
 duplicate map keys are refused. Entry payloads are limited to **256 KiB**, with bounded
-XDR decoding and canonical/full-input checks. Malformed or mismatched reads fail without
+XDR decoding and canonical/full-input checks. Muxed account addresses are rejected in storage
+keys, including inside containers; their routing IDs are never removed to query a G-account
+alias. Returned storage **values** may retain M-address details. This follows the key restriction
+in [CAP-67](https://github.com/stellar/stellar-protocol/blob/master/core/cap-0067.md).
+Malformed or mismatched reads fail without
 replacing the last accepted lookup. Cancel and context changes reject stale responses.
 
 The tab's **Export CSV / JSON** captures the **last accepted lookup**, including its
@@ -873,14 +904,14 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 Portable native packaging is implemented. Further planned areas include:
 
-- Broader asset metadata and contract-token discovery.
+- Stellar Asset Contract identity linking and broader asset metadata.
 - Watchlist batch refresh/change comparison and expanded investigation organization.
 - Deeper evidence comparison and additional result/effect payload interpretation.
-- Further contract event/type compatibility, starting with muxed-address identity and routing IDs.
+- Further SDK/address compatibility as supported formats evolve.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.21. The detailed release
+These are **planned capabilities**, not features available in 0.0.22. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

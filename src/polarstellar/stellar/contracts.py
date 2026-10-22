@@ -8,6 +8,7 @@ import httpx
 from stellar_sdk import Address, StrKey, scval, xdr
 from stellar_sdk import Network as SDKNetwork
 
+from polarstellar.stellar.contract_addresses import address_fields
 from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
 
@@ -55,11 +56,23 @@ def decoded_value(encoded):
 
     Integers have no implied token decimals. In particular, event integers are not
     automatically treated as monetary amounts or divided by seven decimal places.
+    Address scalars retain their exact G/C/M encoding; muxed accounts also expose
+    their underlying G-account and exact routing ID without creating account aliases.
     """
     result = {"xdr": encoded}
     try:
         value = xdr.SCVal.from_xdr(encoded)
         result["type"] = value.type.name
+        if value.type == xdr.SCValType.SCV_ADDRESS:
+            # A successfully parsed prefix is not a valid address payload if bytes
+            # were ignored or the original encoding was noncanonical.
+            if value.to_xdr() != encoded:
+                raise ValueError("Noncanonical or trailing address XDR")
+            try:
+                result.update(address_fields(value.address))
+            except (ValueError, AttributeError, AssertionError):
+                result["note"] = "Unsupported contract address variant; original XDR retained."
+            return result
         native = scval.to_native(value)
         if type(native) is int:
             result["value"] = str(native)

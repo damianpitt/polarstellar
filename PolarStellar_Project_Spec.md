@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.21 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and explicit storage-key reads, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.22 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2074,3 +2074,41 @@ RPC, WASM execution, calls or submissions. Native builds/uploads stay paused; Ma
 
 The next planned contract slice is muxed-address event compatibility: preserve full address
 identity, underlying account and exact routing IDs without ownership or fund-flow inference.
+
+## V0.0.22 implemented slice — muxed account event compatibility
+
+Contract event scalar decoding now retains the full M-address, underlying G-account and
+exact uint64 routing ID as a decimal string. Zero is a present routing ID; the maximum
+18446744073709551615 is preserved without floating-point conversion. The full M-address
+remains the value identity: shared underlying accounts do not collapse separate routing IDs.
+Addresses round-trip through SDK/XDR without losing their encoded components.
+
+Pinned event interpretation supports SC_SPEC_TYPE_MUXED_ADDRESS for G/C/M ScAddress values,
+while ordinary SC_SPEC_TYPE_ADDRESS accepts only G/C. This corrects the prior generic SDK
+path that could label M-addresses as ordinary Address. G/C values have no fabricated routing
+ID; overlapping ordinary/muxed declarations remain ambiguous. Non-address strings/bytes,
+unknown variants, malformed/trailing payloads and unsupported encodings remain raw. Typed
+fields work in supported nested composites, unions/Results, data layouts and dynamic topics.
+
+Raw scalar details are available without a specification; named typed fields still require
+the explicit pinned specification load. Existing CSV/JSON and Save resource retain full
+identities, exact routing IDs, original RPC/XDR and source/network/ledger/spec context.
+Older saved evidence is unchanged. Pagination detects routing-ID changes as evidence conflicts.
+Separate account/routing-like event fields are not synthesized into addresses or transfers.
+Call status, historical executable uncertainty and bounded coverage remain explicit.
+
+No ownership, person, balance, fund-flow, graph edge or alias is inferred. No automatic account
+lookup, signing, submission or additional RPC request occurs. G-account search/watchlist rules,
+dependency versions, cache revision/TTL, export/SQLite schemas and earlier snapshots are unchanged.
+Only muxed account ScAddress is supported by the locked SDK 16.1.0; newer muxed-contract/other
+variants remain raw until a separately validated compatibility update.
+
+As a related key-validation safeguard, muxed account ScVals are rejected before I/O in supplied
+contract storage keys, including nested vectors/maps. Routing IDs are not stripped to query
+another key. Returned storage values can still retain M-address details. Existing byte/node/
+depth limits remain unchanged. Local source smoke validates M/G/zero/maximum routing identity
+and ordinary-vs-muxed type separation without RPC. Native builds/uploads remain paused;
+Mac Intel remains excluded.
+
+The next planned slice is Stellar Asset Contract identity linking: connect inspected assets
+to their contract identities with explicit network/issuer checks and metadata provenance.

@@ -124,7 +124,7 @@ def observed(value=None, topics=None, **changes):
     }
 
 
-def rpc_fixture(wasm=None, changed=False, corrupt=False, event_value=None):
+def rpc_fixture(wasm=None, changed=False, corrupt=False, event_value=None, network=Network.TESTNET):
     """Serve pinned code and optional exact event payload XDR through the real provider; record all methods."""
     wasm = module() if wasm is None else wasm
     digest = hashlib.sha256(wasm).digest()
@@ -140,7 +140,7 @@ def rpc_fixture(wasm=None, changed=False, corrupt=False, event_value=None):
         calls.append(body)
         method = body["method"]
         if method == "getNetwork":
-            result = {"passphrase": PASSPHRASES[Network.TESTNET]}
+            result = {"passphrase": PASSPHRASES[network]}
         elif method == "getHealth":
             result = {"oldestLedger": 100, "latestLedger": 2000}
         elif method == "getLedgerEntries":

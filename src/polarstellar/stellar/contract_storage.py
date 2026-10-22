@@ -49,6 +49,8 @@ def check_key(value, budget=None, depth=0):
 
     Instance storage already has its own inspector. Internal instance/nonce values
     are not accepted as arbitrary user keys, including inside vectors or maps.
+    Muxed account addresses are prohibited in Soroban storage keys, even when nested.
+    Refuse those keys locally rather than removing their routing ID or querying an alias.
     The remaining shape is preserved exactly; no application-specific meaning is assumed.
     """
     budget = [512] if budget is None else budget
@@ -61,6 +63,12 @@ def check_key(value, budget=None, depth=0):
         xdr.SCValType.SCV_LEDGER_KEY_NONCE,
     ):
         raise ValueError("Reserved instance/nonce values are not user storage keys")
+    if (
+        value.type == xdr.SCValType.SCV_ADDRESS
+        and value.address is not None
+        and value.address.type == xdr.SCAddressType.SC_ADDRESS_TYPE_MUXED_ACCOUNT
+    ):
+        raise ValueError("Muxed accounts cannot be used as contract storage keys")
     if value.type == xdr.SCValType.SCV_VEC:
         if value.vec is None:
             raise ValueError("Null key vector")
@@ -94,7 +102,7 @@ def entered_key(text, mode):
     except Exception as exc:
         raise AccountError(
             "Enter a symbol (1–32 ASCII letters, digits or underscores), or canonical base64 "
-            "ScVal XDR up to 4096 bytes. Reserved, malformed or overly complex keys are refused."
+            "ScVal XDR up to 4096 bytes. Reserved, muxed-account, malformed or overly complex keys are refused."
         ) from exc
 
 
