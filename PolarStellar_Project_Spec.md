@@ -2140,7 +2140,11 @@ reject stale responses. Existing refresh paths do not automatically check SAC id
 smoke exercises native derivation/network separation and local built-in instance confirmation.
 
 Native builds and workflow artifact uploads resume for this version on Linux x86_64, Windows
-x86_64 and macOS arm64. Mac Intel remains excluded. Native validation/upload results will be
-recorded after execution; public release publication stays separate from workflow artifacts.
+x86_64 and macOS arm64. Mac Intel remains excluded. Native run 40120185412 succeeded on all
+three: 509 source tests/lint per job, eight extracted/frozen offline checks per target and
+successful archive/checksum plus separate small-report uploads. Build commit is
+779357b343c2b4929ae14a3762ed054eb0e74d3e. Uploaded manifests/reports/screenshots were reviewed;
+sizes/downloads and signing/clean-machine limits are recorded in docs/RELEASES.md.
+Public release publication stays separate from workflow artifacts.
 The next planned slice is watchlist batch refresh and change comparison, with explicit refresh,
 per-resource network/identity separation and clear previous/current snapshot provenance.

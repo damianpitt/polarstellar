@@ -50,8 +50,16 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   Apple Silicon arm64. Mac Intel remains excluded. Archives/checksums, build manifests, frozen
   validation reports and screenshots upload only through the manual native workflow; generated
   binaries remain outside Git. Public release publication is a separate manual action.
-- Results, artifact sizes and any upload limitations will be recorded after execution. Source
-  checks alone do not imply a successful frozen build, upload or clean-machine validation.
+- [Native run 40120185412](https://github.com/damianpitt/polarstellar/actions/runs/40120185412)
+  succeeded on all three targets from clean build commit `779357b343c2b4929ae14a3762ed054eb0e74d3e`.
+  Each job passed 509 tests/lint, built and extracted the archive, then passed all eight frozen
+  offline checks on xcb (Linux), Cocoa (macOS) or Windows Qt. Manifests/reports and startup
+  screenshots were downloaded and reviewed; all versions/platforms/architectures match.
+- Archive/checksum artifact uploads succeeded: Linux 88,864,570 bytes (88.9 MB), macOS arm64
+  50,985,485 bytes (51.0 MB), Windows 64,248,521 bytes (64.2 MB). Matching small report artifacts
+  are 79,880 / 70,191 / 33,592 bytes respectively. Retention is 30 days. No quota/upload failure
+  occurred. Download links are in docs/RELEASES.md; binaries are not added to Git or published
+  as a GitHub release. Unsigned/ad-hoc signing and clean-machine validation limits still apply.
 - Separate small `native-validation-<target>` manifests/reports/screenshots from the larger
   `PolarStellar-<target>` archive/checksum artifacts so validation can be reviewed independently.
 
@@ -61,7 +69,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   native/issued/network/issuer distinctions, malformed and foreign raw evidence, executable/TTL
   checks, export/save/navigation, cancellation and stale-result protection. Ruff checks and
   offline startup validation pass. The SAC tab was reviewed at 1180 × 760 with local fixtures;
-  locked dependency validation passes. Source build/platform/native results follow below.
+  locked dependency validation and local source archive/wheel builds pass.
+- [Source CI run 40120172443](https://github.com/damianpitt/polarstellar/actions/runs/40120172443)
+  passed all 509 tests, Ruff, locked dependency/version checks and source archive/wheel builds
+  on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows (`windows-latest`).
 
 ## [0.0.22] - 2026-10-22
 
