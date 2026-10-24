@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.22 · Pre-alpha**
+**Current version: 0.0.23 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.22 |
+| Area | Available in 0.0.23 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -41,7 +41,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Relationship graph | Bounded multi-hop expansion, local time/type filters, direct-transfer routes, separate path/merge evidence and chronological timelines |
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
 | Contracts | Read-only instances, explicit storage-key reads, pinned declared specifications, candidate event fields and paginated RPC events |
-| Assets | Issued-asset discovery with exact filters/pagination, statistics, inspector shortcuts, and native XLM details |
+| Assets | Issued-asset discovery, exact statistics, native XLM, and locally derived/live-checked Stellar Asset Contract links |
 | Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
 | Watchlists | Local resource lists, combined offline filters, portable JSON import/export, annotations and manual refresh |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
@@ -60,8 +60,9 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-The current source version is 0.0.22; previously validated native artifacts are 0.0.11.
-New native bundles and release uploads are deferred until explicitly requested.
+The current source version is 0.0.23; previously validated native artifacts are 0.0.11.
+Native builds and workflow artifact uploads resume with 0.0.23; validation results are recorded
+in [release documentation](docs/RELEASES.md). Public release publication remains a separate manual step.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
 `.app` inside `PolarStellar`. Runtime Python/uv installation is unnecessary. Keep the bundled
@@ -490,6 +491,40 @@ statistics, identity, issuer flags, source, retrieval time, and coverage notes. 
 website or metadata file is fetched. Field definitions follow the
 [Horizon asset reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/assets/object).
 
+### Stellar Asset Contract identity linking
+
+After inspecting an asset, open **Assets → Inspect asset → Stellar Asset Contract**. The app
+derives its reserved SAC C-address locally from the exact asset code, issuer and network.
+Native XLM and issued XLM remain distinct. Codes are case-sensitive; matching codes from
+different issuers/networks do not share identity. The retained asset XDR, network hash and
+contract-ID preimage make the calculation reviewable. **Derived only** does not prove deployment.
+
+Choose **Check live SAC identity** to explicitly query the known instance through RPC. The check
+verifies the endpoint network, derived contract/key, raw instance/executable, ledger bounds and
+live TTL before reporting **Confirmed — live built-in SAC at derived identity**. Missing entries,
+unknown/expired TTL and non-SAC executables remain unconfirmed. RPC evidence is provider-reported;
+it is not an independent consensus proof, issuer-control claim or endorsement. No deployment,
+simulation, contract method call or transaction submission occurs.
+
+Horizon asset statistics/flags retain their own source and retrieval time, separate from RPC
+instance evidence. Native XLM's metadata stays a local definition. The app does not query mutable
+admin, name or symbol methods, fetch issuer websites, or infer metadata for standalone contract
+tokens. Arbitrary C-address-to-asset reverse discovery is not implemented. The underlying
+[Stellar Asset Contract documentation](https://developers.stellar.org/docs/tokens/stellar-asset-contract)
+describes the reserved identity and built-in executable distinction.
+
+**Inspect derived contract** explicitly opens the accepted C-address in Contracts on the same
+network; it remains available for an unconfirmed derived ID. Unsubmitted form edits do not change
+this shortcut or exported identity. Failures/cancellation preserve earlier accepted identity
+evidence, while network/new-asset changes clear it and reject late responses.
+
+The tab's **Export CSV / JSON** saves `asset_contract_identity`: the complete frozen asset
+metadata, derivation and optional raw RPC instance. A derivation-only export has zero records
+with explicit metadata. The main asset export carries compact link context. **Save resource**
+stores both artifacts in the investigation; older saved JSON is unchanged. There is no new
+cache/schema/dependency or background polling. Existing asset refreshes do not automatically
+perform a SAC check; inspect and save a new observation when you need fresh linked evidence.
+
 ### Soroban contract inspection and events
 
 Open **Contracts**, enter a checksum-valid **C-address**, and choose **Inspect / refresh**.
@@ -633,7 +668,7 @@ of every declaration in every CSV event row. **Save resource** keeps the contrac
 snapshot and one separate full specification document in the selected investigation.
 They reopen offline as frozen JSON. WASM binaries are not saved in these artifacts;
 previous saved snapshots remain unchanged. Cache/SQLite schemas, TTL and dependencies
-are unchanged; native builds/uploads remain paused.
+are unchanged. Native build/upload status is maintained in [release documentation](docs/RELEASES.md).
 
 The format follows Stellar's [contract interface specification (SEP-48)](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0048.md).
 
@@ -685,7 +720,7 @@ contains the value. Previous saved snapshots are unchanged.
 Storage reads bypass the optional cache and transmit the supplied key to the selected
 public RPC provider. They are not automatically saved to disk: use export or save resource.
 Dependencies, cache/SQLite schemas and retention settings are unchanged. Native bundles
-and uploads remain deferred. The underlying method is documented in Stellar's
+and uploads run only through the manual native workflow. The underlying method is documented in Stellar's
 [getLedgerEntries reference](https://developers.stellar.org/docs/data/apis/rpc/api-reference/methods/getLedgerEntries).
 
 ### Saved investigations, notes, and labels
@@ -904,14 +939,14 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 Portable native packaging is implemented. Further planned areas include:
 
-- Stellar Asset Contract identity linking and broader asset metadata.
+- Broader asset metadata and additional contract-token discovery.
 - Watchlist batch refresh/change comparison and expanded investigation organization.
 - Deeper evidence comparison and additional result/effect payload interpretation.
 - Further SDK/address compatibility as supported formats evolve.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.22. The detailed release
+These are **planned capabilities**, not features available in 0.0.23. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

@@ -148,13 +148,13 @@ class MainWindow(QMainWindow):
         self.graph.account_requested.connect(self.investigate_counterparty)
         self.graph.transaction_requested.connect(self.open_transaction)
         self.pages.addWidget(self.graph)
-        self.assets = AssetView(service, lambda: Network(self.network.currentText()))
+        rpc_provider = contract_provider or ContractProvider()
+        self.assets = AssetView(service, lambda: Network(self.network.currentText()), rpc_provider)
         self.assets.issuer_requested.connect(self.investigate_issuer)
+        self.assets.contract_requested.connect(self.open_asset_contract)
         self.activity_views[2].asset_requested.connect(self.open_asset)
         self.pages.addWidget(self.assets)
-        self.contracts = ContractView(
-            contract_provider or ContractProvider(), lambda: Network(self.network.currentText())
-        )
+        self.contracts = ContractView(rpc_provider, lambda: Network(self.network.currentText()))
         self.contracts.transaction_requested.connect(self.open_transaction)
         self.pages.addWidget(self.contracts)
         self.investigations = None
@@ -347,7 +347,7 @@ class MainWindow(QMainWindow):
                 "code": asset.code,
                 "issuer": asset.issuer,
                 "network": asset.network.value,
-                "evidence": [self.assets.export_document()],
+                "evidence": [self.assets.export_document(), self.assets.identity_document()],
             }
         elif self.pages.currentIndex() < 5 and self.account is not None:
             evidence = [account_document(self.account)]
@@ -408,6 +408,12 @@ class MainWindow(QMainWindow):
         """Switch to Assets and inspect the selected code/issuer on the current network."""
         self.navigation.setCurrentRow(5)
         self.assets.open_asset(code, issuer)
+
+    def open_asset_contract(self, address):
+        """Explicitly open the derived contract on the active asset's unchanged network."""
+        self.navigation.setCurrentRow(6)
+        self.contracts.address.setText(address)
+        self.contracts.start()
 
     def investigate_issuer(self, address):
         """Load the issuer account; activity sections then show that account's full history."""

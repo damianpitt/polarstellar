@@ -312,6 +312,14 @@ class ContractProvider:
                 "Specification unavailable, oversized, invalid or executable changed. Existing instance/events retained; inspect again if code changed."
             ) from exc
 
+    async def asset_identity(self, detail):
+        """Explicitly check a locally derived asset contract using the existing read-only instance lookup."""
+        from polarstellar.stellar.asset_contracts import confirm, derive
+
+        derived = derive(detail)
+        snapshot = await self.inspect(derived["contract"], detail.network)
+        return confirm(derived, snapshot)
+
     async def storage(self, contract, network, key_xdr, durability):
         """Read exactly one supplied storage key after checking the endpoint's network.
 

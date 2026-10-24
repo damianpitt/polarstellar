@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.22 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.23 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2112,3 +2112,35 @@ Mac Intel remains excluded.
 
 The next planned slice is Stellar Asset Contract identity linking: connect inspected assets
 to their contract identities with explicit network/issuer checks and metadata provenance.
+
+## V0.0.23 implemented slice — Stellar Asset Contract identity linking
+
+Assets → Inspect asset → Stellar Asset Contract derives the reserved SAC identity locally
+from exact asset/network XDR. Native XLM and issued XLM, code case, issuers and networks stay
+distinct. Retain asset XDR, network hash, contract-ID preimage and a frozen asset metadata
+snapshot. Derivation is not deployment confirmation. No reverse asset discovery or arbitrary
+contract-token metadata is inferred from C-addresses.
+
+An explicit Check live SAC identity action verifies RPC network/passphrase and reads the known
+derived instance with the existing allowlisted read-only inspector. Confirmation requires
+matching source/contract/key/durability/raw instance, a built-in Stellar Asset executable,
+valid ledger bounds and known live TTL. Missing, unknown/expired TTL or WASM instances remain
+unconfirmed, retaining available evidence. RPC state is not independent consensus or endorsement.
+Mutable admin/name/symbol methods, deployment, simulation and submissions are not used.
+
+Asset statistics/flags retain Horizon source/time; native definitions stay local. RPC retrieval/
+ledger/TTL are separate provenance, not simultaneous historical state. Export asset_contract_identity
+with complete metadata, derivation and optional instance evidence; the main asset export has
+compact context. Save resource stores both artifacts as frozen offline evidence. No migration,
+cache revision/TTL or dependency changes. Old saved snapshots remain unchanged.
+
+Inspect derived contract explicitly navigates with accepted identity, not form edits. Optional
+check failures and cancellation retain accepted asset/link; reset/network/new-asset generations
+reject stale responses. Existing refresh paths do not automatically check SAC identity. Source
+smoke exercises native derivation/network separation and local built-in instance confirmation.
+
+Native builds and workflow artifact uploads resume for this version on Linux x86_64, Windows
+x86_64 and macOS arm64. Mac Intel remains excluded. Native validation/upload results will be
+recorded after execution; public release publication stays separate from workflow artifacts.
+The next planned slice is watchlist batch refresh and change comparison, with explicit refresh,
+per-resource network/identity separation and clear previous/current snapshot provenance.

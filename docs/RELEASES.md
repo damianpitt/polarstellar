@@ -47,7 +47,10 @@ X11 Qt plugin; macOS and Windows use their native Qt plugins. Validation checks:
 - NetworkX graph operations and HTTPX's bundled TLS certificate/SSL support.
 - The actual frozen application's version and architecture, plus macOS bundle signatures.
 
-`validation.json` and `startup.png` accompany each archive. These checks do not make live
+The matching `native-validation-<target>` workflow artifact contains `BUILD_INFO.json`,
+`validation.json` and `startup.png`; the `PolarStellar-<target>` artifact contains the archive
+and its checksum. Small reports can be reviewed separately from the application download.
+These checks do not make live
 network requests, test every feature, prove compatibility with every OS version, or replace
 interactive clean-machine release testing. Existing source tests and live provider checks
 have their own scope. A successful workflow is a pre-alpha packaging validation result.
@@ -57,15 +60,17 @@ and build-tool versions, plus project license and third-party license informatio
 `.sha256` files allow integrity verification. Checksums alone do not authenticate an unsigned
 publisher; obtain both archive and checksum from the same trusted repository release.
 
-Current source version: **0.0.22**. Source startup checks include disposable watchlist
+Current source version: **0.0.23**. Source startup checks include disposable watchlist
 persistence, portable JSON round-trip, local trace filters, path/merge observation parsing,
 chronological timeline controls, checked merge-result decoding, declared specification
 parsing/event candidates (including nested union/Result success and error payloads),
 full muxed-account identity with zero/maximum uint64 routing IDs,
 explicit storage-key/entry identity and exact-value decoding,
+local SAC identity derivation and live-instance confirmation against offline fixtures,
 and navigation. These checks use local fixtures without network requests or contract execution.
-New native bundles/uploads remain deferred; the completed
-0.0.11 checks below describe the earlier artifacts, not a packaged 0.0.22 release.
+Native builds and workflow artifact uploads resume for 0.0.23 on Linux x86_64, Windows x86_64
+and macOS Apple Silicon only. The current run's results will be recorded after completion;
+the completed 0.0.11 checks below remain historical.
 
 ## Completed 0.0.11 validation
 
@@ -105,7 +110,8 @@ the workflow's release check uses the native X11 plugin.
 Native packaging is manual-only. Routine pushes and pull requests run source checks;
 they do not build or upload native app archives. Start **Native builds** from GitHub
 Actions when ready to produce the three platform bundles. Release uploads are a separate
-manual step and are currently paused.
+manual step. Workflow artifact uploads are enabled for the explicitly requested native run;
+they do not publish a GitHub release automatically.
 
 1. Align package version, lockfile, README, specification and changelog.
 2. Run source checks and the Native builds workflow for that exact commit.

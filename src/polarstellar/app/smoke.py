@@ -255,6 +255,61 @@ def validate_contract_storage():
     assert result["status"] == "Returned; live at reported ledger"
 
 
+def validate_asset_contract_identity():
+    """Exercise native-XLM derivation and a local built-in SAC instance without HTTP or deployment."""
+    from dataclasses import replace
+    from datetime import UTC, datetime
+
+    from stellar_sdk import xdr
+
+    from polarstellar.stellar.asset_contracts import confirm, derive
+    from polarstellar.stellar.assets import AssetDetail
+    from polarstellar.stellar.contracts import ENDPOINTS, instance_key
+
+    asset = AssetDetail(
+        "XLM",
+        "",
+        Network.TESTNET,
+        "native",
+        {},
+        {},
+        "Local definition",
+        datetime.now(UTC),
+        "Local smoke fixture",
+    )
+    derived = derive(asset)
+    assert derived["contract"] != derive(replace(asset, network=Network.MAINNET))["contract"]
+    key = instance_key(derived["contract"]).contract_data
+    executable = xdr.ContractExecutable(
+        xdr.ContractExecutableType.CONTRACT_EXECUTABLE_STELLAR_ASSET
+    )
+    body = xdr.ContractDataEntry(
+        xdr.ExtensionPoint(0),
+        key.contract,
+        key.key,
+        key.durability,
+        xdr.SCVal(
+            xdr.SCValType.SCV_CONTRACT_INSTANCE, instance=xdr.SCContractInstance(executable, None)
+        ),
+    )
+    raw = xdr.LedgerEntryData(xdr.LedgerEntryType.CONTRACT_DATA, contract_data=body)
+    result = confirm(
+        derived,
+        {
+            "contract": derived["contract"],
+            "network": "Testnet",
+            "source": ENDPOINTS[Network.TESTNET],
+            "instance_latest_ledger": 100,
+            "instance_available": True,
+            "last_modified_ledger": 90,
+            "live_until_ledger": 200,
+            "raw_instance_xdr": raw.to_xdr(),
+            "executable": executable.type.name,
+        },
+    )
+    assert result["status"].startswith("Confirmed")
+
+
 async def validate(window, root, screenshot=None):
     """Exercise bundled dependencies and Qt navigation without contacting any public endpoint.
 
@@ -345,6 +400,7 @@ async def validate(window, root, screenshot=None):
     validate_result_enrichment(address, issuer)
     validate_contract_specification()
     validate_muxed_event_addresses()
+    validate_asset_contract_identity()
     validate_contract_storage()
     checks.append("stellar_sdk_xdr_exact_integer")
     graph = nx.DiGraph([(address, issuer)])

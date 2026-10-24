@@ -10,6 +10,59 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.23] - 2026-10-25
+
+### Added — Stellar Asset Contract identity linking
+
+- In **Assets → Inspect asset → Stellar Asset Contract**, derive the reserved SAC C-address
+  locally from the displayed code, issuer and network. Keep native XLM separate from issued XLM,
+  retain case-sensitive codes and distinguish issuers/networks. Preserve exact asset XDR,
+  network hash and contract-ID preimage. **Derived only** explicitly leaves deployment unchecked.
+- **Check live SAC identity** performs the existing read-only RPC instance inspection with
+  network/passphrase, outer/inner instance identity, raw executable, ledger and live-TTL checks.
+  Only a live built-in Stellar Asset executable at the derived ID is confirmed. Missing instances,
+  unknown/expired TTL and non-SAC executables remain unconfirmed with available evidence retained.
+- **Inspect derived contract** opens the accepted identity in Contracts on the same network,
+  including a derivation-only ID. Form edits cannot redirect that shortcut or relabel exports.
+  Optional check failures/cancellation retain accepted asset/link evidence; context generations
+  reject late results from transports that ignore cancellation.
+- Keep Horizon statistics/issuer flags and native local definitions separately sourced/timed
+  from RPC instance retrieval and ledger/TTL. No mutable admin/name/symbol lookup, issuer website,
+  arbitrary contract-token metadata, endorsement or current issuer-control claim is inferred.
+  No deployment, simulation, contract invocation or transaction submission is added.
+
+### Exports, offline evidence and compatibility
+
+- The SAC tab exports CSV/JSON `asset_contract_identity` with the complete frozen asset metadata,
+  derivation and optional raw RPC instance; derivation-only exports retain request/status metadata
+  with zero records. Main asset exports include compact link context. **Save resource** stores
+  the asset plus separate identity artifact; both reopen offline without rewriting old snapshots.
+- Automatic account/asset refresh paths do not trigger SAC checks; perform an explicit check/save
+  for a new linked observation. Dependencies, cache revision/TTL and SQLite/export schemas remain
+  unchanged. Standalone contract tokens and arbitrary C-address reverse discovery stay outside scope.
+- Align package/header, pyproject, lockfile, README, scope and release docs at 0.0.23, with
+  plain-English code documentation. Extend source/frozen startup smoke to check network-separated
+  native SAC derivation and built-in instance confirmation entirely from local fixtures.
+
+### Native packaging and uploads
+
+- Resume the explicitly requested native workflow for Linux x86_64, Windows x86_64 and macOS
+  Apple Silicon arm64. Mac Intel remains excluded. Archives/checksums, build manifests, frozen
+  validation reports and screenshots upload only through the manual native workflow; generated
+  binaries remain outside Git. Public release publication is a separate manual action.
+- Results, artifact sizes and any upload limitations will be recorded after execution. Source
+  checks alone do not imply a successful frozen build, upload or clean-machine validation.
+- Separate small `native-validation-<target>` manifests/reports/screenshots from the larger
+  `PolarStellar-<target>` archive/checksum artifacts so validation can be reviewed independently.
+
+### Validation
+
+- All 509 local tests pass, including 32 new cases covering exact derivation/provenance,
+  native/issued/network/issuer distinctions, malformed and foreign raw evidence, executable/TTL
+  checks, export/save/navigation, cancellation and stale-result protection. Ruff checks and
+  offline startup validation pass. The SAC tab was reviewed at 1180 × 760 with local fixtures;
+  locked dependency validation passes. Source build/platform/native results follow below.
+
 ## [0.0.22] - 2026-10-22
 
 ### Added — full muxed account identity in contract events

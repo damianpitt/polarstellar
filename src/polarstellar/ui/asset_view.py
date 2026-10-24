@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from polarstellar.stellar.asset_contracts import derive, readable
+from polarstellar.stellar.contracts import ENDPOINTS, ContractProvider
 from polarstellar.stellar.providers import AccountError
 from polarstellar.storage.export import document, plain
 from polarstellar.ui.asset_discovery_view import AssetDiscoveryView
@@ -30,11 +32,13 @@ class AssetView(QWidget):
     """Inspect issued assets without conflating their code with issuer identity."""
 
     issuer_requested = Signal(str)
+    contract_requested = Signal(str)
 
-    def __init__(self, service, network):
+    def __init__(self, service, network, contract_provider=None):
         """Build the form; obtain the active network only when a search starts."""
         super().__init__()
         self.service, self.network = service, network
+        self.contract_provider = contract_provider or ContractProvider()
         self.snapshot = None
         self.generation = 0
         self.tasks = set()
@@ -64,7 +68,25 @@ class AssetView(QWidget):
         layout.addLayout(form)
         self.details = QPlainTextEdit()
         self.details.setReadOnly(True)
-        layout.addWidget(self.details)
+        self.inspection_tabs = QTabWidget()
+        self.inspection_tabs.addTab(self.details, "Asset details")
+        identity_tab = QWidget()
+        identity_layout = QVBoxLayout(identity_tab)
+        self.identity_details = QPlainTextEdit()
+        self.identity_details.setReadOnly(True)
+        identity_layout.addWidget(self.identity_details)
+        actions = QHBoxLayout()
+        self.verify_contract = QPushButton("Check live SAC identity")
+        self.verify_contract.clicked.connect(self.start_identity)
+        self.open_contract = QPushButton("Inspect derived contract")
+        self.open_contract.clicked.connect(self.inspect_contract)
+        actions.addWidget(self.verify_contract)
+        actions.addWidget(self.open_contract)
+        identity_layout.addLayout(actions)
+        self.identity_export = ExportControls(self.identity_document)
+        identity_layout.addWidget(self.identity_export)
+        self.inspection_tabs.addTab(identity_tab, "Stellar Asset Contract")
+        layout.addWidget(self.inspection_tabs)
         self.cancel = QPushButton("Cancel asset lookup")
         self.cancel.clicked.connect(self.cancel_lookup)
         layout.addWidget(self.cancel)
@@ -85,6 +107,15 @@ class AssetView(QWidget):
             task.cancel()
         self.task = None
         self.snapshot = None
+        self.identity = None
+        self.verifying_identity = False
+        self.verify_contract.setEnabled(False)
+        self.open_contract.setEnabled(False)
+        self.identity_export.setEnabled(False)
+        self.identity_details.setPlainText(
+            "Inspect an asset to derive its reserved SAC address locally. "
+            "Live deployment is checked only when you choose Check live SAC identity."
+        )
         self.code.clear()
         self.issuer.clear()
         self.export.setEnabled(False)
@@ -98,6 +129,20 @@ class AssetView(QWidget):
 
     def cancel_lookup(self):
         """Cancel the request and discard its snapshot so it cannot be exported accidentally."""
+        if self.verifying_identity:
+            # Optional verification cancellation keeps the already accepted asset/link.
+            # Generation checks also protect against transports that ignore cancellation.
+            self.generation += 1
+            for task in self.tasks:
+                task.cancel()
+            self.task = None
+            self.verifying_identity = False
+            self.cancel.setEnabled(False)
+            self.verify_contract.setEnabled(self.identity is not None)
+            self.identity_details.appendPlainText(
+                "\nCheck cancelled; previous identity evidence retained."
+            )
+            return
         self.reset(reset_discovery=False)
         self.details.setPlainText("Asset lookup cancelled. Enter an asset to try again.")
 
@@ -128,7 +173,13 @@ class AssetView(QWidget):
             # Some providers may finish after cancellation, so cancellation alone is insufficient.
             if generation != self.generation:
                 return
+            identity = derive(detail)
             self.snapshot = detail
+            self.identity = identity
+            self.identity_details.setPlainText(readable(identity))
+            self.verify_contract.setEnabled(True)
+            self.open_contract.setEnabled(True)
+            self.identity_export.setEnabled(True)
             lines = [
                 f"{detail.code} • {detail.network.value}",
                 f"Issuer: {detail.issuer or 'None — native XLM'}",
@@ -181,8 +232,89 @@ class AssetView(QWidget):
         """Reuse the export schema with asset identity, flags, exact statistics, and provenance."""
         metadata = plain(self.snapshot)
         statistics = metadata.pop("statistics")
+        # Embedded clients may set a valid snapshot directly; derivation remains local.
+        identity = self.identity or derive(self.snapshot)
+        metadata["stellar_asset_contract"] = {
+            key: value
+            for key, value in identity.items()
+            if key not in ("contract_instance", "asset_metadata")
+        }
         return document(
             "asset",
             metadata,
             [{"statistic": key, "value": value} for key, value in statistics.items()],
+        )
+
+    def start_identity(self):
+        """Check only the displayed snapshot; form edits cannot change the frozen asset identity."""
+        if self.task is not None or self.snapshot is None:
+            return
+        self.verifying_identity = True
+        self.verify_contract.setEnabled(False)
+        self.cancel.setEnabled(True)
+        self.task = asyncio.create_task(self.load_identity(self.snapshot, self.generation))
+        self.tasks.add(self.task)
+        self.task.add_done_callback(self.tasks.discard)
+
+    async def load_identity(self, detail, generation):
+        """Accept matching optional evidence atomically; failures and late results retain prior state."""
+        try:
+            result = await self.contract_provider.asset_identity(detail)
+            if generation != self.generation:
+                return
+            expected = derive(detail)
+            for key in (
+                "code",
+                "issuer",
+                "network",
+                "contract",
+                "asset_xdr",
+                "network_id",
+                "contract_id_preimage_xdr",
+                "asset_metadata",
+            ):
+                if result[key] != expected[key]:
+                    raise AccountError("SAC identity result belongs to another asset or network.")
+            snapshot = result["contract_instance"]
+            if snapshot is None or snapshot["source"] != ENDPOINTS[detail.network]:
+                raise AccountError("SAC check did not return matching RPC evidence.")
+            # Recheck evidence at the view boundary rather than trusting a provider status label.
+            from polarstellar.stellar.asset_contracts import confirm
+
+            result = confirm(result, snapshot)
+            preview = readable(result)
+            self.identity = result
+            self.identity_details.setPlainText(preview)
+        except asyncio.CancelledError:
+            return
+        except Exception as exc:  # noqa: BLE001 -- Optional checks must not erase accepted asset evidence.
+            if generation == self.generation:
+                self.identity_details.appendPlainText(
+                    "\n"
+                    + (
+                        str(exc)
+                        if isinstance(exc, AccountError)
+                        else "Unable to check SAC identity."
+                    )
+                    + " Previous identity evidence retained."
+                )
+        finally:
+            if generation == self.generation:
+                self.task = None
+                self.verifying_identity = False
+                self.cancel.setEnabled(False)
+                self.verify_contract.setEnabled(self.identity is not None)
+
+    def inspect_contract(self):
+        """Open the accepted derived address without treating derivation as deployment confirmation."""
+        if self.identity is not None:
+            self.contract_requested.emit(self.identity["contract"])
+
+    def identity_document(self):
+        """Export asset provenance and derivation once, with optional full RPC instance evidence."""
+        identity = self.identity or derive(self.snapshot)
+        return document(
+            "asset_contract_identity",
+            {key: value for key, value in identity.items() if key != "contract_instance"},
+            [identity["contract_instance"]] if identity["contract_instance"] is not None else [],
         )
