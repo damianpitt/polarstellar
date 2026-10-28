@@ -386,6 +386,22 @@ async def validate(window, root, screenshot=None):
     )
     assert restored["entries"][0]["identifier"] == address
     assert restored["entries"][0]["snapshot"] is None
+    # Retain/compare two local observations with exact decimal text. This verifies
+    # pair persistence after restart without live requests or background polling.
+    from polarstellar.storage.export import account_document
+    from polarstellar.storage.watchlist_comparison import compare_entry
+
+    watch_store = WatchlistStore(root / "watchlists.sqlite3")
+    baseline = account_document(window.account)
+    changed = json.loads(json.dumps(baseline))
+    changed["records"][0]["amount"] = "100.0000002"
+    list_id, entry_id = bookmarks[0]["id"], bookmarks[0]["entries"][0]["id"]
+    watch_store.snapshot(list_id, entry_id, baseline)
+    watch_store.snapshot(list_id, entry_id, changed)
+    difference = compare_entry(watch_store.get_entry(list_id, entry_id))
+    assert difference["status"] == "Changed"
+    assert difference["changes"][0]["before"] == "100.0000001"
+    assert difference["changes"][0]["after"] == "100.0000002"
     checks.append("sqlite_watchlist_restart")
     snapshot = window.investigations.export_document()
     write_export(root / "evidence.json", snapshot, "json")

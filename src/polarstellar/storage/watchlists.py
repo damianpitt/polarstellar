@@ -1,5 +1,6 @@
 """Local, network-scoped resource bookmarks, separate from investigations and caches."""
 
+import hashlib
 import json
 import sqlite3
 from contextlib import closing
@@ -11,6 +12,16 @@ from polarstellar.stellar.assets import validate_asset
 from polarstellar.stellar.contracts import validate_contract
 from polarstellar.stellar.models import Network
 from polarstellar.stellar.service import validate_account
+
+UNSPECIFIED = object()
+
+
+def snapshot_digest(evidence):
+    """Bind a retained pair to exact current JSON, detecting writes by older versions without pair support."""
+    raw = json.dumps(
+        evidence, sort_keys=True, ensure_ascii=False, allow_nan=False, separators=(",", ":")
+    )
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
 def resource(kind, value, network, issuer=""):
@@ -42,7 +53,7 @@ def text(value, limit, title, required=False):
 
 
 class WatchlistStore:
-    """Persist complete lists atomically, keeping the latest snapshot rather than evidence history.
+    """Persist lists atomically, retaining the last two successful snapshots rather than full history.
 
     Limits are 100 lists, 500 entries per list, and 10 MB of JSON per list. Existing
     investigations are never migrated or modified. Unknown future schemas are refused.
@@ -77,6 +88,18 @@ class WatchlistStore:
                 json.loads(row[0])
                 for row in connection.execute("SELECT payload FROM watchlists ORDER BY rowid DESC")
             ]
+
+    def get_entry(self, identifier, entry_id):
+        """Read one committed entry without loading other lists; missing/deleted identities fail explicitly."""
+        if not self.path.exists():
+            raise ValueError("This watchlist no longer exists.")
+        with closing(self.connect()) as connection:
+            row = connection.execute(
+                "SELECT payload FROM watchlists WHERE id=?", (identifier,)
+            ).fetchone()
+        if row is None:
+            raise ValueError("This watchlist no longer exists.")
+        return self.entry(json.loads(row[0]), entry_id)
 
     def write(self, connection, item):
         """Write bounded JSON in the caller's transaction; failures leave the previous row intact."""
@@ -206,16 +229,32 @@ class WatchlistStore:
 
         self.update(identifier, remove_entry)
 
-    def snapshot(self, identifier, entry_id, evidence):
-        """Replace only the latest snapshot; re-reading protects concurrent notes and deletions.
+    def snapshot(
+        self, identifier, entry_id, evidence, expected_identity=None, expected_snapshot=UNSPECIFIED
+    ):
+        """Rotate a successful snapshot pair atomically, protecting concurrent notes/deletions/refreshes.
 
-        This is a convenience bookmark snapshot, not immutable investigation history.
-        Source/retrieval times belong to the evidence document and remain unchanged.
+        Refresh callers supply the identity and baseline they actually requested. If
+        another window refreshed in the meantime, refuse to overwrite its newer data.
+        Legacy callers may omit these guards; existing schema-1 JSON gains optional
+        previous_snapshot on its next successful write, with no database migration.
+        The original retrieval/source metadata is retained without rewriting timestamps.
         """
 
         def replace(item):
-            """Write into the original entry only; never recreate a deleted bookmark."""
-            self.entry(item, entry_id)["snapshot"] = evidence
+            """Check committed state under the write lock; failures roll back the entire pair."""
+            entry = self.entry(item, entry_id)
+            if expected_identity is not None and any(
+                entry.get(key) != value for key, value in expected_identity.items()
+            ):
+                raise ValueError("Watchlist identity changed during refresh. Retry.")
+            if expected_snapshot is not UNSPECIFIED and entry.get("snapshot") != expected_snapshot:
+                raise ValueError(
+                    "Snapshot changed during refresh. Retry to compare the latest baseline."
+                )
+            entry["previous_snapshot"] = entry.get("snapshot")
+            entry["snapshot"] = evidence
+            entry["snapshot_pair_current_digest"] = snapshot_digest(evidence)
 
         self.update(identifier, replace)
 

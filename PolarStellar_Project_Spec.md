@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.23 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.24 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2148,3 +2148,41 @@ sizes/downloads and signing/clean-machine limits are recorded in docs/RELEASES.m
 Public release publication stays separate from workflow artifacts.
 The next planned slice is watchlist batch refresh and change comparison, with explicit refresh,
 per-resource network/identity separation and clear previous/current snapshot provenance.
+
+## V0.0.24 implemented slice — watchlist batch refresh and snapshot comparison
+
+Manual Refresh visible entries freezes the selected list's visible stable identities and
+their saved networks/issuers. Maximum batch size is 50; larger scopes are refused without
+requests or silent truncation. Sequential reads bypass the cache and use existing account,
+asset/native-definition and known contract-instance lookups, with no extra activity/event/
+spec/storage/SAC checks. Per-entry errors are isolated and successes commit independently.
+Selection stays offline and does not alter the queue. Cancel/list/network/filter/removal
+changes reject unfinished/late responses while retaining completed work. Batch progress is
+session-local; full per-entry snapshot pairs persist across restart.
+
+Single and batch success atomically rotate current into previous and save the new observation.
+Capture each committed baseline before I/O; identity and compare-and-swap checks under the
+SQLite write lock refuse changed baselines and never recreate deleted entries. Intervening
+annotations and unsaved selected drafts are retained. Failed lookups/saves do not rotate a pair.
+Schema 1 gains optional previous_snapshot and a digest binding it to the current JSON; older
+versions' snapshot-only writes are detected as unverified pairs, with no false comparison.
+No database migration/dependency/cache revision/TTL change; the existing 10 MB list cap covers
+both observations, and quota failures roll back the whole write.
+
+Offline comparison covers documented account, asset and instance fields. Balance identity
+includes exact asset/issuer-or-pool; storage comparison uses key/value XDR rather than decoder
+presentation. Exact finite decimal equality needs no arithmetic/context rounding. Unknown/null
+fields never become zero. Retrieval/export times, moving RPC retention/latest-ledger counters
+and decoder descriptions are excluded; source/retrieval/cache/ledger provenance stays visible.
+At most 2000 projected/union fields are compared; unsupported/ambiguous/oversized evidence is
+Not comparable, never a partial no-change claim. Full snapshots remain available. Changes are
+observations between reads, not complete history, transfers, ownership, causation or atomic state.
+
+Current/Previous/Change comparison tabs expose original evidence and readable before/after
+fields. Separate comparison CSV/JSON exports contain changes/provenance; full pair JSON retains
+both documents without repeating raw evidence per CSV row. Portable bookmark JSON still excludes
+snapshots, pair metadata and batch reports. Source startup smoke checks persisted exact pairs.
+No native builds/uploads are run for this slice; latest validated binaries remain 0.0.23.
+Mac Intel remains excluded. The next planned feature is saved-investigation snapshot comparison:
+choose two observations of the same resource, preserve originals/notes and compare with explicit
+network/issuer and coverage safeguards.

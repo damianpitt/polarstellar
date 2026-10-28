@@ -10,6 +10,73 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.24] - 2026-10-28
+
+### Added — manual visible-scope watchlist batch refresh
+
+- In **Watchlists**, set offline filters then choose **Refresh visible entries (live; maximum
+  50)**. Freeze exactly those visible stable IDs and saved networks/full issuer identities.
+  Refuse larger scopes without requests or silent truncation. New/hidden entries do not enter
+  a running queue. Reads run sequentially and bypass the optional response cache.
+- Show per-resource pending/refreshing/refreshed/failed status, isolated errors and comparison
+  results. Successes save independently; failed/unfinished entries retain their previous pair.
+  Cancel, list/network/filter changes and removals invalidate unfinished requests, including
+  cancellation-resistant late responses. Completed work remains committed.
+- Selecting another row stays offline without changing the queue; existing unsaved-note
+  safeguards remain. Progress reports stay in memory for the current list/session; snapshot
+  pairs persist. Account reads load details/balances, assets load Horizon statistics or local
+  native-XLM definitions, contracts load their known instance. No extra activity/events,
+  specifications, effects, arbitrary storage or SAC checks are performed.
+
+### Added — retained successful snapshot pairs and exact field comparison
+
+- Both single and batch refresh retain current/previous successful observations atomically.
+  Re-read committed baselines before I/O and check identity/current snapshot under the write
+  lock before rotation. Concurrent refreshes are refused rather than overwritten; deletions
+  are never resurrected, intervening stored notes and selected unsaved drafts are preserved.
+- Open **Current snapshot**, **Previous snapshot**, or **Change comparison**. First success is
+  Baseline only; compatible pairs show Changed or No observed changes in supported fields.
+  Unsupported/ambiguous/oversized evidence is Not comparable, without partial changes/no-change
+  claims. Comparisons are bounded to 2000 projected/union fields; full stored evidence remains.
+- Compare account sequence/home domain and balances by full asset/issuer/pool identity, including
+  exact amount, limit and authorization; asset type/statistics/issuer flags; contract availability,
+  executable/WASM hash, modification/TTL and known instance storage keyed by exact XDR. Decoder
+  presentation, moving retention/latest-ledger counters and export/retrieval times do not create
+  state changes. Preserve each source/retrieval/cache/ledger context separately.
+- Compare finite decimal values exactly, without arithmetic or ambient precision rounding;
+  formatting-only trailing zeros are equivalent. Missing/null fields remain unknown, never zero.
+  A before/after difference does not prove a transfer, fund continuity, ownership, supply, cause,
+  intervening activity or simultaneous network state.
+
+### Export, storage and compatibility safeguards
+
+- Export displayed comparison CSV/JSON with changed fields and provenance; export full snapshot
+  pair JSON separately to retain original documents without repeating them in every CSV row.
+  Draft/local annotations are excluded. Portable list JSON remains bookmark-only and excludes
+  snapshots, pair metadata and batch reports.
+- Existing schema-1 JSON gains optional previous snapshot/current-digest metadata on successful
+  writes, without SQLite migration or changing dependencies/cache revision/TTL. Pair binding
+  detects older app versions replacing only the current snapshot and reports unverified pairing;
+  a new explicit refresh establishes a pair. Old discarded history is not reconstructed.
+- The existing 10 MB list cap now covers both retained snapshots; a quota failure rolls back
+  the complete write. Labels, notes, investigations, caches and historical export files remain
+  independent. Source startup smoke checks pair persistence and exact before/after values offline.
+- Align package/header, pyproject, lockfile, README, project scope and release docs at 0.0.24.
+  Add plain-English documentation for queue, comparison and concurrency safeguards.
+
+### Packaging and validation
+
+- No native builds or uploads are run for this slice. Latest validated native artifacts remain
+  0.0.23; they do not contain these new features. Mac Intel remains excluded; packaging stays
+  occasional and explicitly requested.
+- Local validation passes all 534 tests, including 25 new cases for exact fields/identity,
+  unknown/unsupported evidence, limits, pair rotation/rollback, older writers, exports/privacy,
+  filtered mixed batches, errors, cancellation, selection, deletion and concurrent refresh.
+  Ruff formatting/lint, locked dependency validation and source archive/wheel builds pass.
+  Batch/comparison screens were reviewed at 1180 × 760, with changes before long provenance
+  notes and live counts on the batch button. Source startup smoke checks persisted pairs offline.
+  Platform source-CI results will be recorded after the push; no native builds/uploads.
+
 ## [0.0.23] - 2026-10-25
 
 ### Added — Stellar Asset Contract identity linking

@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.23 · Pre-alpha**
+**Current version: 0.0.24 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.23 |
+| Area | Available in 0.0.24 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -43,7 +43,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Contracts | Read-only instances, explicit storage-key reads, pinned declared specifications, candidate event fields and paginated RPC events |
 | Assets | Issued-asset discovery, exact statistics, native XLM, and locally derived/live-checked Stellar Asset Contract links |
 | Investigations | Named offline evidence collections with local notes, labels, and explicit refresh |
-| Watchlists | Local resource lists, combined offline filters, portable JSON import/export, annotations and manual refresh |
+| Watchlists | Local lists, offline filters, portable JSON, annotations, manual batch refresh and snapshot-pair comparison |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
 
@@ -60,7 +60,9 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source and validated native bundle version: **0.0.23**. Download the Linux x86_64,
+Current source version: **0.0.24**. Latest validated native bundles: **0.0.23**, which do not
+include the new watchlist batch/comparison features. No native builds/uploads are run for
+0.0.24; packaging remains occasional and explicitly requested. Download the Linux x86_64,
 Windows x86_64 or macOS Apple Silicon archive/checksum artifact from the
 [successful native run](https://github.com/damianpitt/polarstellar/actions/runs/40120185412).
 Separate `native-validation-<target>` artifacts contain small manifests, reports and screenshots.
@@ -775,21 +777,23 @@ asset issuers always remain distinct. Entries may belong to more than one named 
 
 | Action | Result |
 | --- | --- |
-| Select a list or entry | Read local annotations and the last saved snapshot offline |
+| Select a list or entry | Read annotations and the retained snapshot pair offline |
 | Save label / notes | Commit your local interpretation separately from network facts |
 | Rename / Delete list | Organize lists; deleting a list requires confirmation |
-| Remove entry | Delete that bookmark, notes, and latest snapshot after confirmation |
+| Remove entry | Delete that bookmark, notes, and snapshot pair after confirmation |
 | Open in explorer / double-click entry | Switch to the entry's saved network and perform an explicit explorer lookup |
 | Refresh saved snapshot | Fetch a fresh resource on its saved network, bypassing the optional response cache |
+| Refresh visible entries | Sequentially refresh the frozen visible scope, up to 50 entries |
 | Cancel refresh | Keep the previous saved snapshot and reject late results |
 
 Explorer opening follows normal cache settings and does not change the watchlist's saved
-snapshot. Watchlist refresh replaces **only the latest snapshot**, retaining labels and
-notes. To preserve a sequence of historical evidence, use **Investigations**. Failed
+snapshot. Successful refresh retains **current and previous successful snapshots**, keeping
+labels and notes. This is a two-observation convenience pair; save/export separate observations
+or use **Investigations** for longer history. Failed
 refreshes retain old data, including its original source and retrieval time. Unsaved
 annotation edits are protected when changing selections or closing the window, and a
 refresh does not erase notes being typed. Saved snapshots are explicitly labeled as
-past data; there is no automatic monitoring, polling, change alert, or batch refresh.
+past data; there is no automatic monitoring, polling or change alert.
 
 Account refresh retrieves account details/balances only. Issued-asset refresh retrieves
 Horizon asset statistics. Native XLM uses a local definition without an API request.
@@ -804,6 +808,50 @@ allow 100 characters, labels 200, and notes 10,000. Unknown future database sche
 refused. Clear cache and investigation deletion do not remove watchlists. Labels and
 notes stay local; explicit lookups send only public identifiers to Horizon/Stellar RPC.
 Automatic alerts and encrypted storage remain planned.
+
+### Watchlist batch refresh and change comparison
+
+Choose **Refresh visible entries (live; maximum 50)** after setting the list's offline filters.
+The queue captures exactly those visible saved identities; hidden/new entries are not added.
+More than 50 visible entries is refused without making requests or silently truncating the
+scope. Each row uses its own saved network/issuer and refreshes sequentially, bypassing the
+optional cache. Account reads load details/balances; asset reads load Horizon statistics (or
+native XLM's local definition); contracts load only the known instance. No activities, events,
+effects, storage-key discovery, specification or SAC-identity checks are triggered.
+
+The progress report shows each entry as pending, refreshing, refreshed or failed, with an
+isolated error and comparison status where available. Completed observations save independently;
+one failure cannot erase another entry's success. **Cancel refresh**, list/network/filter
+changes, or resource removal cancel unfinished work and reject late results. Completed entries
+remain saved; unfinished/failed entries keep their prior pair. Selecting another entry offline
+does not change the frozen batch. Unsaved annotation protection still applies. The last batch
+report stays in memory for that list/session; persisted snapshot pairs remain after restart.
+
+Open **Current snapshot**, **Previous snapshot**, or **Change comparison** for a selected entry.
+First success is **Baseline only**; subsequent compatible observations show **Changed** or
+**No observed changes** in compared fields. Unsupported/ambiguous/oversized evidence shows
+**Not comparable**, with no partial no-change claim. The 2000-field comparison bound does not
+discard the full stored snapshots. Pair storage still shares the existing 10 MB list limit;
+a failed write rolls back both snapshots. A concurrent refresh in another window is refused
+rather than overwriting a changed baseline; intervening notes are preserved.
+
+Compared fields are account sequence/home domain and balances keyed by full asset/issuer or
+pool identity (amount, trust limit, authorization); asset type/statistics/issuer flags; and
+contract availability, executable/WASM hash, modification/TTL and known instance-storage values
+keyed by exact XDR. Storage decoding descriptions, retrieval/export times and moving RPC
+retention/latest-ledger counters are ignored as state changes. Original source, retrieval,
+cache labels and available ledger context remain alongside both observations. Amounts are
+compared as exact finite decimals without arithmetic; formatting-only trailing zeros do not
+create a change. Missing/null fields stay unknown, never zero. Differences do not establish
+transfers, fund continuity, ownership, supply, cause, or atomic simultaneous network state.
+
+The comparison tab's **Export CSV / JSON** freezes displayed changes/provenance without
+repeating full snapshots in every CSV row. **Export full snapshot pair JSON** separately retains
+both original documents; annotations are excluded. Existing **Export list JSON** remains
+bookmark-only, excluding snapshots, pair metadata and reports. No new dependency, cache change
+or SQLite migration is introduced: schema-1 JSON gains optional pair metadata on success.
+If an older app replaces a current snapshot without updating its pair, comparison reports
+an unverified pair. Refresh again to establish a new pair; old values are never fabricated.
 
 ### Watchlist filters and portable JSON
 
@@ -944,13 +992,13 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 Portable native packaging is implemented. Further planned areas include:
 
 - Broader asset metadata and additional contract-token discovery.
-- Watchlist batch refresh/change comparison and expanded investigation organization.
+- Saved-investigation snapshot comparison and expanded investigation organization.
 - Deeper evidence comparison and additional result/effect payload interpretation.
 - Further SDK/address compatibility as supported formats evolve.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
-These are **planned capabilities**, not features available in 0.0.23. The detailed release
+These are **planned capabilities**, not features available in 0.0.24. The detailed release
 boundaries and acceptance criteria are maintained in the project specification.
 
 ## Documentation and checks

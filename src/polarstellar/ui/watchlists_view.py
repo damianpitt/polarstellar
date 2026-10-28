@@ -1,9 +1,10 @@
-"""Offline bookmark organization with explicit explorer opening and single-resource refresh."""
+"""Offline bookmarks with explicit bounded refresh, snapshot pairs and conservative field comparison."""
 
 import asyncio
 import copy
 import json
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QScrollArea,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -28,8 +30,19 @@ from polarstellar.stellar.models import Network
 from polarstellar.stellar.providers import AccountError
 from polarstellar.stellar.service import AccountService
 from polarstellar.storage.export import account_document, document, plain, write_export
+from polarstellar.storage.watchlist_comparison import (
+    compare,
+    compare_entry,
+    comparison_document,
+    identity,
+    pair_document,
+    validate_context,
+)
 from polarstellar.storage.watchlist_transfer import matches, portable, read_file
 from polarstellar.storage.watchlists import resource
+from polarstellar.ui.export_controls import ExportControls
+
+MAX_BATCH = 50
 
 
 class WatchlistsView(QWidget):
@@ -51,6 +64,8 @@ class WatchlistsView(QWidget):
         self.visible_entries = []
         self.last_filters = ("", "All networks", "All types")
         self.task, self.tasks, self.generation = None, set(), 0
+        self.batch_running = False
+        self.batch_report = None
         # Filters and transfer controls add useful height. A scrollable panel keeps
         # every action reachable on smaller displays instead of compressing widgets
         # below their minimum size or drawing one editor over another.
@@ -123,6 +138,9 @@ class WatchlistsView(QWidget):
         layout.addLayout(filter_row)
         self.filter_count = QLabel()
         layout.addWidget(self.filter_count)
+        self.batch_button = QPushButton("Refresh visible entries (live; maximum 50)")
+        self.batch_button.clicked.connect(self.start_batch)
+        layout.addWidget(self.batch_button)
         self.entries = QListWidget()
         self.entries.setMinimumHeight(100)
         self.entries.setMaximumHeight(150)
@@ -191,7 +209,29 @@ class WatchlistsView(QWidget):
         self.filter_kind.currentTextChanged.connect(self.apply_filters)
         self.evidence = QPlainTextEdit()
         self.evidence.setReadOnly(True)
-        layout.addWidget(self.evidence, 1)
+        self.evidence_tabs = QTabWidget()
+        self.evidence_tabs.addTab(self.evidence, "Current snapshot")
+        self.previous_evidence = QPlainTextEdit()
+        self.previous_evidence.setReadOnly(True)
+        self.evidence_tabs.addTab(self.previous_evidence, "Previous snapshot")
+        comparison_tab = QWidget()
+        comparison_layout = QVBoxLayout(comparison_tab)
+        self.comparison = QPlainTextEdit()
+        self.comparison.setReadOnly(True)
+        self.comparison.setMinimumHeight(180)
+        comparison_layout.addWidget(self.comparison)
+        self.comparison_export = ExportControls(self.comparison_document)
+        comparison_layout.addWidget(self.comparison_export)
+        self.pair_button = QPushButton("Export full snapshot pair JSON")
+        self.pair_button.clicked.connect(self.export_pair)
+        comparison_layout.addWidget(self.pair_button)
+        self.evidence_tabs.addTab(comparison_tab, "Change comparison")
+        layout.addWidget(self.evidence_tabs, 1)
+        self.batch_summary = QPlainTextEdit()
+        self.batch_summary.setReadOnly(True)
+        self.batch_summary.setMaximumHeight(140)
+        self.batch_summary.setVisible(False)
+        layout.addWidget(self.batch_summary)
         self.reload()
 
     def attempt(self, callback, *arguments):
@@ -307,6 +347,10 @@ class WatchlistsView(QWidget):
                 self.set_filters(self.last_filters)
                 return
             self.cancel_refresh()
+        elif self.batch_running and values != self.last_filters:
+            # The queue is a frozen visible scope. Changing its filter cancels pending
+            # work rather than silently widening or replacing the authorized requests.
+            self.cancel_refresh()
         draft = (self.label.text(), self.notes.toPlainText()) if remains else None
         self.last_filters = values
         self.populate(selected)
@@ -338,7 +382,8 @@ class WatchlistsView(QWidget):
             self.entries.setCurrentRow(previous)
             self.entries.blockSignals(False)
             return
-        self.cancel_refresh()
+        if not self.batch_running:
+            self.cancel_refresh()
         self.display(row)
 
     def display(self, row):
@@ -350,34 +395,79 @@ class WatchlistsView(QWidget):
         snapshot = self.current.get("snapshot") if self.current else None
         # An empty evidence panel needlessly crowds bookmark rows and filter controls.
         # The status already explains that a never-refreshed bookmark has no snapshot.
-        self.evidence.setVisible(bool(snapshot))
+        self.evidence_tabs.setVisible(snapshot is not None)
         self.evidence.setPlainText(
             json.dumps(snapshot, ensure_ascii=False, indent=2)
-            if snapshot
+            if snapshot is not None
             else "No saved snapshot. Choose Refresh to fetch one explicitly."
         )
+        previous = self.current.get("previous_snapshot") if self.current else None
+        self.previous_evidence.setPlainText(
+            json.dumps(previous, ensure_ascii=False, indent=2)
+            if previous is not None
+            else "No previous successful snapshot."
+        )
+        if self.current and snapshot is not None:
+            result = compare_entry(self.current)
+            lines = [result["status"]]
+            for change in result["changes"]:
+                lines.append(" / ".join(change["field"]) + ": " + change["change"])
+                lines.append(
+                    "  Before: "
+                    + (
+                        json.dumps(change["before"], ensure_ascii=False)
+                        if change["before_present"]
+                        else "Not reported"
+                    )
+                )
+                lines.append(
+                    "  After: "
+                    + (
+                        json.dumps(change["after"], ensure_ascii=False)
+                        if change["after_present"]
+                        else "Not reported"
+                    )
+                )
+            lines += [
+                "",
+                result["note"],
+                result["coverage"],
+                "",
+                "Previous: " + json.dumps(result["previous_provenance"], ensure_ascii=False),
+                "Current: " + json.dumps(result["current_provenance"], ensure_ascii=False),
+            ]
+            self.comparison.setPlainText("\n".join(lines))
+        else:
+            self.comparison.setPlainText(
+                "Refresh to establish a baseline. A second success enables comparison."
+            )
         self.status.setText(
             f"{self.current['network']} • {self.current['kind']} • {self.current['identifier']}\n"
             + (
-                "Saved snapshot, not current data. Refresh replaces only this latest snapshot."
-                if snapshot
+                "Saved snapshot pair, not current data. Compare the last two successful observations offline."
+                if snapshot is not None
                 else "Bookmark saved locally; never refreshed."
             )
             if self.current
             else "Create/select a list, then add or select a resource."
         )
         self.controls()
+        self.show_batch()
 
     def controls(self):
         """Enable actions only for their valid local selection and current request state."""
         for button in (self.save_button, self.remove_button, self.open_button):
             button.setEnabled(self.current is not None)
         self.refresh_button.setEnabled(self.current is not None and self.task is None)
+        self.batch_button.setEnabled(bool(self.visible_entries) and self.task is None)
         self.cancel_button.setEnabled(self.task is not None)
         self.add_button.setEnabled(self.current_list is not None)
         self.export_button.setEnabled(self.current_list is not None)
         self.label.setEnabled(self.current is not None)
         self.notes.setEnabled(self.current is not None)
+        has_snapshot = self.current is not None and self.current.get("snapshot") is not None
+        self.comparison_export.setEnabled(has_snapshot)
+        self.pair_button.setEnabled(has_snapshot)
 
     def create(self):
         """Create a named local list after protecting edits to the previously selected entry."""
@@ -569,8 +659,21 @@ class WatchlistsView(QWidget):
         for task in self.tasks:
             task.cancel()
         self.task = None
+        was_batch = self.batch_running
+        self.batch_running = False
+        if was_batch and self.batch_report is not None:
+            self.batch_report["finished_at"] = datetime.now(UTC).isoformat()
+            self.batch_report["cancelled"] = True
+            for row in self.batch_report["entries"]:
+                if row["status"] in ("Pending", "Refreshing"):
+                    row["status"] = "Not refreshed — cancelled"
+            self.show_batch()
         self.controls()
-        self.status.setText("Refresh cancelled. Saved snapshots are unchanged.")
+        self.status.setText(
+            "Batch cancelled. Completed snapshots retained; unfinished entries unchanged."
+            if was_batch
+            else "Refresh cancelled. Saved snapshots are unchanged."
+        )
 
     def start_refresh(self):
         """Capture list, entry, identity and network before starting one live lookup."""
@@ -587,45 +690,202 @@ class WatchlistsView(QWidget):
         self.controls()
 
     async def refresh(self, list_id, entry, generation):
-        """Replace the latest snapshot only after success, preserving notes and rejecting stale data."""
+        """Rotate a successful pair only against its captured committed baseline, preserving drafts and identity."""
         try:
-            network = Network(entry["network"])
-            if entry["kind"] == "account":
-                evidence = account_document(await self.service.lookup(entry["identifier"], network))
-            elif entry["kind"] == "asset":
-                detail = await self.service.asset(entry["code"], entry["issuer"], network)
-                evidence = document("asset", plain(detail), [])
-            else:
-                snapshot = await self.contract_provider.inspect(entry["identifier"], network)
-                if (snapshot["contract"], snapshot["network"]) != (
-                    entry["identifier"],
-                    network.value,
-                ):
-                    raise AccountError("Contract response does not match this watchlist entry.")
-                evidence = document(
-                    "contract",
-                    {
-                        "instance": snapshot,
-                        "events_queried": False,
-                        "coverage": "Contract instance only; no events loaded by watchlist refresh.",
-                    },
-                    [],
-                )
+            baseline = self.store.get_entry(list_id, entry["id"])
+            if identity(baseline) != identity(entry):
+                raise AccountError("Watchlist identity changed before refresh.")
+            evidence = await self.fetch(entry)
             # Cancellation alone cannot prevent a provider from completing late. Never
             # write after selection/network changes, and never recreate a removed item.
             if generation != self.generation:
                 return
-            self.store.snapshot(list_id, entry["id"], evidence)
+            self.store.snapshot(
+                list_id, entry["id"], evidence, identity(entry), baseline.get("snapshot")
+            )
             self.reload(list_id, entry["id"], preserve=True)
         except asyncio.CancelledError:
             return
         except Exception as exc:  # noqa: BLE001 -- Keep network/storage failures inside the view.
             if generation == self.generation:
                 self.status.setText(
-                    (str(exc) if isinstance(exc, AccountError) else "Refresh failed.")
+                    (str(exc) if isinstance(exc, (AccountError, ValueError)) else "Refresh failed.")
                     + " Previous snapshot retained; retry when ready."
                 )
         finally:
             if generation == self.generation:
                 self.task = None
                 self.controls()
+
+    async def fetch(self, entry):
+        """Read one saved identity live, bypassing caches and excluding activities/optional contract queries."""
+        checked = identity(entry)
+        network = Network(checked["network"])
+        if checked["kind"] == "account":
+            evidence = account_document(await self.service.lookup(checked["identifier"], network))
+        elif checked["kind"] == "asset":
+            detail = await self.service.asset(checked["code"], checked["issuer"], network)
+            evidence = document("asset", plain(detail), [])
+        else:
+            snapshot = await self.contract_provider.inspect(checked["identifier"], network)
+            if (snapshot["contract"], snapshot["network"]) != (
+                checked["identifier"],
+                network.value,
+            ):
+                raise AccountError("Contract response does not match this watchlist entry.")
+            evidence = document(
+                "contract",
+                {
+                    "instance": snapshot,
+                    "events_queried": False,
+                    "coverage": "Contract instance only; no events loaded by watchlist refresh.",
+                },
+                [],
+            )
+        validate_context(entry, evidence)
+        return evidence
+
+    def start_batch(self):
+        """Freeze visible stable entry identities; never silently truncate or expand a batch."""
+        if self.task is not None or self.current_list is None or not self.visible_entries:
+            return
+        if len(self.visible_entries) > MAX_BATCH:
+            self.status.setText(
+                "Batch limit is 50 entries. Filter the list to 50 or fewer visible entries first."
+            )
+            return
+        queue = copy.deepcopy(self.visible_entries)
+        list_id = self.current_list["id"]
+        self.batch_report = {
+            "list_id": list_id,
+            "started_at": datetime.now(UTC).isoformat(),
+            "finished_at": None,
+            "cancelled": False,
+            "entries": [
+                {"entry_id": row["id"], **identity(row), "status": "Pending"} for row in queue
+            ],
+        }
+        self.batch_running = True
+        self.task = asyncio.create_task(self.refresh_batch(list_id, queue, self.generation))
+        self.tasks.add(self.task)
+        self.task.add_done_callback(self.tasks.discard)
+        self.controls()
+        self.show_batch()
+
+    async def refresh_batch(self, list_id, queue, generation):
+        """Refresh sequentially with isolated errors, committed baselines and cancellation between every entry."""
+        report = self.batch_report
+        try:
+            for entry, row in zip(queue, report["entries"], strict=True):
+                if generation != self.generation:
+                    return
+                row["status"] = "Refreshing"
+                self.show_batch()
+                try:
+                    # Yield even for local definitions so cancellation can run before
+                    # the next lookup, and keep cancellation inside the guarded block.
+                    await asyncio.sleep(0)
+                    if generation != self.generation:
+                        return
+                    baseline = self.store.get_entry(list_id, entry["id"])
+                    if identity(baseline) != identity(entry):
+                        raise ValueError("Watchlist identity changed before lookup.")
+                    evidence = await self.fetch(entry)
+                    if generation != self.generation:
+                        return
+                    self.store.snapshot(
+                        list_id, entry["id"], evidence, identity(entry), baseline.get("snapshot")
+                    )
+                    row["status"] = "Refreshed"
+                    row["comparison"] = compare(entry, baseline.get("snapshot"), evidence)["status"]
+                    selected = self.current["id"] if self.current else None
+                    self.reload(list_id, selected, preserve=True)
+                except asyncio.CancelledError:
+                    return
+                except Exception as exc:  # noqa: BLE001 -- Failed resources cannot erase other entries' completed work.
+                    if generation != self.generation:
+                        return
+                    row["status"] = "Failed"
+                    row["error"] = (
+                        str(exc)
+                        if isinstance(exc, (AccountError, ValueError))
+                        else "Lookup or local save failed; previous snapshots retained."
+                    )
+                self.show_batch()
+            report["finished_at"] = datetime.now(UTC).isoformat()
+            self.status.setText(
+                "Batch finished. Completed entries saved independently; failures retain their previous snapshots."
+            )
+        finally:
+            if generation == self.generation:
+                self.task = None
+                self.batch_running = False
+                self.controls()
+                self.show_batch()
+
+    def show_batch(self):
+        """Display per-resource progress for this list only; reports stay in memory, snapshots persist."""
+        report = self.batch_report
+        visible = (
+            report is not None
+            and self.current_list is not None
+            and report["list_id"] == self.current_list["id"]
+        )
+        self.batch_summary.setVisible(visible)
+        self.batch_button.setText("Refresh visible entries (live; maximum 50)")
+        if not visible:
+            return
+        rows = report["entries"]
+        completed = sum(row["status"] == "Refreshed" for row in rows)
+        failed = sum(row["status"] == "Failed" for row in rows)
+        if self.batch_running:
+            self.batch_button.setText(
+                f"Visible batch: {completed}/{len(rows)} refreshed • {failed} failed"
+            )
+        lines = [
+            f"Visible batch: {len(rows)} entries • {completed} refreshed • {failed} failed • "
+            + (
+                "Cancelled"
+                if report["cancelled"]
+                else "Finished"
+                if report["finished_at"]
+                else "Running"
+            )
+        ]
+        lines += [
+            f"{row['network']} • {row['kind']} • {row['identifier']} • {row['status']}"
+            + (" • " + row["comparison"] if "comparison" in row else "")
+            + (" • " + row["error"] if "error" in row else "")
+            for row in rows
+        ]
+        self.batch_summary.setPlainText("\n".join(lines))
+
+    def comparison_document(self):
+        """Freeze the displayed committed pair, without substituting unseen newer data or draft annotations."""
+        return comparison_document(copy.deepcopy(self.current))
+
+    def export_pair(self):
+        """Explicitly write full snapshot-pair JSON, distinct from bookmark-only portable exports."""
+        if self.current is None:
+            return
+        payload = pair_document(copy.deepcopy(self.current))
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Export snapshot pair", "polarstellar-watchlist-snapshots.json", "JSON (*.json)"
+        )
+        if filename:
+            path = Path(filename)
+            if not path.suffix:
+                path = path.with_suffix(".json")
+                if (
+                    path.exists()
+                    and QMessageBox.question(
+                        self,
+                        "Replace file?",
+                        "Replace the existing snapshot-pair JSON file?",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No,
+                    )
+                    != QMessageBox.StandardButton.Yes
+                ):
+                    return
+            self.attempt(write_export, path, payload, "json")
