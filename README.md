@@ -890,7 +890,7 @@ are rejected before storage writes. A valid import commits as one transaction; q
 or write failures leave existing lists intact. Existing 100-list/10-MB storage limits
 still apply. Exports validate their own format/byte size and replace the chosen file
 atomically. File-dialog cancellation makes no library changes. JSON is the supported
-portable format; CSV import, merging, encrypted files and snapshot transfer remain planned.
+portable format; CSV import, merging, encrypted files and snapshot import into watchlists remain planned.
 
 ### CSV and JSON export
 

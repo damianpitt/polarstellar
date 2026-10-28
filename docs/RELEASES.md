@@ -73,6 +73,9 @@ Windows x86_64 and macOS Apple Silicon only. The completed 0.0.11 checks below r
 No native builds/uploads are run for 0.0.24. The latest downloadable native apps stay at
 0.0.23 and do not include 0.0.24's watchlist batch/comparison features. Packaging runs only
 when explicitly requested at selected development steps; Mac Intel remains excluded.
+The [0.0.24 source run](https://github.com/damianpitt/polarstellar/actions/runs/40646716271)
+passed all 534 tests per platform, lint, locked dependency/version checks and source archive/
+wheel builds on Linux, macOS and Windows. This is source validation, not new frozen-app validation.
 
 ## Completed 0.0.23 validation
 

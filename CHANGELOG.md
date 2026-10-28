@@ -75,7 +75,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   Ruff formatting/lint, locked dependency validation and source archive/wheel builds pass.
   Batch/comparison screens were reviewed at 1180 × 760, with changes before long provenance
   notes and live counts on the batch button. Source startup smoke checks persisted pairs offline.
-  Platform source-CI results will be recorded after the push; no native builds/uploads.
+- [Source CI run 40646716271](https://github.com/damianpitt/polarstellar/actions/runs/40646716271)
+  passed on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows (`windows-latest`):
+  all 534 tests on each platform, Ruff, locked dependency/version checks and source archive/wheel
+  builds. These are source validation results only; no native builds or uploads were triggered.
 
 ## [0.0.23] - 2026-10-25
 
