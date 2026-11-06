@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.25 · Pre-alpha**
+**Current version: 0.0.26 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.25 |
+| Area | Available in 0.0.26 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -42,7 +42,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
 | Contracts | Read-only instances, explicit storage-key reads, pinned declared specifications, candidate event fields and paginated RPC events |
 | Assets | Issued-asset discovery, exact statistics, native XLM, and locally derived/live-checked Stellar Asset Contract links |
-| Investigations | Named offline evidence collections with local notes, labels, explicit refresh, and saved snapshot comparison |
+| Investigations | Searchable local evidence collections with labels, network filters, notes, explicit refresh, and saved snapshot comparison |
 | Watchlists | Local lists, offline filters, portable JSON, annotations, manual batch refresh and snapshot-pair comparison |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
@@ -60,8 +60,8 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source version: **0.0.25**. The latest validated native bundles are **0.0.23**.
-Watchlist batch refresh and saved-investigation comparison are available from source.
+Current source version: **0.0.26**. The latest validated native bundles are **0.0.23**.
+Watchlist batch refresh, investigation search, and saved snapshot comparison are available from source.
 Native packaging runs at selected development steps. Download the Linux x86_64,
 Windows x86_64 or macOS Apple Silicon archive/checksum artifact from the
 [successful native run](https://github.com/damianpitt/polarstellar/actions/runs/40120185412).
@@ -759,6 +759,29 @@ response cache does not delete investigations, and deleting an investigation doe
 remove previously exported files. Schema version 1 refuses unknown future versions.
 Each investigation is limited to 20 MB. Encrypted storage remains planned.
 
+### Find saved investigations
+
+In **Investigations**, enter part of a case name, label, or saved resource identifier and
+choose **Apply filters** or press Enter in a text field. Resource search includes saved
+addresses, transaction hashes, and asset codes and issuers. Use **Exact label** to match
+one complete comma-separated label. Text matching ignores case and outer whitespace.
+
+Choose **Mainnet** or **Testnet** to require saved evidence on that network. When a search
+matches a resource identifier, that resource must also be saved on the chosen network.
+Name and label matches can appear whenever the case has evidence on that network.
+**All networks** includes cases that have yet to collect evidence.
+
+The count shows how many cases match. **Clear filters** restores the full library.
+Filters use committed case metadata and resource identities. Notes and evidence contents
+stay outside search. The selected case, draft annotations, and open evidence stay in place
+when the case still matches. When a filter would hide a case with unsaved edits, you can
+keep editing by declining the change. A newly created or renamed case stays visible after
+save, and the library clears filters if needed to show it.
+
+Filtering runs offline and changes which cases appear in the list. Opening a match still
+shows the full case and all its saved evidence, and exports follow the selected case's
+usual annotation setting.
+
 ### Compare saved investigation snapshots
 
 1. Save two account, asset, or contract observations into the same investigation.
@@ -1020,8 +1043,7 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 Portable native packaging is implemented. Further planned areas include:
 
 - Broader asset metadata and additional contract-token discovery.
-- Expanded investigation organization with offline filters for names, labels, and saved resources.
-- Deeper evidence comparison and additional result/effect payload interpretation.
+- Saved transaction evidence comparison and additional result/effect payload interpretation.
 - Further SDK/address compatibility as supported formats evolve.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.

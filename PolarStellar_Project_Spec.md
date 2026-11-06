@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.25 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations with offline snapshot comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.26 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline snapshot comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2219,3 +2219,30 @@ Native packaging remains manual. The latest validated native bundles are 0.0.23.
 The next planned slice is investigation organization. Add offline search and filters by
 case name, label, resource identity, and network, with safeguards for unsaved annotations
 when the visible selection changes.
+
+## V0.0.26 implemented slice — offline investigation organization
+
+The Investigations library applies local substring search to saved case names, comma-separated
+labels and saved resource identity fields. An exact-label filter matches one complete label.
+Text comparison ignores case and outer whitespace without normalizing the identities stored in
+evidence. Notes, drafts and raw evidence are outside the search scope.
+
+A Mainnet or Testnet filter requires at least one saved entry on that network. When a query
+matches a resource identity, the matching entry must itself be on the selected network. Case
+name and label matches require any entry on the selected network. All networks includes cases
+without evidence. Filters change the case list while the complete case stays available when
+opened or exported.
+
+Apply filters together with the button or Enter. Counts distinguish matching from total cases.
+Retain selection by stable saved ID and keep its editor and open evidence when the case stays
+visible. Confirm before filtering or switching away from an unsaved draft. Declining restores the
+previous controls or selection. Explicit saves reveal a case that leaves the active scope and
+explain any filter reset. A live refresh reloads the matching case and preserves locally edited
+fields alongside newer saved annotations.
+
+Search and filters are session-only. They need no network, database migration, dependency change,
+or additional data indexing. Native packaging remains manual.
+
+The next planned slice is saved transaction evidence comparison. Compare observations of the same
+transaction hash and network, keep operation and effect provenance, and distinguish differences
+in loaded evidence from differences in supported fields.

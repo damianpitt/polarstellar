@@ -60,9 +60,10 @@ and build-tool versions, plus project license and third-party license informatio
 `.sha256` files allow integrity verification. Checksums alone do not authenticate an unsigned
 publisher; obtain both archive and checksum from the same trusted repository release.
 
-Current source version: **0.0.25**. Source startup checks include offline comparison of
-two saved investigation observations with exact before/after amounts and disposable watchlist
-persistence, retained snapshot pairs/exact comparison, portable JSON round-trip, local trace filters, path/merge observation parsing,
+Current source version: **0.0.26**. Source startup checks include saved investigation search
+by identity and network, comparison of two observations with exact before/after amounts,
+disposable watchlist persistence, retained snapshot pairs/exact comparison, portable JSON
+round-trip, local trace filters, path/merge observation parsing,
 chronological timeline controls, checked merge-result decoding, declared specification
 parsing/event candidates (including nested union/Result success and error payloads),
 full muxed-account identity with zero/maximum uint64 routing IDs,
@@ -71,9 +72,9 @@ local SAC identity derivation and live-instance confirmation against offline fix
 and navigation. These checks use local fixtures without network requests or contract execution.
 Native builds and workflow artifact uploads resumed successfully for 0.0.23 on Linux x86_64,
 Windows x86_64 and macOS Apple Silicon only. The completed 0.0.11 checks below remain historical.
-The latest validated native apps are 0.0.23. Watchlist batch refresh and saved investigation
-comparison are available from source. Packaging runs at selected development steps on Linux
-x86_64, Windows x86_64 and Apple Silicon.
+The latest validated native apps are 0.0.23. Watchlist batch refresh, investigation search,
+and saved snapshot comparison are available from source. Packaging runs at selected development
+steps on Linux x86_64, Windows x86_64 and Apple Silicon.
 
 The [0.0.25 source run](https://github.com/damianpitt/polarstellar/actions/runs/42150896260)
 passed all 547 tests per platform, lint, locked dependency and version checks, and Python

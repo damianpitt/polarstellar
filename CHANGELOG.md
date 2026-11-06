@@ -10,6 +10,50 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.26] - 2026-11-06
+
+### Added — offline investigation library search and filters
+
+- In **Investigations**, search saved names, labels, or resource identifiers by substring.
+  Account and contract addresses, trace roots, transaction hashes, and asset codes and full
+  issuers are searchable. **Exact label** matches one whole comma-separated label. Text
+  search ignores case and outer whitespace while stored identifiers retain their exact form.
+- Combine the search and label with **All networks**, **Mainnet**, or **Testnet**. Resource
+  matches under a network filter must come from evidence on that same network. Case name
+  and label matches require any saved evidence on the selected network. Empty cases remain
+  discoverable under **All networks**.
+- Choose **Apply filters** or press Enter in either text field to apply the controls
+  together. The library displays matching and total counts, with **Clear filters** to
+  restore all cases. Search reads committed metadata and resource identities in memory.
+  Notes, drafts and raw evidence contents are excluded from matching. The library
+  scrolls in smaller windows so editors and evidence remain readable.
+
+### Selection, annotations and compatibility
+
+- Track the selected case by its saved ID as filters move visible rows. Keeping a case
+  visible preserves its evidence selection, drafts, and export option. If a new filter
+  would hide an edited case, declining the confirmation restores the active controls and
+  leaves the editor intact. Approving the change closes that editor without selecting a
+  different case automatically.
+- Keep a created or explicitly saved case open if it stops matching. Clear incompatible
+  filters and explain the change in the count line. Background refreshes retain applicable
+  filters and preserve only edited annotation fields, while showing newer saved values
+  elsewhere. If creating a case would discard draft notes or labels, ask first.
+- Filter the library, with full evidence and the existing annotation opt-in available when
+  exporting a selected case. Search settings stay in the session. No provider calls,
+  storage migration, cache changes, or new dependencies are required for filtering.
+
+### Packaging and validation
+
+- Source-only update. The latest validated native bundles are 0.0.23.
+- The offline startup check now finds a disposable saved investigation by exact resource
+  and network and verifies that the case stays selected.
+- Local validation passes all 562 tests, including 15 new cases for combined filters,
+  mixed-network evidence, stable selection, draft retention, refresh and whole-case exports.
+  Ruff, lockfile and version checks, offline startup, and Python source archive and wheel
+  builds pass. The archive contains only public project files and package metadata.
+  Reviewed the library at 1180 × 760 and 800 × 520.
+
 ## [0.0.25] - 2026-11-06
 
 ### Added — offline comparison of saved investigation snapshots

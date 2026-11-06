@@ -74,3 +74,35 @@ def new_investigation(name):
         "labels": "",
         "entries": [],
     }
+
+
+def matches_investigation(item, query="", label="", network=None):
+    """Match committed case metadata and saved resource identities entirely offline.
+
+    Text discovery is case-insensitive. The network narrows the same entries
+    searched for resource identifiers, so a different saved resource cannot
+    make an identifier on the wrong network appear to match.
+    """
+    query, label = query.strip().casefold(), label.strip().casefold()
+    labels = {part.strip().casefold() for part in item["labels"].split(",") if part.strip()}
+    if label and label not in labels:
+        return False
+
+    entries = item["entries"]
+    if network is not None:
+        entries = [entry for entry in entries if entry["network"] == network]
+        if not entries:
+            return False
+
+    # Notes and raw evidence are excluded. Match only text that identifies the
+    # case or its saved resources, without changing the original identities.
+    return (
+        not query
+        or query in item["name"].casefold()
+        or any(query in saved_label for saved_label in labels)
+        or any(
+            query in entry.get(key, "").casefold()
+            for entry in entries
+            for key in ("identifier", "code", "issuer")
+        )
+    )

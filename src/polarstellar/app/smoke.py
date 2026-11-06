@@ -377,6 +377,14 @@ async def validate(window, root, screenshot=None):
     assert saved_difference["status"] == "Changed"
     assert saved_difference["changes"][0]["before"] == "100.0000001"
     assert saved_difference["changes"][0]["after"] == "100.0000002"
+    # The library finds saved identities on their own network, even when opened
+    # from an unrelated explorer view. A matching filter keeps the case selected.
+    library = window.investigations
+    library.query.setText(address)
+    library.network_filter.setCurrentText(Network.MAINNET.value)
+    library.apply_filters()
+    assert len(library.visible_items) == 1 and library.current is not None
+    library.clear_filters()
     checks.append("sqlite_saved_investigation_restart")
     # Exercise the production bookmark controls using the same disposable storage.
     # Adding/reopening the entry must stay offline and preserve its selected network.
