@@ -76,6 +76,10 @@ The latest validated native apps are 0.0.23. Watchlist batch refresh, investigat
 and saved snapshot comparison are available from source. Packaging runs at selected development
 steps on Linux x86_64, Windows x86_64 and Apple Silicon.
 
+The [0.0.26 source run](https://github.com/damianpitt/polarstellar/actions/runs/42152240958)
+passed all 562 tests per platform, lint, locked dependency and version checks, and Python
+source archive and wheel builds on Linux, macOS and Windows.
+
 The [0.0.25 source run](https://github.com/damianpitt/polarstellar/actions/runs/42150896260)
 passed all 547 tests per platform, lint, locked dependency and version checks, and Python
 source archive and wheel builds on Linux, macOS and Windows. The source archive uses

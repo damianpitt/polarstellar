@@ -53,6 +53,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   Ruff, lockfile and version checks, offline startup, and Python source archive and wheel
   builds pass. The archive contains only public project files and package metadata.
   Reviewed the library at 1180 × 760 and 800 × 520.
+- [Source CI run 42152240958](https://github.com/damianpitt/polarstellar/actions/runs/42152240958)
+  passed all 562 tests on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows
+  (`windows-latest`). Ruff, locked dependency and version checks, and Python source
+  archive and wheel builds passed on each platform.
 
 ## [0.0.25] - 2026-11-06
 
