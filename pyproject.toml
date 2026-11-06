@@ -31,6 +31,24 @@ packaging = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/polarstellar"]
 
+[tool.hatch.build.targets.sdist]
+# Keep source archives limited to public project paths, even in a checkout with local builds.
+only-include = [
+    ".github",
+    ".gitignore",
+    ".python-version",
+    "CHANGELOG.md",
+    "LICENSE",
+    "PolarStellar_Project_Spec.md",
+    "README.md",
+    "docs",
+    "pyproject.toml",
+    "src",
+    "tests",
+    "tools",
+    "uv.lock",
+]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"

@@ -49,6 +49,9 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 ### Packaging and validation
 
 - Source-only update. The latest validated native bundles remain 0.0.23.
+- Limit the Python source archive to explicit public project paths. A build from the local
+  checkout verified that it contains the 89 tracked project files and package metadata.
+  Local working files and generated native outputs stay outside the source archive.
 - Source startup validation uses disposable local storage to check an exact amount change
   across two reopened investigation observations.
 - Local validation passes all 547 tests, including 13 new cases for identity, older saved
