@@ -21,8 +21,10 @@ from PySide6.QtWidgets import (
 from polarstellar.stellar.models import Network
 from polarstellar.stellar.service import AccountService
 from polarstellar.storage.export import account_document, document, transaction_document
+from polarstellar.storage.investigation_comparison import PRIMARY_KIND
 from polarstellar.storage.investigations import new_investigation
 from polarstellar.ui.export_controls import ExportControls
+from polarstellar.ui.investigation_comparison_dialog import InvestigationComparisonDialog
 
 
 class InvestigationsView(QWidget):
@@ -80,6 +82,9 @@ class InvestigationsView(QWidget):
         )
         self.refresh_button.clicked.connect(self.start_refresh)
         layout.addWidget(self.refresh_button)
+        self.compare_button = QPushButton("Compare selected snapshot (offline)")
+        self.compare_button.clicked.connect(self.open_comparison)
+        layout.addWidget(self.compare_button)
         self.annotations = QCheckBox("Include saved name, notes, and labels in export")
         layout.addWidget(self.annotations)
         self.export = ExportControls(self.export_document)
@@ -166,8 +171,10 @@ class InvestigationsView(QWidget):
         self.labels.setText(item.get("labels", ""))
         self.annotations.setChecked(False)
         self.entries.clear()
-        for entry in item.get("entries", []):
-            self.entries.addItem(f"{entry['network']} • {entry['kind']} • {entry['identifier']}")
+        for number, entry in enumerate(item.get("entries", []), 1):
+            self.entries.addItem(
+                f"#{number} • {entry['network']} • {entry['kind']} • {entry['identifier']}"
+            )
         self.export.setEnabled(self.current is not None)
         self.show_entry(-1)
 
@@ -211,6 +218,13 @@ class InvestigationsView(QWidget):
     def show_entry(self, row):
         """Render the full saved JSON evidence and original timestamps without executing content."""
         valid = self.current is not None and 0 <= row < len(self.current["entries"])
+        comparable = valid and self.current["entries"][row]["kind"] in PRIMARY_KIND
+        self.compare_button.setEnabled(comparable)
+        self.compare_button.setToolTip(
+            "Choose a second saved entry with the same resource and network."
+            if comparable
+            else "Choose saved account, asset, or contract evidence to compare."
+        )
         refreshable = valid and self.current["entries"][row]["kind"] in (
             "account",
             "transaction",
@@ -227,6 +241,17 @@ class InvestigationsView(QWidget):
             if valid
             else "Select saved evidence to inspect it offline."
         )
+
+    def open_comparison(self):
+        """Use the selected row as the baseline without refreshing data or saving draft notes."""
+        row = self.entries.currentRow()
+        if self.current is None or row < 0:
+            return
+        entries = self.current["entries"]
+        if entries[row]["kind"] in PRIMARY_KIND:
+            # A window-modal dialog prevents changes to the library selection
+            # while leaving the application's asynchronous refresh loop free to run.
+            InvestigationComparisonDialog(entries, row, self).open()
 
     def delete(self):
         """Ask before deleting a complete investigation, including its local annotations."""

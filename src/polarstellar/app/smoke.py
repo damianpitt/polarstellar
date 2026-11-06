@@ -18,8 +18,10 @@ from polarstellar import __version__
 from polarstellar.stellar.contracts import decoded_value
 from polarstellar.stellar.horizon import HorizonProvider
 from polarstellar.stellar.models import Network
-from polarstellar.storage.export import serialize, write_export
+from polarstellar.storage.export import account_document, serialize, write_export
+from polarstellar.storage.investigation_comparison import compare_entries
 from polarstellar.storage.investigations import InvestigationStore
+from polarstellar.storage.watchlist_comparison import compare_entry
 from polarstellar.storage.watchlist_transfer import read_file
 from polarstellar.storage.watchlists import WatchlistStore
 
@@ -362,8 +364,19 @@ async def validate(window, root, screenshot=None):
     window.investigations.name.setText("Disposable native smoke check")
     window.investigations.create()
     window.save_resource()
-    reopened = InvestigationStore(root / "investigations.sqlite3").list()
-    assert reopened[0]["entries"][0]["network"] == Network.MAINNET.value
+    # Save two observations from the fixture and compare the committed evidence
+    # after reopening it, with no provider reads during the comparison.
+    baseline = account_document(window.account)
+    changed = json.loads(json.dumps(baseline))
+    changed["records"][0]["amount"] = "100.0000002"
+    original = window.investigations.current["entries"][0]
+    window.investigations.add_evidence({**original, "evidence": [changed]})
+    reopened = InvestigationStore(root / "investigations.sqlite3").list()[0]["entries"]
+    assert reopened[0] == original and reopened[0]["network"] == Network.MAINNET.value
+    saved_difference = compare_entries(*reopened)
+    assert saved_difference["status"] == "Changed"
+    assert saved_difference["changes"][0]["before"] == "100.0000001"
+    assert saved_difference["changes"][0]["after"] == "100.0000002"
     checks.append("sqlite_saved_investigation_restart")
     # Exercise the production bookmark controls using the same disposable storage.
     # Adding/reopening the entry must stay offline and preserve its selected network.
@@ -388,13 +401,7 @@ async def validate(window, root, screenshot=None):
     assert restored["entries"][0]["snapshot"] is None
     # Retain/compare two local observations with exact decimal text. This verifies
     # pair persistence after restart without live requests or background polling.
-    from polarstellar.storage.export import account_document
-    from polarstellar.storage.watchlist_comparison import compare_entry
-
     watch_store = WatchlistStore(root / "watchlists.sqlite3")
-    baseline = account_document(window.account)
-    changed = json.loads(json.dumps(baseline))
-    changed["records"][0]["amount"] = "100.0000002"
     list_id, entry_id = bookmarks[0]["id"], bookmarks[0]["entries"][0]["id"]
     watch_store.snapshot(list_id, entry_id, baseline)
     watch_store.snapshot(list_id, entry_id, changed)

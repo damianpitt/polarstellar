@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.24 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.25 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, saved investigations with offline snapshot comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2186,3 +2186,36 @@ No native builds/uploads are run for this slice; latest validated binaries remai
 Mac Intel remains excluded. The next planned feature is saved-investigation snapshot comparison:
 choose two observations of the same resource, preserve originals/notes and compare with explicit
 network/issuer and coverage safeguards.
+
+## V0.0.25 implemented slice — saved investigation snapshot comparison
+
+In Investigations, select a numbered saved entry and choose **Compare selected snapshot
+(offline)**. The selected entry is the baseline and the second picker offers other observations
+of the same resource in that investigation. The direction follows the user's selection.
+Both entry and evidence identities must match the full saved network and address or
+case-sensitive asset code and issuer. Legacy native XLM labels with a trailing colon are
+recognized without merging issued XLM. Both saved asset statistics layouts are supported.
+
+Compare account sequence, home domain and balances/trustlines by exact issuer or pool;
+asset type, statistics and flags; or known contract availability, executable, WASM hash,
+modification ledger, TTL and instance storage by raw key/value XDR. Keep original amounts,
+unreported fields and explicit nulls distinct. Only compare up to 2,000 projected/union
+fields. Refuse unsupported, ambiguous, mismatched or oversized core evidence with an
+explicit status and no partial diff.
+
+Show original source/retrieval provenance, document creation times, supplemental evidence
+counts, and saved contract event coverage separately for both entries. Changes to loaded
+activity, counterparties, events, specifications, SAC checks, or explicit storage reads
+are outside the field comparison. Transactions and traces remain available as saved evidence.
+Observed differences describe the selected snapshots and do not establish flow or causation.
+
+Comparison reads committed local evidence and keeps the selected pair pinned during any
+background reload. CSV/JSON exports contain the selected entry numbers, scope, provenance,
+status and field changes. Comparison reports omit investigation names, notes and labels.
+Full original evidence stays available through the library and investigation export.
+No SQLite schema change, migration, cache change, or new dependency is required.
+Native packaging remains manual. The latest validated native bundles are 0.0.23.
+
+The next planned slice is investigation organization. Add offline search and filters by
+case name, label, resource identity, and network, with safeguards for unsaved annotations
+when the visible selection changes.

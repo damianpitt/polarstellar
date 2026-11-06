@@ -10,6 +10,52 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.25] - 2026-11-06
+
+### Added — offline comparison of saved investigation snapshots
+
+- In **Investigations**, select a numbered account, asset, or contract entry and choose
+  **Compare selected snapshot (offline)**. The picker lists other saves for the same resource
+  in that investigation, with their saved document timestamps. The selected baseline sets
+  the direction. Source retrieval times can differ from the order in which evidence was saved.
+- Verify both entries and their core documents against the saved network and full resource
+  identity. Keep case-sensitive asset codes, issuers, and native XLM separate. Support older
+  native XLM row labels and the two existing asset statistics layouts used by explorer saves
+  and explicit investigation refreshes.
+- Show exact before and after values for account sequence, home domain, balances and trustline
+  fields by issuer or pool, asset type/statistics/flags, and known contract instance availability,
+  executable, WASM hash, modification ledger, TTL and storage key/value XDR. Equivalent decimal
+  formatting does not create a difference. Unreported values and explicit nulls remain distinct
+  from reported zero. Ambiguous, incompatible, or oversized core evidence returns **Not
+  comparable** without partial results. Comparisons are bounded to 2,000 projected/union fields.
+
+### Evidence, privacy and compatibility
+
+- **Coverage and sources** shows original source/retrieval/cache or ledger context for each
+  observation, plus document creation times, supplemental evidence counts and saved contract
+  event windows. Activity, counterparties, events, specifications, SAC identity checks, and
+  explicit storage-key evidence stay in the original entries. Transaction and trace entries
+  remain readable offline. A comparison covers only supported resource fields and cannot
+  establish intervening history, transfers, ownership, supply or causation.
+- **Export CSV** and **Export JSON** save the displayed changes, chosen entry numbers,
+  status, scope and provenance. Comparison exports omit investigation names, notes and labels,
+  including unsaved drafts. Full investigation export still offers the original snapshots
+  and its existing explicit opt-in for saved annotations.
+- Opening, comparing and exporting the report require no provider requests. The dialog keeps
+  its chosen evidence when the library reloads, and neither comparison nor its export edits
+  the saved observations or annotations. Existing database schema, size limit, dependencies
+  and cache settings stay in place. Update the README, project specification and release notes.
+
+### Packaging and validation
+
+- Source-only update. The latest validated native bundles remain 0.0.23.
+- Source startup validation uses disposable local storage to check an exact amount change
+  across two reopened investigation observations.
+- Local validation passes all 547 tests, including 13 new cases for identity, older saved
+  formats, exact values, differing coverage, limits, selection, pinned evidence and export
+  privacy. Ruff, locked dependency verification, version inspection and the offline source
+  startup check pass. Reviewed the comparison dialog using local fixture evidence.
+
 ## [0.0.24] - 2026-10-28
 
 ### Added — manual visible-scope watchlist batch refresh
