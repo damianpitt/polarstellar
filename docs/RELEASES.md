@@ -74,6 +74,12 @@ Windows x86_64 and macOS Apple Silicon only. The completed 0.0.11 checks below r
 The latest validated native apps are 0.0.23. Watchlist batch refresh and saved investigation
 comparison are available from source. Packaging runs at selected development steps on Linux
 x86_64, Windows x86_64 and Apple Silicon.
+
+The [0.0.25 source run](https://github.com/damianpitt/polarstellar/actions/runs/42150896260)
+passed all 547 tests per platform, lint, locked dependency and version checks, and Python
+source archive and wheel builds on Linux, macOS and Windows. The source archive uses
+an explicit list of public project paths to exclude local working files and generated builds.
+
 The [0.0.24 source run](https://github.com/damianpitt/polarstellar/actions/runs/40646716271)
 passed all 534 tests per platform, lint, locked dependency/version checks and source archive/
 wheel builds on Linux, macOS and Windows. This is source validation, not new frozen-app validation.

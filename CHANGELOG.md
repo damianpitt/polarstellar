@@ -58,6 +58,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   formats, exact values, differing coverage, limits, selection, pinned evidence and export
   privacy. Ruff, locked dependency verification, version inspection and the offline source
   startup check pass. Reviewed the comparison dialog using local fixture evidence.
+- [Source CI run 42150896260](https://github.com/damianpitt/polarstellar/actions/runs/42150896260)
+  passed all 547 tests on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows
+  (`windows-latest`). Each job passed Ruff, locked dependency and version checks,
+  and built the Python source archive and wheel.
 
 ## [0.0.24] - 2026-10-28
 
