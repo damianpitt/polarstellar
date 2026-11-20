@@ -50,8 +50,8 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 
 ### Native packaging and validation
 
-- Native builds and workflow uploads are requested for Linux x86_64, Windows x86_64 and
-  macOS Apple Silicon. Results will be recorded after the extracted apps are validated.
+- Native builds and workflow uploads completed for Linux x86_64, Windows x86_64 and
+  macOS Apple Silicon. Mac Intel remains excluded.
 - Extend source/frozen startup validation to reopen saved transaction observations with
   local effect evidence, compare the exact amount through the dialog and export its report.
   Fixtures use disposable storage and no live provider requests.
@@ -60,6 +60,20 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   pagination failures, comparison limits, the library dialog, and private exports.
   Ruff, locked dependencies/version, offline source startup and source archive/wheel builds
   pass. Reviewed the transaction comparison and coverage screens with local fixtures.
+- [Source run 44838801828](https://github.com/damianpitt/polarstellar/actions/runs/44838801828)
+  passed all 587 tests on Linux, macOS and Windows, plus Ruff, locked dependencies/version
+  and Python source archive/wheel builds.
+- [Native run 44838820941](https://github.com/damianpitt/polarstellar/actions/runs/44838820941)
+  passed all 587 source tests per target, then built and launched each extracted native app
+  from clean commit `f307a1ed67c42e2f763f1d50b8768f4dd3f8900d`. All eight offline checks
+  passed on each target with the native Qt display plugin. Downloaded and reviewed each
+  build manifest, validation report and rendered startup screenshot.
+- Uploaded native artifacts are 88.9 MB for Linux, 51.0 MB for Apple Silicon and 64.3 MB
+  for Windows, including archive/checksum packaging. Small reports are uploaded separately.
+  Binaries remain outside Git. Downloads and exact sizes are in the release documentation,
+  with 30-day retention and GitHub access required. Linux/Windows are unsigned and macOS
+  is ad-hoc signed. Signing/notarization and interactive clean-machine qualification remain
+  planned. The README links to the validated 0.0.27 bundles.
 
 ## [0.0.26] - 2026-11-06
 

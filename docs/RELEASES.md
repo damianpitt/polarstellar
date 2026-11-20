@@ -73,8 +73,38 @@ saved transaction/effects comparison through the offline dialog and JSON export,
 and navigation. These checks use local fixtures without network requests or contract execution.
 Native builds and workflow artifact uploads resumed successfully for 0.0.23 on Linux x86_64,
 Windows x86_64 and macOS Apple Silicon only. The completed 0.0.11 checks below remain historical.
-Native validation for 0.0.27 is in progress. The latest completed native validation is 0.0.23.
-Packaging runs at selected development steps on Linux x86_64, Windows x86_64 and Apple Silicon.
+The latest validated native apps are 0.0.27. Packaging runs at selected development steps
+on Linux x86_64, Windows x86_64 and Apple Silicon.
+
+## Completed 0.0.27 validation
+
+The [native run](https://github.com/damianpitt/polarstellar/actions/runs/44838820941) passed
+on all three targets from clean commit `f307a1ed67c42e2f763f1d50b8768f4dd3f8900d`.
+Each native job passed all 587 source tests and Ruff, then built, extracted and launched
+its deliverable app. All eight offline startup checks passed using X11/xcb on Linux,
+Cocoa on macOS and Windows Qt on Windows. The checks include saved transaction/effects
+comparison through the dialog and JSON export using disposable fixture evidence.
+The downloaded build manifests, validation reports and startup screenshots were reviewed.
+
+| Target | Archive/checksum artifact | Uploaded artifact size | Small validation reports |
+| --- | --- | --- | --- |
+| Linux x86_64 | [Download](https://github.com/damianpitt/polarstellar/actions/runs/44838820941/artifacts/14678774257) | 88,908,592 bytes (88.9 MB) | [Reports](https://github.com/damianpitt/polarstellar/actions/runs/44838820941/artifacts/14680185497), 79,489 bytes |
+| macOS arm64 | [Download](https://github.com/damianpitt/polarstellar/actions/runs/44838820941/artifacts/14679872321) | 51,032,825 bytes (51.0 MB) | [Reports](https://github.com/damianpitt/polarstellar/actions/runs/44838820941/artifacts/14679892278), 69,743 bytes |
+| Windows x86_64 | [Download](https://github.com/damianpitt/polarstellar/actions/runs/44838820941/artifacts/14680335357) | 64,292,942 bytes (64.3 MB) | [Reports](https://github.com/damianpitt/polarstellar/actions/runs/44838820941/artifacts/14678639711), 33,471 bytes |
+
+Uploads completed for all bundles and reports with 30-day artifact retention. Downloads
+require GitHub access. These sizes describe workflow artifacts, with binaries stored outside
+Git. Linux/Windows bundles are unsigned and macOS is ad-hoc signed. This validation covers
+automated pre-alpha startup checks; signing, notarization, installers and interactive
+clean-machine qualification remain planned.
+
+The [0.0.27 source run](https://github.com/damianpitt/polarstellar/actions/runs/44838801828)
+also passed all 587 tests per platform, Ruff, locked dependency/version checks and Python
+source archive/wheel builds on Linux, macOS and Windows. The source archive was checked
+locally to contain the 92 public project files plus package metadata. Later documentation
+commits record these results; native bundles retain the build commit above.
+
+## Earlier source validation
 
 The [0.0.26 source run](https://github.com/damianpitt/polarstellar/actions/runs/42152240958)
 passed all 562 tests per platform, lint, locked dependency and version checks, and Python

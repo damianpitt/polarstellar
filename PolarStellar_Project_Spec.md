@@ -2270,9 +2270,12 @@ or reconstruct missing effect history. CSV/JSON freeze the displayed report and 
 investigation names, labels and notes. Original entries and annotations remain intact.
 
 Source and frozen startup checks reopen disposable saved transaction observations and compare
-a local effect through the production dialog and JSON export. Native build and workflow uploads
-are requested for Linux x86_64, Windows x86_64 and macOS arm64 for this slice. Validation and
-upload results are recorded after completion.
+a local effect through the production dialog and JSON export. Native builds and workflow uploads
+completed for Linux x86_64, Windows x86_64 and macOS arm64 for this slice. The source and native
+runs each passed all 587 tests per platform. Each extracted native app passed eight offline
+checks with its native Qt display plugin. Reports/screenshots were downloaded and reviewed.
+The release documentation records artifact links, exact build commit, sizes and signing limits.
+Mac Intel remains excluded.
 
 The next planned slice is saved graph and timeline evidence comparison. Match observations by
 root account and network, expose filters and coverage for each side, and compare loaded

@@ -60,12 +60,11 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source version: **0.0.27**. Native validation for this version is in progress.
-The latest completed native validation is **0.0.23**. Source includes watchlist batch
+Current source and validated native version: **0.0.27**. Bundles include watchlist batch
 refresh, investigation search, and resource/transaction snapshot comparison.
-Native packaging runs at selected development steps. Download the Linux x86_64,
+Download the Linux x86_64,
 Windows x86_64 or macOS Apple Silicon archive/checksum artifact from the
-[successful native run](https://github.com/damianpitt/polarstellar/actions/runs/40120185412).
+[successful native run](https://github.com/damianpitt/polarstellar/actions/runs/44838820941).
 Separate `native-validation-<target>` artifacts contain small manifests, reports and screenshots.
 All three extracted apps passed eight offline checks and their uploads completed. See
 [release documentation](docs/RELEASES.md) for sizes, tested commit and validation limits.
