@@ -18,7 +18,13 @@ from polarstellar import __version__
 from polarstellar.stellar.contracts import decoded_value
 from polarstellar.stellar.horizon import HorizonProvider
 from polarstellar.stellar.models import Network
-from polarstellar.storage.export import account_document, serialize, write_export
+from polarstellar.storage.export import (
+    account_document,
+    plain,
+    serialize,
+    transaction_document,
+    write_export,
+)
 from polarstellar.storage.investigation_comparison import compare_entries
 from polarstellar.storage.investigations import InvestigationStore
 from polarstellar.storage.watchlist_comparison import compare_entry
@@ -89,6 +95,52 @@ def validate_result_enrichment(address, destination):
     parsed = parse_transaction(data, data["hash"], Network.TESTNET, rows, "fixture")
     assert parsed.operations[0].result.merge_amount == Decimal("10.0000001")
     assert not parsed.result_warning
+    return parsed
+
+
+def validate_transaction_comparison(window, transaction):
+    """Reopen two saved transaction observations and compare one explicitly loaded fixture effect."""
+    from polarstellar.stellar.effects import parse_effects
+    from polarstellar.ui.investigation_comparison_dialog import InvestigationComparisonDialog
+
+    identifier = transaction.operations[0].identifier
+    effect = {
+        "id": f"{identifier}-1",
+        "paging_token": f"{identifier}-1",
+        "type": "account_credited",
+        "account": transaction.source_account,
+        "asset_type": "native",
+        "amount": "10.0000001",
+        "_links": {"operation": {"href": f"{transaction.source}/operations/{identifier}"}},
+    }
+    page = parse_effects(
+        {"_embedded": {"records": [effect]}},
+        identifier,
+        transaction.network,
+        transaction.source,
+    )
+    baseline = {
+        "kind": "transaction",
+        "identifier": transaction.hash,
+        "network": transaction.network.value,
+        "evidence": [transaction_document(transaction)],
+    }
+    current = json.loads(json.dumps(baseline))
+    current["evidence"][0]["records"][0]["effect_pages"] = plain([page])
+    library = window.investigations
+    library.add_evidence(baseline)
+    library.add_evidence(current)
+    # Re-read the persisted observations rather than comparing only fixture objects.
+    saved = InvestigationStore(library.store.path).list()[0]["entries"]
+    difference = compare_entries(*saved[-2:])
+    amount = next(row for row in difference["changes"] if row["field"][-1] == "amount")
+    assert difference["status"] == "Evidence differs" and amount["after"] == "10.0000001"
+    dialog = InvestigationComparisonDialog(saved, len(saved) - 2, window)
+    dialog.candidate.setCurrentIndex(1)
+    exported = dialog.export_document()
+    assert exported["records"] == difference["changes"]
+    write_export(library.store.path.parent / "transaction-comparison.json", exported, "json")
+    dialog.close()
 
 
 def validate_contract_specification():
@@ -428,7 +480,8 @@ async def validate(window, root, screenshot=None):
     checks.append("csv_json_exports")
     value = decoded_value(scval.to_int128(2**100).to_xdr())
     assert value["value"] == str(2**100)
-    validate_result_enrichment(address, issuer)
+    parsed = validate_result_enrichment(address, issuer)
+    validate_transaction_comparison(window, parsed)
     validate_contract_specification()
     validate_muxed_event_addresses()
     validate_asset_contract_identity()

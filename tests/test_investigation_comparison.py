@@ -217,12 +217,12 @@ def test_library_dialog_uses_committed_same_resource_entries_and_keeps_draft_not
 
 
 def test_library_handles_single_snapshot_and_unsupported_evidence(app, tmp_path):
-    """Explain missing candidates and keep transaction-only evidence readable in the library."""
+    """Explain missing candidates and keep unsupported trace evidence readable in the library."""
     store = InvestigationStore(tmp_path / "investigations.sqlite3")
     item = new_investigation("One observation")
     item["entries"] = [
         entry(),
-        {"kind": "transaction", "identifier": "a" * 64, "network": "Testnet", "evidence": []},
+        {"kind": "trace", "identifier": ADDRESS, "network": "Testnet", "evidence": []},
     ]
     store.save(item)
     view = InvestigationsView(store, object())
@@ -234,4 +234,4 @@ def test_library_handles_single_snapshot_and_unsupported_evidence(app, tmp_path)
     assert not dialog.export.isEnabled()
     dialog.reject()
     view.entries.setCurrentRow(1)
-    assert "transaction" in view.evidence.toPlainText() and not view.compare_button.isEnabled()
+    assert "trace" in view.evidence.toPlainText() and not view.compare_button.isEnabled()

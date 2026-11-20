@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.26 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline snapshot comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.27 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2246,3 +2246,34 @@ or additional data indexing. Native packaging remains manual.
 The next planned slice is saved transaction evidence comparison. Compare observations of the same
 transaction hash and network, keep operation and effect provenance, and distinguish differences
 in loaded evidence from differences in supported fields.
+
+## V0.0.27 implemented slice — saved transaction evidence comparison
+
+Investigations can compare two saved observations of the same transaction hash and network.
+Compare reported summary fields and exact fee stroops, available envelope/result/result-meta
+XDR, raw operation fields by full operation ID, and explicitly loaded effects by canonical
+operation-effect cursor. JSON object order and navigation links are excluded. Raw monetary
+text, value types and array order remain exact, including formatting differences.
+
+Reparse saved transaction and effect JSON offline to check identities, summary consistency,
+execution order, canonical effect identity, requested/continuation cursors and normalized
+effect values. Refuse incompatible evidence with no partial report. Limits are 2 MB per raw
+JSON object, 2,000 fields and 4 MB of projected values per observation, and 2,000 union fields.
+Legacy saves without effects stay readable and show their unknown coverage.
+
+Each side retains source, original retrieval time, document time, loaded/reported operation
+counts, partial status, saved result interpretations, and per-operation effect page source/time,
+cursors, loaded count and limit/end-of-available-results state. Saved result interpretations
+remain context alongside the reported fields. No new consensus verification is asserted.
+The report describes differences between observations and does not assert transaction mutation
+or reconstruct missing effect history. CSV/JSON freeze the displayed report and exclude
+investigation names, labels and notes. Original entries and annotations remain intact.
+
+Source and frozen startup checks reopen disposable saved transaction observations and compare
+a local effect through the production dialog and JSON export. Native build and workflow uploads
+are requested for Linux x86_64, Windows x86_64 and macOS arm64 for this slice. Validation and
+upload results are recorded after completion.
+
+The next planned slice is saved graph and timeline evidence comparison. Match observations by
+root account and network, expose filters and coverage for each side, and compare loaded
+relationships and evidence identities while keeping original sources available.

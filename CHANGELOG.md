@@ -10,6 +10,57 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.27] - 2026-11-21
+
+### Added — saved transaction evidence comparison
+
+- In **Investigations**, select a saved transaction and choose **Compare selected snapshot
+  (offline)**. Choose another save of the same transaction hash on the same network.
+  Compare transaction status, ledger, creation time, source and fee accounts, exact charged
+  fee in stroops, memo, reported operation count, and available envelope/result/result-meta XDR.
+- Compare reported operation fields by operation ID and explicitly loaded effect fields by
+  operation ID and canonical effect cursor. Preserve raw decimal strings, full addresses
+  and issuers, JSON value types and array order. Object field order, navigation links,
+  padded effect IDs, source retrieval times and readable explanations stay outside field
+  differences. Raw formatting differences in decimal text remain observable.
+- Use **Evidence differs** or **No differences in compared evidence** to describe the selected
+  observations. Newly reported or unreported fields can reflect loading a different selection.
+  A difference does not establish a change to the finalized transaction or independently
+  verify consensus. An unreported instruction/effect stays unknown.
+
+### Coverage, provenance and compatibility
+
+- **Coverage and sources** shows each side's source/retrieval/cache context, document time,
+  reported/loaded operation counts, partial-selection status and saved result interpretations.
+  Each operation retains its saved result evidence and original effect-page source, retrieval
+  time, requested/next cursor and record count. End-of-available-results and the five-page
+  bound remain explicit. End of results does not prove complete history.
+- Reuse the existing transaction/effect parsers offline to check raw identities, summaries,
+  ordering, page continuations and normalized effect fields. Refuse conflicting metadata,
+  foreign networks or operations, duplicate JSON members, incompatible pages and applied
+  effects attached to failed transactions. Existing saves without effect-page metadata stay
+  comparable and show that their effects were not saved.
+- Bound each raw JSON object to 2 MB, each projection to 2,000 fields and 4 MB of values,
+  and the union to 2,000 fields. Unsupported/ambiguous/oversized evidence produces **Not
+  comparable** with no partial diff. Original entries remain available for inspection.
+- Comparison CSV/JSON exports freeze the displayed fields, scope and provenance and omit
+  investigation names, notes and labels. Comparison preserves original saves and drafts.
+  Reuse the bounded field-diff logic shared by watchlist comparisons. No storage schema,
+  dependency or cache changes are required.
+
+### Native packaging and validation
+
+- Native builds and workflow uploads are requested for Linux x86_64, Windows x86_64 and
+  macOS Apple Silicon. Results will be recorded after the extracted apps are validated.
+- Extend source/frozen startup validation to reopen saved transaction observations with
+  local effect evidence, compare the exact amount through the dialog and export its report.
+  Fixtures use disposable storage and no live provider requests.
+- Local validation passes all 587 tests, including 25 new cases covering older saves,
+  fee-bump and failed transactions, partial operations/effects, exact values, identity and
+  pagination failures, comparison limits, the library dialog, and private exports.
+  Ruff, locked dependencies/version, offline source startup and source archive/wheel builds
+  pass. Reviewed the transaction comparison and coverage screens with local fixtures.
+
 ## [0.0.26] - 2026-11-06
 
 ### Added — offline investigation library search and filters

@@ -60,7 +60,7 @@ and build-tool versions, plus project license and third-party license informatio
 `.sha256` files allow integrity verification. Checksums alone do not authenticate an unsigned
 publisher; obtain both archive and checksum from the same trusted repository release.
 
-Current source version: **0.0.26**. Source startup checks include saved investigation search
+Current source version: **0.0.27**. Source startup checks include saved investigation search
 by identity and network, comparison of two observations with exact before/after amounts,
 disposable watchlist persistence, retained snapshot pairs/exact comparison, portable JSON
 round-trip, local trace filters, path/merge observation parsing,
@@ -69,12 +69,12 @@ parsing/event candidates (including nested union/Result success and error payloa
 full muxed-account identity with zero/maximum uint64 routing IDs,
 explicit storage-key/entry identity and exact-value decoding,
 local SAC identity derivation and live-instance confirmation against offline fixtures,
+saved transaction/effects comparison through the offline dialog and JSON export,
 and navigation. These checks use local fixtures without network requests or contract execution.
 Native builds and workflow artifact uploads resumed successfully for 0.0.23 on Linux x86_64,
 Windows x86_64 and macOS Apple Silicon only. The completed 0.0.11 checks below remain historical.
-The latest validated native apps are 0.0.23. Watchlist batch refresh, investigation search,
-and saved snapshot comparison are available from source. Packaging runs at selected development
-steps on Linux x86_64, Windows x86_64 and Apple Silicon.
+Native validation for 0.0.27 is in progress. The latest completed native validation is 0.0.23.
+Packaging runs at selected development steps on Linux x86_64, Windows x86_64 and Apple Silicon.
 
 The [0.0.26 source run](https://github.com/damianpitt/polarstellar/actions/runs/42152240958)
 passed all 562 tests per platform, lint, locked dependency and version checks, and Python

@@ -135,7 +135,7 @@ class InvestigationComparisonDialog(QDialog):
         self.changes.setPlainText("\n\n".join(changes) if changes else self.status.text())
         # Show source and save times separately because cached data can be saved much
         # later than its original retrieval. A changed timestamp is not a field change.
-        sections = [COVERAGE]
+        sections = [self.result["coverage"]]
         for title, side, scope_key in (
             ("Baseline", "baseline_provenance", "baseline_scope"),
             ("Comparison", "comparison_provenance", "comparison_scope"),

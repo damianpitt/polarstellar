@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.26 · Pre-alpha**
+**Current version: 0.0.27 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.26 |
+| Area | Available in 0.0.27 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -42,7 +42,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
 | Contracts | Read-only instances, explicit storage-key reads, pinned declared specifications, candidate event fields and paginated RPC events |
 | Assets | Issued-asset discovery, exact statistics, native XLM, and locally derived/live-checked Stellar Asset Contract links |
-| Investigations | Searchable local evidence collections with labels, network filters, notes, explicit refresh, and saved snapshot comparison |
+| Investigations | Searchable local evidence collections, notes, explicit refresh, and resource/transaction snapshot comparison |
 | Watchlists | Local lists, offline filters, portable JSON, annotations, manual batch refresh and snapshot-pair comparison |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
@@ -60,8 +60,9 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source version: **0.0.26**. The latest validated native bundles are **0.0.23**.
-Watchlist batch refresh, investigation search, and saved snapshot comparison are available from source.
+Current source version: **0.0.27**. Native validation for this version is in progress.
+The latest completed native validation is **0.0.23**. Source includes watchlist batch
+refresh, investigation search, and resource/transaction snapshot comparison.
 Native packaging runs at selected development steps. Download the Linux x86_64,
 Windows x86_64 or macOS Apple Silicon archive/checksum artifact from the
 [successful native run](https://github.com/damianpitt/polarstellar/actions/runs/40120185412).
@@ -784,7 +785,7 @@ usual annotation setting.
 
 ### Compare saved investigation snapshots
 
-1. Save two account, asset, or contract observations into the same investigation.
+1. Save two account, asset, contract, or transaction observations into the same investigation.
 2. Open **Investigations**, select the entry to use as your baseline, then choose
    **Compare selected snapshot (offline)**.
 3. Choose another numbered entry under **Compare with**. Only entries for the same
@@ -800,7 +801,7 @@ a change. An unreported value, an explicit null, and a reported zero are distinc
 time, and supplemental evidence counts. It also shows the saved event window for contracts.
 Activity pages, graphs, contract events, explicit storage-key reads, specifications and
 Stellar Asset Contract identity artifacts stay available in the original entries. Separate
-transaction and timeline evidence can be opened in the library. Field comparison covers
+timeline evidence can be opened in the library. Field comparison covers
 only the supported resource fields, so matching values say nothing about unexamined
 history or whether the two saves loaded the same evidence.
 
@@ -809,6 +810,36 @@ exports always omit investigation names, notes, and labels. Both original entrie
 available for inspection and full investigation export. Comparison is local and read-only.
 Unrecognized, ambiguous, or oversized evidence produces a **Not comparable** report.
 The comparison limit is 2,000 fields across the two observations.
+
+### Compare saved transaction evidence
+
+Select a transaction entry in **Investigations**, then use **Compare selected snapshot
+(offline)** to choose another save of that hash and network. Save transactions from the
+transaction inspector. Its **Load effects** controls can add evidence before saving again.
+
+**Field changes** compares the transaction summary, exact charged fee, available
+envelope/result/result-meta XDR, reported operation fields and explicitly loaded effects.
+Operations are matched by their full ID, and effects by operation ID and canonical cursor.
+Raw decimal strings retain their exact spelling. Navigation links, JSON object field order,
+effect ID padding and readable decoder explanations do not create field changes.
+
+**Coverage and sources** shows saved result interpretations and warnings, loaded versus
+reported operation counts, each effect page's original source/time and cursors, and whether
+the loaded selection reached the page limit or the end of available results. Older saves
+without effects are supported. Results read **Evidence differs** or **No differences in
+compared evidence**. A different loaded selection can introduce newly reported or unreported
+fields. Compare both sides' coverage when interpreting the report.
+
+The report describes saved observations. Differences for the same hash do not establish
+a change to the finalized transaction or independently verify consensus. Missing effects
+are unknown, and end-of-results does not prove complete history. Incompatible identities,
+conflicting summaries, invalid pagination or oversized evidence produce **Not comparable**.
+Limits are 2 MB per raw JSON object, 2,000 projected fields and 4 MB of projected values
+per observation, with at most 2,000 fields across the pair.
+
+Comparison CSV/JSON exports include the displayed changes and source/coverage context.
+Investigation names, notes and labels are omitted from comparison exports. Both original
+observations remain available in the library and whole-case export.
 
 ### Watchlists
 
@@ -1043,7 +1074,7 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 Portable native packaging is implemented. Further planned areas include:
 
 - Broader asset metadata and additional contract-token discovery.
-- Saved transaction evidence comparison and additional result/effect payload interpretation.
+- Saved graph/timeline evidence comparison and additional result/effect payload interpretation.
 - Further SDK/address compatibility as supported formats evolve.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.

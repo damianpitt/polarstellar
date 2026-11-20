@@ -2,9 +2,15 @@
 
 from polarstellar.stellar.providers import AccountError
 from polarstellar.storage.export import document
+from polarstellar.storage.transaction_comparison import compare_transactions
 from polarstellar.storage.watchlist_comparison import MAX_FIELDS, compare, identity
 
-PRIMARY_KIND = {"account": "balances", "asset": "asset", "contract": "contract"}
+PRIMARY_KIND = {
+    "account": "balances",
+    "asset": "asset",
+    "contract": "contract",
+    "transaction": "transaction",
+}
 EXTRA_KINDS = {
     "transactions",
     "operations",
@@ -15,8 +21,8 @@ EXTRA_KINDS = {
     "contract_storage",
 }
 COVERAGE = (
-    "Only account details/balances, asset statistics/flags, or known contract instance fields "
-    "are compared. Supplemental evidence is listed for context. Loaded row counts and ledger "
+    "Compared account details/balances, asset statistics/flags, known contract instance fields "
+    "or saved transaction observations. Supplemental evidence is listed for context. Loaded row counts and ledger "
     "windows describe the saved selection, even when they match. Missing or null values are "
     "unknown. Observed differences do not establish transfers, ownership, supply, causation, "
     "or intervening history."
@@ -113,9 +119,18 @@ def compare_entries(baseline, comparison):
     try:
         key = resource_key(baseline)
         if key[0] not in PRIMARY_KIND:
-            raise ValueError("Choose an account, asset, or contract snapshot.")
+            raise ValueError("Choose an account, asset, contract, or transaction snapshot.")
         if key != resource_key(comparison):
             raise ValueError("Both entries must match by resource, network, and asset issuer.")
+        if key[0] == "transaction":
+            before, after = primary_document(baseline), primary_document(comparison)
+            if any(
+                snapshot["metadata"]["hash"] != entry["identifier"]
+                or snapshot["metadata"]["network"] != entry["network"]
+                for entry, snapshot in ((baseline, before), (comparison, after))
+            ):
+                raise ValueError("Saved transaction entry disagrees with its evidence identity.")
+            return compare_transactions(before, after)
         expected = identity(baseline)
         # Older native XLM explorer saves used a trailing colon in the row label.
         # The explicit code and empty issuer still identify the same native asset.
@@ -137,7 +152,7 @@ def compare_entries(baseline, comparison):
             comparison_provenance=result.pop("current_provenance"),
         )
         return result
-    except (AccountError, KeyError, TypeError, ValueError, AttributeError) as exc:
+    except (AccountError, KeyError, TypeError, ValueError, AttributeError, RecursionError) as exc:
         return {**result, "status": "Not comparable", "note": str(exc)}
 
 

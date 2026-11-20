@@ -157,6 +157,36 @@ def provenance(snapshot):
     }
 
 
+def field_changes(before, after, equivalent=equal):
+    """Compare bounded projections, retaining presence and exact before/after values.
+
+    Callers choose the equality rule for their evidence format. A missing field
+    remains distinct from an explicit null or a reported zero.
+    """
+    keys = sorted(set(before) | set(after))
+    if len(keys) > MAX_FIELDS:
+        raise ValueError("Comparison exceeds 2000 fields")
+    changes = []
+    for key in keys:
+        old_present, new_present = key in before, key in after
+        if old_present != new_present or not equivalent(key, before[key], after[key]):
+            changes.append(
+                {
+                    "field": list(key),
+                    "before_present": old_present,
+                    "after_present": new_present,
+                    "before": before.get(key),
+                    "after": after.get(key),
+                    "change": "Newly reported"
+                    if not old_present
+                    else "No longer reported"
+                    if not new_present
+                    else "Changed",
+                }
+            )
+    return changes
+
+
 def compare(entry, previous, current):
     """Report bounded before/after observations; unsupported history never becomes a false no-change claim."""
     result = {
@@ -175,27 +205,7 @@ def compare(entry, previous, current):
                 "note": "No previous successful snapshot is available.",
             }
         before = fields(entry, previous)
-        keys = sorted(set(before) | set(after))
-        if len(keys) > MAX_FIELDS:
-            raise ValueError("Comparison exceeds 2000 fields")
-        changes = []
-        for key in keys:
-            old_present, new_present = key in before, key in after
-            if old_present != new_present or not equal(key, before[key], after[key]):
-                changes.append(
-                    {
-                        "field": list(key),
-                        "before_present": old_present,
-                        "after_present": new_present,
-                        "before": before.get(key),
-                        "after": after.get(key),
-                        "change": "Newly reported"
-                        if not old_present
-                        else "No longer reported"
-                        if not new_present
-                        else "Changed",
-                    }
-                )
+        changes = field_changes(before, after)
         return {
             **result,
             "status": "Changed" if changes else "No observed changes",
