@@ -77,6 +77,11 @@ Windows x86_64 and macOS Apple Silicon only. The completed 0.0.11 checks below r
 The latest validated native apps are 0.0.27. Packaging runs at selected development steps
 on Linux x86_64, Windows x86_64 and Apple Silicon.
 
+The [0.0.28 source run](https://github.com/damianpitt/polarstellar/actions/runs/44924310241)
+passed all 610 tests per platform, Ruff, locked dependency/version checks and Python source
+archive/wheel builds on Linux, macOS and Windows. This source update adds saved graph/timeline
+comparison. Its startup path checks the new comparison with disposable offline evidence.
+
 ## Completed 0.0.27 validation
 
 The [native run](https://github.com/damianpitt/polarstellar/actions/runs/44838820941) passed

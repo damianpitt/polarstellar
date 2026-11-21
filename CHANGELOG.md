@@ -64,6 +64,11 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   merge semantics, malformed evidence, limits, 1,000-operation graph/timeline observations,
   the normal library entry point and export privacy. Ruff, version/lockfile checks and
   source archive/wheel builds pass. Comparison and coverage screens were reviewed.
+- [Source run 44924310241](https://github.com/damianpitt/polarstellar/actions/runs/44924310241)
+  passed all 610 tests on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows
+  (`windows-latest`), plus Ruff, locked dependency/version checks and Python source
+  archive/wheel builds. The locally inspected source archive contains 94 public project
+  files plus package metadata.
 
 ## [0.0.27] - 2026-11-21
 
