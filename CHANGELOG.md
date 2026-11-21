@@ -10,6 +10,61 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.28] - 2026-11-21
+
+### Added — saved expanded graph and timeline comparison
+
+- In **Investigations**, select a saved expanded graph or timeline and choose **Compare
+  selected snapshot (offline)**. The picker offers the same saved type, root G-address
+  and network. Save these observations from the expanded Graph/Timeline dialog.
+- Compare directional relationships by sender, recipient and exact asset/issuer identity,
+  including exact direct-transfer totals and supporting operation IDs. Match observations
+  by operation ID while retaining their transaction, network, endpoints, asset, exact amounts,
+  timestamp, instruction type and separate path-payment or merge details.
+- Compare graph/timeline records independently of list order, evidence array order and
+  equivalent decimal formatting. Timeline display order, shared-timestamp counts and gaps
+  stay visible as context. Original amounts and timestamps remain available. Account merges
+  retain unknown amounts and path payments retain separate sent/received amounts.
+
+### Evidence scope, validation and exports
+
+- **Coverage and sources** preserves each observation's applied asset/time/type filters,
+  account focus, route query, paths/limits, exclusions, expansion status and unfetched peers.
+  Keep the original per-account page source, retrieval/cache context and continuation,
+  plus timeline rows' original source references and timing annotations.
+- Results describe **Evidence differs** or **No differences in compared evidence**. Newly
+  reported or unreported operations can reflect filters, pagination or further expansion.
+  Missing evidence remains unknown. Per-asset loaded totals do not establish ownership,
+  cross-hop amounts, running balances, fund continuity or complete history.
+- Validate entry/document root and network, page identities, endpoint and asset identities,
+  operation/transaction identifiers, exact direct totals and supporting observations.
+  Reuse the path/merge model safeguards and check timeline displayed fields/source references
+  against its saved evidence. Ambiguous, incompatible or oversized observations return
+  **Not comparable** with no partial diff.
+- Compare up to 1,000 saved rows and 2,000 operation/relationship records across the pair.
+  Bound projected values and scope to 4 MB each per observation. The full 1,000-operation
+  trace timeline limit is supported. Older graph rows without record-kind/type metadata
+  retain their unknown type while remaining comparable when evidence is valid.
+- CSV/JSON exports freeze the displayed comparison with original scope and source context.
+  Investigation names, notes and labels are excluded. Original observations and draft notes
+  stay available. Storage schema, dependencies and cache settings require no changes.
+- Display nested comparison values on separate lines with wrapping so complete amounts,
+  addresses and supporting operation lists remain readable in the comparison dialog.
+
+### Documentation and validation
+
+- Review progress against the original 17-area V0.1 roadmap and the broader specification.
+  Record implemented functional areas and separate remaining account-detail, UI/acceptance
+  and release-qualification work from later trades/offers, monitoring and historical analytics.
+- Extend offline startup checks to save/reopen differently filtered graph and timeline
+  observations and confirm that unreported evidence keeps its original coverage.
+- This is a source update. Latest validated native bundles are 0.0.27.
+- Local validation passes all 610 tests, including 23 new cases for expansion, legacy
+  graph formats, exact totals, issuer/direction identity, selection/order differences,
+  merge semantics, malformed evidence, limits, 1,000-operation graph/timeline observations,
+  the normal library entry point and export privacy. Ruff, version/lockfile checks and
+  source archive/wheel builds pass. Comparison and coverage screens were reviewed.
+
 ## [0.0.27] - 2026-11-21
 
 ### Added — saved transaction evidence comparison

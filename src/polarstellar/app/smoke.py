@@ -543,6 +543,10 @@ async def validate(window, root, screenshot=None):
     )
     trace.rebuild()
     assert len(trace.links) == 2 and not trace.connections
+    # Retain two independently selected graph/timeline observations. Comparing
+    # them must show missing selection as unknown and preserve each side's scope.
+    graph_before = trace.export_document()
+    timeline_before = trace.timeline_document()
     trace.from_time.setText("2026-10-01T00:00:00Z")
     trace.operation_type.setCurrentIndex(trace.operation_type.findText("Account merges"))
     trace.apply_filters()
@@ -559,6 +563,19 @@ async def validate(window, root, screenshot=None):
     assert timeline["records"][0]["source_amount"] is None
     trace.timeline_order.setCurrentIndex(1)
     assert trace.active_document()["metadata"]["timeline"]["order"] == "Newest first"
+    for baseline, candidate in (
+        (graph_before, trace.export_document()),
+        (timeline_before, trace.timeline_document()),
+    ):
+        window.save_trace(baseline)
+        window.save_trace(candidate)
+        saved = InvestigationStore(window.investigations.store.path).list()[0]["entries"][-2:]
+        difference = compare_entries(*saved)
+        assert difference["status"] == "Evidence differs"
+        assert any(row["change"] == "No longer reported" for row in difference["changes"])
+        assert difference["comparison_scope"]["selection"]["trace_filters"]["operation_types"] == [
+            "account_merge"
+        ]
     trace.reject()
     checks.append("networkx_relationship_model")
     # TLS is constructed locally to verify packaged CA certificates and SSL support.

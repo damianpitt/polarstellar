@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.27 · Pre-alpha**
+**Current version: 0.0.28 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.27 |
+| Area | Available in 0.0.28 |
 | --- | --- |
 | Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -42,7 +42,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Local caching | Optional SQLite snapshots with expiry and clear-cache controls |
 | Contracts | Read-only instances, explicit storage-key reads, pinned declared specifications, candidate event fields and paginated RPC events |
 | Assets | Issued-asset discovery, exact statistics, native XLM, and locally derived/live-checked Stellar Asset Contract links |
-| Investigations | Searchable local evidence collections, notes, explicit refresh, and resource/transaction snapshot comparison |
+| Investigations | Searchable local evidence collections, notes, explicit refresh, and resource/transaction/graph/timeline comparison |
 | Watchlists | Local lists, offline filters, portable JSON, annotations, manual batch refresh and snapshot-pair comparison |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
@@ -60,7 +60,8 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source and validated native version: **0.0.27**. Bundles include watchlist batch
+Current source version: **0.0.28**. Latest validated native version: **0.0.27**.
+Saved graph/timeline comparison is available from source. Bundles include watchlist batch
 refresh, investigation search, and resource/transaction snapshot comparison.
 Download the Linux x86_64,
 Windows x86_64 or macOS Apple Silicon archive/checksum artifact from the
@@ -784,7 +785,8 @@ usual annotation setting.
 
 ### Compare saved investigation snapshots
 
-1. Save two account, asset, contract, or transaction observations into the same investigation.
+1. Save two observations into the same investigation. Choose the same resource, transaction,
+   expanded graph or timeline type.
 2. Open **Investigations**, select the entry to use as your baseline, then choose
    **Compare selected snapshot (offline)**.
 3. Choose another numbered entry under **Compare with**. Only entries for the same
@@ -799,8 +801,7 @@ a change. An unreported value, an explicit null, and a reported zero are distinc
 **Coverage and sources** shows each side's saved document time, original source and retrieval
 time, and supplemental evidence counts. It also shows the saved event window for contracts.
 Activity pages, graphs, contract events, explicit storage-key reads, specifications and
-Stellar Asset Contract identity artifacts stay available in the original entries. Separate
-timeline evidence can be opened in the library. Field comparison covers
+Stellar Asset Contract identity artifacts stay available in the original entries. Field comparison covers
 only the supported resource fields, so matching values say nothing about unexamined
 history or whether the two saves loaded the same evidence.
 
@@ -839,6 +840,30 @@ per observation, with at most 2,000 fields across the pair.
 Comparison CSV/JSON exports include the displayed changes and source/coverage context.
 Investigation names, notes and labels are omitted from comparison exports. Both original
 observations remain available in the library and whole-case export.
+
+### Compare saved expanded graphs and timelines
+
+Open **Graph**, choose **Explore multiple hops**, and save the active expanded graph or timeline
+to a selected investigation. Save another observation after changing filters or loading
+more evidence. In **Investigations**, select one and choose **Compare selected snapshot
+(offline)**. Candidates share its saved type, root account and network.
+
+The report compares directional relationship totals and their supporting operation IDs,
+plus individual observations with full asset/issuer identities and exact amounts. Path
+payments retain separate sent/received amounts, and merge amounts remain unknown. Equivalent
+decimal spellings, evidence order and timeline display order do not create field differences.
+
+**Coverage and sources** shows each side's filters, route/account-focus selection, limits,
+exclusions, unfetched accounts and original page source/retrieval/cache/cursors. Timeline
+source references, shared-timestamp counts and gaps stay with the saved observation.
+Different selections or expansion can add or hide evidence. An unreported relationship or
+operation stays unknown. Matching compared records does not establish complete history.
+
+Comparison CSV/JSON exports contain the displayed records, source context and coverage,
+with investigation names, notes and labels excluded. Original saves remain available.
+Unsupported, inconsistent or oversized evidence yields **Not comparable**. Bounds are
+1,000 saved rows, 2,000 projected/union operation and relationship records, and 4 MB each
+for projected values and scope per observation.
 
 ### Watchlists
 
@@ -1072,13 +1097,22 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 Portable native packaging is implemented. Further planned areas include:
 
+- Account authority details including signers, threshold weights, flags and sponsorship.
 - Broader asset metadata and additional contract-token discovery.
-- Saved graph/timeline evidence comparison and additional result/effect payload interpretation.
+- Additional result/effect payload interpretation.
 - Further SDK/address compatibility as supported formats evolve.
 - Optional historical analytics through Hubble.
 - Signed/notarized distributions, installers, and clean-machine release qualification.
 
 The project specification tracks planned capabilities, release boundaries, and acceptance criteria.
+
+The original V0.1 roadmap's 16 functional workflow areas have implementations, with documented
+data and decoding limits. Its polished cross-platform interface requirement still needs
+acceptance work. Remaining release work includes broader account details from the specification,
+UI/error-flow review, fresh live endpoint checks and interactive clean-machine testing.
+The wider vision includes later trades/offers, monitoring, historical indexing and Hubble.
+See the V0.1 readiness review in the specification for the distinction between implemented
+capabilities and release qualification.
 
 ## Documentation and checks
 

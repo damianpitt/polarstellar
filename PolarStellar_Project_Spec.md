@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.27 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.28 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction/graph/timeline comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2280,3 +2280,70 @@ Mac Intel remains excluded.
 The next planned slice is saved graph and timeline evidence comparison. Match observations by
 root account and network, expose filters and coverage for each side, and compare loaded
 relationships and evidence identities while keeping original sources available.
+
+## V0.0.28 implemented slice — saved graph and timeline comparison
+
+The offline investigation comparison dialog accepts expanded_graph and trace_timeline entries.
+Choose a second observation of the same saved type, root G-address and network. Compare
+directional relationships by sender/recipient/asset identity, exact totals and supporting
+operation IDs. Match individual direct-transfer/path/merge observations by operation ID with
+their transaction, full network/asset/endpoint identity and exact amounts. Compare equivalent
+decimal/time representations without rewriting original evidence. Keep merge balances unknown
+and path-payment source/destination observations separate.
+
+Each side exposes original account/page source, retrieval/cache/cursor context, applied
+asset/time/type filters, route target/direction, account focus, exclusions, expansion limits,
+unfetched accounts, timestamp ambiguity and timing gaps. Different display order stays in scope.
+Unreported evidence can reflect a changed selection or fetch boundary and remains unknown.
+Reports do not infer fund continuity, cross-hop amounts or complete history.
+
+Validate saved context, exact aggregate support, timeline/evidence consistency and source
+references. Refuse ambiguous, incompatible or oversized comparisons without partial output.
+Bounds are 1,000 saved rows, 2,000 projected/union operation/relationship records and 4 MB each
+for projected values and context per observation. Full 1,000-operation timelines remain
+supported. Older graph rows without record-kind/type fields keep their unknown type.
+
+CSV/JSON freeze the displayed changes/scope/provenance without case names, notes or labels.
+Original saves remain intact. Startup checks compare two saved selections using disposable
+local evidence. The current native bundles are 0.0.27; this slice updates source.
+
+## V0.1 readiness review — 2026-11-21
+
+This review maps the original section 30 checklist to implemented entry points. Functional
+coverage describes available bounded workflows. Acceptance and release qualification need
+their own evidence before a V0.1 release is declared complete.
+
+| Original roadmap items | Current implementation | Remaining qualification |
+| --- | --- | --- |
+| 1–3 account, transaction and contract search | Validated G-address/hash/C-address lookups through Horizon/RPC | Fresh live endpoint acceptance checks |
+| 4–6 account overview, balances and trustlines | Sequence/home domain, exact balances, full issuer/pool identity, trust limits and authorization | Broader account identity/authority fields from sections 21 and 37 |
+| 7–10 transaction history, operations, payments and details | Independent pagination, ordered instructions, supported explanations/raw fields and result/effect evidence | Interactive review of errors, partial data and unsupported formats |
+| 11–12 counterparties and simple graph | Evidence-backed direct totals, bounded expansion, path/merge observations and timeline tools | Interaction/performance/usability review on target platforms |
+| 13–14 JSON and CSV | Local exports with exact values, source/coverage and annotation controls | Export acceptance with realistic investigations |
+| 15–16 network switching and SQLite cache | Network-scoped lookups/storage, stale-result rejection, optional expiring cache | Interactive cancellation/network/cache regression checklist |
+| 17 polished Linux/macOS/Windows Qt UI | All three native builds pass automated startup checks in 0.0.27 | Polish and manual clean-machine acceptance |
+
+The first 16 functional roadmap areas have implementations. Item 17 has a working
+cross-platform UI and automated native checks, with polish and manual qualification still
+open. The first-milestone acceptance criteria in section 44 also require a separate live
+endpoint check. Automated fixture tests alone do not close that criterion.
+
+Before first-release completion, the remaining workstreams are:
+
+1. Account-detail completion from the wider first-build requirements. Add signer keys/weights,
+   low/medium/high thresholds, account flags and available sponsorship data with exact
+   provider provenance and compatibility for older saved/cached observations.
+2. Acceptance and UI hardening. Review loading, cancellation, errors, missing/partial data,
+   compact displays, graph interactions, larger local investigations and export flows.
+3. Release qualification. Run fresh live read-only endpoint checks, interactive clean-machine
+   testing on Linux/Apple Silicon/Windows, resolve findings, and publish the documented V0.1
+   release. Signing, installers and updates can be separately scoped where they remain planned.
+
+The longer specification also describes potential trades/offers and asset interaction views,
+live watchlist monitoring, broader local/history indexing, Hubble, advanced contract invocation
+interpretation, clustering and heuristics. Those are later capability areas. They are not
+requirements to postpone the deliberately small section 30 V0.1 workflow indefinitely.
+
+The next planned implementation slice is account authority and security details. Show signer
+keys/weights, thresholds, flags and available sponsorship information alongside network/source
+evidence, preserving read-only behavior and compatibility with older observations.

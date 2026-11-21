@@ -372,7 +372,7 @@ class InvestigationsView(QWidget):
         self.compare_button.setToolTip(
             "Choose a second saved entry with the same resource and network."
             if comparable
-            else "Choose saved account, asset, contract, or transaction evidence to compare."
+            else "Choose saved resource, transaction, expanded graph, or timeline evidence to compare."
         )
         refreshable = valid and self.current["entries"][row]["kind"] in (
             "account",

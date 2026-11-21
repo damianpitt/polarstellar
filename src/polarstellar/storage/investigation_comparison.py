@@ -2,6 +2,7 @@
 
 from polarstellar.stellar.providers import AccountError
 from polarstellar.storage.export import document
+from polarstellar.storage.trace_comparison import compare_traces
 from polarstellar.storage.transaction_comparison import compare_transactions
 from polarstellar.storage.watchlist_comparison import MAX_FIELDS, compare, identity
 
@@ -10,6 +11,8 @@ PRIMARY_KIND = {
     "asset": "asset",
     "contract": "contract",
     "transaction": "transaction",
+    "expanded_graph": "expanded_graph",
+    "trace_timeline": "trace_timeline",
 }
 EXTRA_KINDS = {
     "transactions",
@@ -22,7 +25,7 @@ EXTRA_KINDS = {
 }
 COVERAGE = (
     "Compared account details/balances, asset statistics/flags, known contract instance fields "
-    "or saved transaction observations. Supplemental evidence is listed for context. Loaded row counts and ledger "
+    "or saved transaction/graph/timeline observations. Supplemental evidence is listed for context. Loaded row counts and ledger "
     "windows describe the saved selection, even when they match. Missing or null values are "
     "unknown. Observed differences do not establish transfers, ownership, supply, causation, "
     "or intervening history."
@@ -119,9 +122,13 @@ def compare_entries(baseline, comparison):
     try:
         key = resource_key(baseline)
         if key[0] not in PRIMARY_KIND:
-            raise ValueError("Choose an account, asset, contract, or transaction snapshot.")
+            raise ValueError("Choose supported resource, transaction, graph, or timeline evidence.")
         if key != resource_key(comparison):
             raise ValueError("Both entries must match by resource, network, and asset issuer.")
+        if key[0] in ("expanded_graph", "trace_timeline"):
+            return compare_traces(
+                primary_document(baseline), primary_document(comparison), baseline
+            )
         if key[0] == "transaction":
             before, after = primary_document(baseline), primary_document(comparison)
             if any(

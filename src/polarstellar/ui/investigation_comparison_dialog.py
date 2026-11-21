@@ -42,7 +42,12 @@ def display_value(present, value):
         return "Unreported"
     if value is None:
         return "Unknown (null)"
-    return json.dumps(value, ensure_ascii=False)
+    # Whole graph relationships and observations contain several exact fields.
+    # Put nested values on separate lines so their amounts and identities are
+    # readable without changing what is copied into the comparison export.
+    return json.dumps(
+        value, ensure_ascii=False, indent=2 if isinstance(value, (dict, list)) else None
+    )
 
 
 class InvestigationComparisonDialog(QDialog):
@@ -87,7 +92,6 @@ class InvestigationComparisonDialog(QDialog):
         tabs = QTabWidget()
         self.changes = QPlainTextEdit()
         self.changes.setReadOnly(True)
-        self.changes.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
         tabs.addTab(self.changes, "Field changes")
         self.sources = QPlainTextEdit()
         self.sources.setReadOnly(True)
