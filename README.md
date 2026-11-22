@@ -556,7 +556,7 @@ evidence, while network/new-asset changes clear it and reject late responses.
 
 The tab's **Export CSV / JSON** saves `asset_contract_identity`: the complete frozen asset
 metadata, derivation and optional raw RPC instance. A derivation-only export has zero records
-with explicit metadata. The main asset export carries compact link context. **Save resource**
+with explicit metadata. The main asset export carries compact link context. **Save to selected investigation**
 stores both artifacts in the investigation; older saved JSON is unchanged. There is no new
 cache/schema/dependency or background polling. Existing asset refreshes do not automatically
 perform a SAC check; inspect and save a new observation when you need fresh linked evidence.
@@ -651,7 +651,7 @@ same identity. Separate `to` / `to_muxed_id` fields remain separate; the app doe
 an M-address from them or infer a payment.
 
 Select a loaded event in **Contracts** to view these details; matching typed fields require
-the existing explicit specification load. CSV/JSON exports and **Save resource** include full
+the existing explicit specification load. CSV/JSON exports and **Save to selected investigation** include full
 addresses, routing details, original RPC/XDR evidence and network/spec provenance. Earlier saved
 JSON is unchanged. Pagination conflicts still compare complete evidence, including routing IDs.
 No underlying account is fetched automatically, no graph relationship is added, and the main
@@ -700,7 +700,7 @@ payment totals, routes or balances through this interpretation.
 The specification tab has its own **Export CSV / JSON** artifact, `contract_specification`,
 containing readable declarations and each entry's exact XDR. Contract-event exports carry
 only a compact specification summary plus per-event interpretations, avoiding repetition
-of every declaration in every CSV event row. **Save resource** keeps the contract/event
+of every declaration in every CSV event row. **Save to selected investigation** keeps the contract/event
 snapshot and one separate full specification document in the selected investigation.
 They reopen offline as frozen JSON. WASM binaries are not saved in these artifacts;
 previous saved snapshots remain unchanged. Cache/SQLite schemas, TTL and dependencies

@@ -78,6 +78,12 @@ Windows x86_64 and macOS Apple Silicon only. The completed 0.0.11 checks below r
 The latest validated native apps are 0.0.27. Packaging runs at selected development steps
 on Linux x86_64, Windows x86_64 and Apple Silicon.
 
+The [0.0.29 source run](https://github.com/damianpitt/polarstellar/actions/runs/45047855750)
+passed all 632 tests per platform, Ruff, locked dependency/version checks and Python source
+archive/wheel builds on Linux, macOS and Windows. Account authority, sponsorship, old-cache
+compatibility and compact-window assertions are included. Windows action labels were shortened
+after its first compact-layout check exposed an excessive minimum button width.
+
 The [0.0.28 source run](https://github.com/damianpitt/polarstellar/actions/runs/44924310241)
 passed all 610 tests per platform, Ruff, locked dependency/version checks and Python source
 archive/wheel builds on Linux, macOS and Windows. This source update adds saved graph/timeline

@@ -72,6 +72,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   readability and late network responses. Ruff, version/lockfile, offline source startup
   and Python source archive/wheel checks pass. Reviewed the authority view at 1180 × 760
   and 800 × 520.
+- [Source run 45047855750](https://github.com/damianpitt/polarstellar/actions/runs/45047855750)
+  passed all 632 tests on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows
+  (`windows-latest`), including the compact account view. Ruff, locked dependency/version
+  checks and source archive/wheel builds passed on each platform.
 
 ## [0.0.28] - 2026-11-21
 
