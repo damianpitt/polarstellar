@@ -7,7 +7,8 @@ from dataclasses import replace
 
 import httpx
 import pytest
-from PySide6.QtWidgets import QApplication, QScrollArea
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication
 from stellar_sdk import SignerKey, StrKey
 from stellar_sdk.signer_key import SignedPayloadSigner
 from test_accounts import ADDRESS, ISSUER, account_data
@@ -273,9 +274,22 @@ def test_window_lookup_save_and_network_invalidation_keep_authority_bound_to_acc
         window.overview_tabs.setCurrentIndex(1)
         window.resize(800, 520)
         app.processEvents()
-        scroll = window.findChild(QScrollArea)
+        # Native window styles can queue another layout request while processing
+        # the initial resize. Measure the settled view, as a user would see it.
+        QTest.qWait(50)
+        scroll = window.explorer_scroll
         assert window.authority.details.height() >= 140
-        assert scroll.horizontalScrollBar().maximum() == 0
+        assert scroll.horizontalScrollBar().maximum() == 0, {
+            "viewport": scroll.viewport().size().toTuple(),
+            "content": scroll.widget().size().toTuple(),
+            "minimum": scroll.widget().minimumSizeHint().toTuple(),
+            "page": window.pages.minimumSizeHint().toTuple(),
+            "buttons": [
+                window.watch_resource_button.minimumSizeHint().toTuple(),
+                window.save_resource_button.minimumSizeHint().toTuple(),
+            ],
+            "message_policy": str(window.message.sizePolicy().horizontalPolicy()),
+        }
         window.save_resource()
         saved = store.list()[0]["entries"][0]["evidence"][0]
         assert saved["metadata"]["authority"]["num_sponsored"] == 0
