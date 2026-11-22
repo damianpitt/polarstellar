@@ -55,6 +55,8 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 - Size the explorer from its active page and allow vertical scrolling on compact displays.
   Hidden forms no longer reserve the account pane's height, and the authority reader keeps
   a usable minimum size. Navigation returns the explorer to the top of the selected page.
+- Shorten the explorer's watchlist/investigation action labels and retain full descriptions
+  in tooltips, keeping Windows button widths within the compact explorer pane.
 
 ### Documentation and validation
 

@@ -216,12 +216,16 @@ class MainWindow(QMainWindow):
             )
             self.watchlists.open_requested.connect(self.open_watchlist_resource)
             self.pages.addWidget(self.watchlists)
-        watch_resource = QPushButton("Add displayed resource to selected watchlist")
+        watch_resource = QPushButton("Add to selected watchlist")
+        watch_resource.setToolTip("Add the displayed resource to the selected local watchlist.")
         self.watch_resource_button = watch_resource
         watch_resource.setEnabled(self.watchlists is not None)
         watch_resource.clicked.connect(self.watch_resource)
         pane.addWidget(watch_resource)
-        save_resource = QPushButton("Save resource to selected investigation")
+        save_resource = QPushButton("Save to selected investigation")
+        save_resource.setToolTip(
+            "Save the displayed resource and its loaded evidence to the selected investigation."
+        )
         self.save_resource_button = save_resource
         save_resource.clicked.connect(self.save_resource)
         save_resource.setEnabled(self.investigations is not None)

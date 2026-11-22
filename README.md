@@ -589,7 +589,7 @@ as transfers or added to graph totals. A valid event transaction hash can be ope
 existing Horizon inspector, subject to Horizon's own history availability.
 
 CSV/JSON exports include the instance, loaded events, fixed query range, and per-page
-source/retrieval/retention metadata. **Save resource to selected investigation** keeps
+source/retrieval/retention metadata. **Save to selected investigation** keeps
 that evidence offline. Saved contract snapshots are not refreshed by the library's
 single-resource refresh button; inspect again in Contracts and save a new snapshot.
 
@@ -747,7 +747,7 @@ The tab's **Export CSV / JSON** captures the **last accepted lookup**, including
 original key/entry XDR and provenance. Editing inputs does not relabel that evidence.
 A missing entry exports zero records with explicit request/status metadata. Only one
 accepted storage lookup is held at a time; save/export it before reading a different key
-if you need both observations. **Save resource to selected investigation** stores one
+if you need both observations. **Save to selected investigation** stores one
 separate `contract_storage` document alongside the contract/events and any loaded
 specification. It reopens offline as frozen JSON, including missing-entry observations.
 Main contract/event exports include storage request context; the separate storage export
@@ -762,8 +762,7 @@ and uploads run only through the manual native workflow. The underlying method i
 ### Saved investigations, notes, and labels
 
 Open **Investigations**, enter a name, and choose **Create new**. Select that
-investigation, inspect an account, asset, or contract, and choose **Save resource to selected
-investigation**. Transaction inspectors have their own **Save to selected investigation**
+investigation, inspect an account, asset, or contract, and choose **Save to selected investigation**. Transaction inspectors have their own **Save to selected investigation**
 button. An account save captures its balances and any already-loaded activity and graph
 evidence; it does not fetch additional pages. Each resource retains its network.
 
@@ -903,8 +902,7 @@ window. Identifiers are checksum-validated locally; asset codes remain case-sens
 For native XLM, enter `XLM` and leave the issuer empty. An issued asset named XLM with
 an issuer remains a separate resource.
 
-From a loaded Overview/activity/Graph, Assets, or Contracts page, choose **Add displayed
-resource to selected watchlist** to bookmark its identity without another request.
+From a loaded Overview/activity/Graph, Assets, or Contracts page, choose **Add to selected watchlist** to bookmark its identity without another request.
 Select a list in Watchlists first. This saves a bookmark, not the currently displayed
 snapshot. Adding the same kind/identity/network twice returns to the existing entry
 without replacing its label, notes, or saved snapshot. Different networks and different
