@@ -8,6 +8,7 @@ from enum import Enum
 from types import UnionType
 from typing import get_args, get_origin, get_type_hints
 
+from polarstellar.stellar.account_authority import AccountAuthority, AccountSigner
 from polarstellar.stellar.activity import ActivityKind, ActivityPage, ActivityRecord
 from polarstellar.stellar.models import Account, Balance, Network, OperationLink, Transfer
 from polarstellar.stellar.results import ResultEvidence
@@ -18,6 +19,8 @@ TYPES = {
     cls.__name__: cls
     for cls in (
         Account,
+        AccountAuthority,
+        AccountSigner,
         Balance,
         Transfer,
         OperationLink,
@@ -81,9 +84,17 @@ def decode(value):
         return ENUMS[value["enum"]](value["value"])
     if set(value) == {"type", "fields"}:
         cls = TYPES[value["type"]]
-        if set(value["fields"]) != {field.name for field in fields(cls)}:
+        encoded_fields = dict(value["fields"])
+        # Earlier accounts/balances have the same cache revision but lack these
+        # optional additions. Restore only these known old omissions as unknown.
+        # Every other missing or extra field still refuses the cached object.
+        if cls is Account:
+            encoded_fields.setdefault("authority", None)
+        if cls is Balance:
+            encoded_fields.setdefault("sponsor", None)
+        if set(encoded_fields) != {field.name for field in fields(cls)}:
             raise ValueError("Cache fields do not match this application version")
-        restored = {key: decode(item) for key, item in value["fields"].items()}
+        restored = {key: decode(item) for key, item in encoded_fields.items()}
         hints = get_type_hints(cls)
         if not all(matches(item, hints[key]) for key, item in restored.items()):
             raise ValueError("Invalid cached field type")

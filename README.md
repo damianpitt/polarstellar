@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.28 · Pre-alpha**
+**Current version: 0.0.29 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,9 +32,9 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.28 |
+| Area | Available in 0.0.29 |
 | --- | --- |
-| Account lookup | G-address validation, balances, trustlines, sequence, and home domain |
+| Account lookup | G-address validation, exact balances/trustlines, signers, thresholds, flags, and reserve sponsorship |
 | Recent activity | Transactions, operations, and payments with independent pagination |
 | Transaction inspection | Status, ledger, fees, memo, ordered operations, checked result codes/merge balances and live effects |
 | Counterparties | Incoming/outgoing totals by asset, with supporting operation evidence |
@@ -60,8 +60,9 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source version: **0.0.28**. Latest validated native version: **0.0.27**.
-Saved graph/timeline comparison is available from source. Bundles include watchlist batch
+Current source version: **0.0.29**. Latest validated native version: **0.0.27**.
+Account authority/sponsorship and saved graph/timeline comparison are available from source.
+Bundles include watchlist batch
 refresh, investigation search, and resource/transaction snapshot comparison.
 Download the Linux x86_64,
 Windows x86_64 or macOS Apple Silicon archive/checksum artifact from the
@@ -139,6 +140,34 @@ Trustline information includes the asset issuer, trust limit, and authorization 
 
 Addresses are checksum-validated before requests are sent. Amounts retain their exact
 values, and issued assets remain distinguished by both their code and issuer.
+
+### Account authority and sponsorship
+
+In **Overview**, choose **Authority & sponsorship**. Review low, medium and high threshold
+weights, the reported master-key weight, issuer flags and the full signer selection.
+Each signer keeps its key, type, weight and available reserve sponsor. Ed25519 public keys,
+preauthorized transaction hashes, SHA-256 hash keys and Ed25519 signed-payload keys have
+encoding checks. Future types keep their public key text with an unrecognized label.
+
+The same pane shows the account reserve sponsor, reserves sponsored by/for the account,
+subentry count and last-modified ledger. **Balances** adds a **Reserve sponsor** column.
+The fields follow Horizon's account response. The existing lookup supplies all these details.
+See the [Horizon account reference](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/accounts/object).
+
+Reported zeros and false values stay distinct from **Not reported**. A missing master-key
+entry leaves its weight unreported. Invalid optional fields carry warnings while valid
+balances remain available. A malformed or ambiguous signer selection is wholly unavailable.
+The pane's **Raw reported fields** tab retains the reported configuration, including invalid
+values where representable. Limits are 100 signers and 2 MB of raw configuration JSON.
+
+The network, source, original retrieval time and cache label remain visible. This is public
+configuration observed at that time. Effective authorization depends on the transaction,
+operation requirements and signer type. Reserve sponsorship describes reserve responsibility.
+
+Exports and saved snapshots include available authority and sponsorship. Comparisons match
+signers by full type/key, so reordered lists do not create changes. Older saved/cached
+accounts show unknown fields until a new observation supplies them. Normal cache expiry and
+retrieval times still apply. Turn **Use local cache** off and inspect again for available live fields.
 
 ### Recent activity
 
@@ -1097,7 +1126,7 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 Portable native packaging is implemented. Further planned areas include:
 
-- Account authority details including signers, threshold weights, flags and sponsorship.
+- V0.1 acceptance and UI hardening, then live endpoint and clean-machine release qualification.
 - Broader asset metadata and additional contract-token discovery.
 - Additional result/effect payload interpretation.
 - Further SDK/address compatibility as supported formats evolve.
@@ -1108,8 +1137,8 @@ The project specification tracks planned capabilities, release boundaries, and a
 
 The original V0.1 roadmap's 16 functional workflow areas have implementations, with documented
 data and decoding limits. Its polished cross-platform interface requirement still needs
-acceptance work. Remaining release work includes broader account details from the specification,
-UI/error-flow review, fresh live endpoint checks and interactive clean-machine testing.
+acceptance work. Account authority details are implemented in 0.0.29. Remaining release
+work includes UI/error-flow review, fresh live endpoint checks and interactive clean-machine testing.
 The wider vision includes later trades/offers, monitoring, historical indexing and Hubble.
 See the V0.1 readiness review in the specification for the distinction between implemented
 capabilities and release qualification.

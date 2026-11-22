@@ -2,6 +2,13 @@
 
 from decimal import Decimal, InvalidOperation
 
+from polarstellar.stellar.account_authority import (
+    COUNTS,
+    FLAGS,
+    THRESHOLDS,
+    authority_from_plain,
+    sponsor,
+)
 from polarstellar.storage.export import document
 from polarstellar.storage.watchlists import resource, snapshot_digest
 
@@ -72,6 +79,20 @@ def fields(entry, snapshot):
         for field in ("sequence", "home_domain"):
             if field in metadata:
                 put(("account", field), metadata[field])
+        if metadata.get("authority") is not None:
+            authority = authority_from_plain(metadata["authority"])
+            for name in (*THRESHOLDS, *FLAGS, *COUNTS, "sponsor"):
+                value = getattr(authority, name)
+                # An omitted old field and an unavailable new field are both
+                # unknown. Only a reported value enters the state comparison.
+                if value is not None:
+                    put(("authority", name), value)
+            if authority.signers is not None:
+                put(("authority", "signers_reported"), True)
+                for signer in authority.signers:
+                    put(("signers", signer.kind, signer.key, "weight"), signer.weight)
+                    if signer.sponsor is not None:
+                        put(("signers", signer.kind, signer.key, "sponsor"), signer.sponsor)
         seen = set()
         for row in snapshot["records"]:
             key = (row["asset"], row["identity"])
@@ -81,6 +102,8 @@ def fields(entry, snapshot):
             for field in ("amount", "limit", "authorized"):
                 if field in row:
                     put(("balances", *key, field), row[field])
+            if row.get("sponsor") is not None:
+                put(("balances", *key, "sponsor"), sponsor(row["sponsor"]))
     elif entry["kind"] == "asset":
         put(("asset", "asset_type"), metadata["asset_type"])
         for group in ("statistics", "flags"):

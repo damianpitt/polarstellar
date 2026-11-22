@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 
 import httpx
 
+from polarstellar.stellar.account_authority import parse_authority, sponsor
 from polarstellar.stellar.activity import PAGE_SIZE, ActivityKind, ActivityPage, parse_page
 from polarstellar.stellar.asset_discovery import filters, parse_catalog, token
 from polarstellar.stellar.assets import AssetDetail, parse_asset, validate_asset
@@ -19,6 +20,7 @@ ENDPOINTS = {
 
 
 def money(value: object) -> Decimal:
+    """Read an exact nonnegative amount without converting through a binary float."""
     if not isinstance(value, str):
         raise TypeError("Expected an exact decimal string")
     result = Decimal(value)
@@ -28,10 +30,12 @@ def money(value: object) -> Decimal:
 
 
 def parse_account(data: dict, address: str, network: Network, source: str) -> Account:
+    """Bind account identity, exact balances and optional authority to one Horizon observation."""
     if data["account_id"] != address:
         raise ValueError("Account identity mismatch")
     balances = []
-    for row in data["balances"]:
+    balance_warnings = []
+    for index, row in enumerate(data["balances"], 1):
         kind = row["asset_type"]
         if kind == "native":
             asset, identity, limit, authorized = "XLM", "Native", None, None
@@ -48,12 +52,28 @@ def parse_account(data: dict, address: str, network: Network, source: str) -> Ac
             raise ValueError("Unsupported balance type")
         if not isinstance(asset, str) or not isinstance(identity, str):
             raise TypeError("Invalid asset identity")
-        balances.append(Balance(asset, identity, money(row["balance"]), limit, authorized))
+        try:
+            reserve_sponsor = sponsor(row.get("sponsor"))
+        except ValueError:
+            reserve_sponsor = None
+            balance_warnings.append(f"Balance row {index} has an invalid reserve sponsor.")
+        balances.append(
+            Balance(asset, identity, money(row["balance"]), limit, authorized, reserve_sponsor)
+        )
     sequence = data["sequence"]
     domain = data.get("home_domain", "")
     if not isinstance(sequence, str) or not sequence.isdecimal() or not isinstance(domain, str):
         raise ValueError("Invalid account details")
-    return Account(address, network, sequence, domain, tuple(balances), source, datetime.now(UTC))
+    return Account(
+        address,
+        network,
+        sequence,
+        domain,
+        tuple(balances),
+        source,
+        datetime.now(UTC),
+        authority=parse_authority(data, balance_warnings),
+    )
 
 
 class HorizonProvider:

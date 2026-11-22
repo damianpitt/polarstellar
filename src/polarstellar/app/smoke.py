@@ -389,6 +389,13 @@ async def validate(window, root, screenshot=None):
                 "account_id": address,
                 "sequence": "123",
                 "home_domain": "",
+                "thresholds": {"low_threshold": 0, "med_threshold": 1, "high_threshold": 2},
+                "flags": {"auth_required": False, "auth_revocable": True},
+                "signers": [{"key": address, "type": "ed25519_public_key", "weight": 0}],
+                "num_sponsoring": 0,
+                "num_sponsored": 1,
+                "sponsor": issuer,
+                "last_modified_ledger": 123,
                 "balances": [
                     {"asset_type": "native", "balance": "100.0000001"},
                     {
@@ -398,6 +405,7 @@ async def validate(window, root, screenshot=None):
                         "balance": "7.0000002",
                         "limit": "1000.0000000",
                         "is_authorized": True,
+                        "sponsor": issuer,
                     },
                 ],
             },
@@ -412,6 +420,10 @@ async def validate(window, root, screenshot=None):
     assert window.account is not None and window.account.balances[0].amount == Decimal(
         "100.0000001"
     )
+    assert window.account.authority.low_threshold == 0
+    assert window.account.authority.signers[0].weight == 0
+    assert window.account.balances[1].sponsor == issuer
+    assert "Master key weight  0" in window.authority.details.toPlainText()
     checks.append("account_lookup_exact_amounts")
     window.investigations.name.setText("Disposable native smoke check")
     window.investigations.create()

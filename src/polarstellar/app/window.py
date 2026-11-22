@@ -6,15 +6,19 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
     QMainWindow,
     QPushButton,
+    QScrollArea,
+    QSizePolicy,
     QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -30,6 +34,7 @@ from polarstellar.storage.export import (
     activity_document,
     graph_document,
 )
+from polarstellar.ui.account_authority_view import AccountAuthorityView
 from polarstellar.ui.activity_view import ActivityView
 from polarstellar.ui.asset_view import AssetView
 from polarstellar.ui.cache_controls import CacheControls
@@ -39,6 +44,25 @@ from polarstellar.ui.graph_view import GraphView
 from polarstellar.ui.investigations_view import InvestigationsView
 from polarstellar.ui.transaction_view import TransactionDialog
 from polarstellar.ui.watchlists_view import WatchlistsView
+
+
+class ExplorerPages(QStackedWidget):
+    """Size the explorer for the visible page so hidden forms cannot enlarge its scrollable content."""
+
+    def __init__(self):
+        """Notify the parent layout when navigation changes the page whose size matters."""
+        super().__init__()
+        self.currentChanged.connect(lambda _index: self.updateGeometry())
+
+    def sizeHint(self):
+        """Request the active page's preferred size instead of the largest hidden page."""
+        page = self.currentWidget()
+        return page.sizeHint() if page is not None else super().sizeHint()
+
+    def minimumSizeHint(self):
+        """Keep the active page's controls readable without inheriting hidden form minimums."""
+        page = self.currentWidget()
+        return page.minimumSizeHint() if page is not None else super().minimumSizeHint()
 
 
 class MainWindow(QMainWindow):
@@ -116,27 +140,42 @@ class MainWindow(QMainWindow):
         content.addWidget(navigation)
         self.message = QLabel()
         self.message.setWordWrap(True)
+        self.message.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self.message.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.message.setTextFormat(Qt.TextFormat.PlainText)
         self.message.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         pane = QVBoxLayout()
         pane.addWidget(self.message)
-        self.balances = QTableWidget(0, 5)
+        self.balances = QTableWidget(0, 6)
         self.balances.setHorizontalHeaderLabels(
-            ["Asset", "Issuer / pool identity", "Balance", "Trust limit", "Authorized"]
+            [
+                "Asset",
+                "Issuer / pool identity",
+                "Balance",
+                "Trust limit",
+                "Authorized",
+                "Reserve sponsor",
+            ]
         )
         self.balances.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.balances.horizontalHeader().setStretchLastSection(True)
-        self.pages = QStackedWidget()
+        self.pages = ExplorerPages()
         overview = QWidget()
         overview_layout = QVBoxLayout(overview)
-        overview_layout.addWidget(self.balances)
+        self.overview_tabs = QTabWidget()
+        balance_page = QWidget()
+        balance_layout = QVBoxLayout(balance_page)
+        balance_layout.addWidget(self.balances)
         self.open_balance_asset = QPushButton("Inspect selected asset")
         self.open_balance_asset.setEnabled(False)
         self.open_balance_asset.clicked.connect(self.inspect_balance_asset)
         self.balances.itemSelectionChanged.connect(self.update_balance_asset_button)
         self.balances.cellDoubleClicked.connect(lambda *_: self.inspect_balance_asset())
-        overview_layout.addWidget(self.open_balance_asset)
+        balance_layout.addWidget(self.open_balance_asset)
+        self.overview_tabs.addTab(balance_page, "Balances")
+        self.authority = AccountAuthorityView()
+        self.overview_tabs.addTab(self.authority, "Authority & sponsorship")
+        overview_layout.addWidget(self.overview_tabs)
         self.export = ExportControls(lambda: account_document(self.account))
         overview_layout.addWidget(self.export)
         self.pages.addWidget(overview)
@@ -189,9 +228,22 @@ class MainWindow(QMainWindow):
         pane.addWidget(save_resource)
         self.assets.tabs.currentChanged.connect(self.update_asset_actions)
         self.pages.currentChanged.connect(self.update_asset_actions)
-        pane.addWidget(self.pages)
+        pane.addWidget(self.pages, 1)
         navigation.currentRowChanged.connect(self.select_page)
-        content.addLayout(pane, 1)
+        # Account provenance and save actions must remain reachable without
+        # compressing the authority reader to one line on a small display.
+        # Scroll the explorer pane as a whole so the context can move out of
+        # the way while the selected page keeps a readable minimum height.
+        pane.setContentsMargins(0, 0, 0, 0)
+        explorer = QWidget()
+        explorer.setLayout(pane)
+        explorer.setMinimumHeight(430)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setWidget(explorer)
+        self.explorer_scroll = scroll
+        content.addWidget(scroll, 1)
         layout.addLayout(content, 1)
         self.setCentralWidget(root)
         self.statusBar().showMessage("Mainnet selected • Ready")
@@ -376,6 +428,7 @@ class MainWindow(QMainWindow):
             for widget in (self.message, self.watch_resource_button, self.save_resource_button):
                 widget.setVisible(index < 7)
             self.pages.setCurrentIndex(index)
+            self.explorer_scroll.verticalScrollBar().setValue(0)
             self.update_asset_actions()
             if index == 4:
                 view = self.activity_views[2]
@@ -457,6 +510,7 @@ class MainWindow(QMainWindow):
         self.task = None
         self.cancel.setEnabled(False)
         self.account = None
+        self.authority.set_account(None)
         self.export.setEnabled(False)
         self.balances.setRowCount(0)
         self.message.setText("Ready for a new investigation.")
@@ -514,6 +568,7 @@ class MainWindow(QMainWindow):
             if generation != self.generation:
                 return
             self.account = account
+            self.authority.set_account(account)
             self.export.setEnabled(True)
             self.message.setText(
                 f"{account.address}\n{network.value} • Sequence {account.sequence}\n"
@@ -532,6 +587,7 @@ class MainWindow(QMainWindow):
                     else "Yes"
                     if balance.authorized
                     else "No",
+                    balance.sponsor or "Not reported",
                 ]
                 for column, value in enumerate(values):
                     self.balances.setItem(row, column, QTableWidgetItem(value))

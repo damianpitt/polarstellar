@@ -60,7 +60,8 @@ and build-tool versions, plus project license and third-party license informatio
 `.sha256` files allow integrity verification. Checksums alone do not authenticate an unsigned
 publisher; obtain both archive and checksum from the same trusted repository release.
 
-Current source version: **0.0.28**. Source startup checks include saved graph/timeline
+Current source version: **0.0.29**. Source startup checks include account authority with
+reported zero weights/thresholds and reserve sponsors, plus saved graph/timeline
 comparison with independent filter/source coverage, saved investigation search
 by identity and network, comparison of two observations with exact before/after amounts,
 disposable watchlist persistence, retained snapshot pairs/exact comparison, portable JSON

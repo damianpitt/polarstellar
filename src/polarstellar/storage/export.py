@@ -47,10 +47,14 @@ def document(kind, metadata, rows):
 
 
 def account_document(account):
-    """Export the account snapshot, with one CSV/JSON record per asset balance."""
+    """Export available authority/provenance as metadata and one record per exact asset balance."""
     metadata = plain(account)
     del metadata["balances"]
-    metadata["coverage"] = "Account snapshot; not historical balances."
+    metadata["coverage"] = (
+        "Account balances and available authority/sponsorship at original retrieval time. "
+        "Missing fields are unreported; inspect authority warnings. Not historical balances "
+        "or an evaluation of effective transaction authorization."
+    )
     return document("balances", metadata, account.balances)
 
 

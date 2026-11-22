@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.28 with account/activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction/graph/timeline comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.29 with account authority/sponsorship and activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction/graph/timeline comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2347,3 +2347,48 @@ requirements to postpone the deliberately small section 30 V0.1 workflow indefin
 The next planned implementation slice is account authority and security details. Show signer
 keys/weights, thresholds, flags and available sponsorship information alongside network/source
 evidence, preserving read-only behavior and compatibility with older observations.
+
+## V0.0.29 implemented slice — account authority and sponsorship
+
+Overview now has Balances and Authority & sponsorship tabs. The authority pane shows reported
+low/medium/high thresholds, the matching account Ed25519 master-key weight, issuer flags,
+signer key/type/weight and signer reserve sponsor, account reserve sponsor/counters,
+subentries and last-modified ledger. Balance rows retain available reserve sponsors.
+The existing Horizon account response supplies these fields with the original network,
+source, retrieval time and cache label. No extra lookup or authorization operation is added.
+
+Known Ed25519, preauth, SHA-256 hash and signed-payload signer encodings are validated with
+the SDK, including canonical signed-payload round-trip checks. Unknown future types retain
+bounded key text with an explicit label. Validate unsigned weight/threshold/count/ledger
+ranges, boolean flags and G-address reserve sponsors. Preserve zeros/false values and keep
+missing values unknown. Invalid optional fields carry warnings while base balances remain
+available. Refuse an entire malformed/duplicate/oversized signer selection as unavailable.
+Bound signer selections to 100 records and retained raw configuration to 2 MB.
+
+The raw tab preserves reported configuration and balance sponsorship identity/row positions.
+Exports, investigations and watchlist snapshots include the available fields. Comparisons
+match signers by exact type/key and compare known weights, thresholds, flags, sponsors,
+counts and ledger context. Raw formatting and warning prose stay outside state comparison.
+
+Old cache objects remain readable by filling only the new Account.authority and Balance.sponsor
+fields as unknown. Existing revision-4 keys, expiry and original retrieval times remain valid.
+New normalized types pass codec validation and all other missing/extra fields still fail
+closed to live fallback. Saved historical documents remain intact and retain their unknown
+coverage. SQLite schema and dependency versions require no changes.
+
+Public configuration is an observation at retrieval time. Effective authorization depends
+on transaction/operation requirements and signer types. Reserve sponsorship describes reserve
+responsibility without attributing key ownership. Search/network invalidation clears the pane
+and the existing generation checks reject late results. The current native apps are 0.0.27.
+
+## V0.1 readiness follow-up — 2026-11-22
+
+The account-detail workstream identified in the 2026-11-21 review is implemented in 0.0.29.
+The remaining first-release workstreams are acceptance/UI hardening and release qualification.
+This closes the planned signer/threshold/flag/sponsorship gap while the original release
+acceptance criteria still require interactive review and fresh live endpoint checks.
+
+The next planned slice is V0.1 acceptance and UI hardening. Review loading/cancellation,
+errors, unavailable and partial data, compact displays, graph interactions, export flows
+and larger saved investigations. Fix reproducible issues and record the actual checks
+before moving to interactive clean-machine testing and release qualification.

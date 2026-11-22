@@ -8,6 +8,9 @@ from enum import Enum
 
 from stellar_sdk import StrKey
 
+from polarstellar.stellar.account_authority import AccountAuthority
+from polarstellar.stellar.account_authority import sponsor as validate_sponsor
+
 
 class Network(str, Enum):
     """The network identity that must remain part of every lookup and cache key."""
@@ -18,18 +21,27 @@ class Network(str, Enum):
 
 @dataclass(frozen=True)
 class Balance:
-    """An exact asset balance with issuer identity and trustline information."""
+    """An exact asset balance with issuer/trustline identity and any reported reserve sponsor."""
 
     asset: str
     identity: str
     amount: Decimal
     limit: Decimal | None
     authorized: bool | None
+    sponsor: str | None = None
+
+    def __post_init__(self):
+        """Validate optional sponsorship even when restoring a cached balance."""
+        validate_sponsor(self.sponsor)
 
 
 @dataclass(frozen=True)
 class Account:
-    """An account snapshot with original retrieval time and an explicit live/cache label."""
+    """An account snapshot with original retrieval time and an explicit live/cache label.
+
+    Optional authority is unknown for earlier snapshots. It shares this account's
+    network, source and retrieval time rather than implying a separate live read.
+    """
 
     address: str
     network: Network
@@ -39,6 +51,7 @@ class Account:
     source: str
     fetched_at: datetime
     cache_status: str = "Live data"
+    authority: AccountAuthority | None = None
 
 
 @dataclass(frozen=True)

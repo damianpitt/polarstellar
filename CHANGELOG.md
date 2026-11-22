@@ -10,6 +10,67 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.29] - 2026-11-22
+
+### Added — account authority and reserve sponsorship
+
+- In **Overview**, open **Authority & sponsorship** for low/medium/high threshold weights,
+  the reported master-key weight, issuer authorization/revocation/immutability/clawback
+  flags, signer keys/types/weights, and available signer/account reserve sponsors.
+  Account reserve counters, subentry count and last-modified ledger retain their exact
+  integer values. The original network, source, retrieval time and cache label stay visible.
+- **Balances** adds a **Reserve sponsor** column for reported trustline/pool sponsorship.
+  The authority pane's **Raw reported fields** tab preserves the selected Horizon fields,
+  including balance sponsor identity and row position. These details come from the
+  existing account response, with no additional provider request.
+- Recognize Ed25519 public keys, preauthorized transaction hashes, SHA-256 hash keys and
+  Ed25519 signed-payload keys. Validate known encodings with the SDK and canonical payload
+  round-trip checks. Keep complete keys without converting signer types into account
+  ownership. Unknown future types retain bounded key text and an explicit unrecognized label.
+- Preserve reported zero weights/thresholds and false flags. Missing or unavailable values
+  read **Not reported**. Master weight is shown only when the matching account G-key occurs
+  in the reported Ed25519 signer selection. Public configuration is an observation at retrieval
+  time; effective transaction authorization is outside this inspection.
+
+### Parsing, evidence and compatibility
+
+- Validate uint8 weights/thresholds, uint32 counts/ledger values, boolean flags and sponsor
+  G-address checksums. Contain invalid optional fields as unavailable with warnings while
+  preserving valid balances and other fields. A malformed, duplicate or oversized signer
+  selection becomes wholly unavailable, so a partial list cannot imply complete authority.
+  Bound signer lists to 100 records and retained raw authority JSON to 2 MB.
+- Account CSV/JSON exports, saved investigations and watchlist snapshots retain available
+  authority, warnings, raw fields and balance sponsors alongside the original provenance.
+  Offline comparisons match signers by exact type/key and compare reported weights, flags,
+  thresholds, sponsors and counters. Signer order, raw formatting and warning text stay
+  outside state differences. An old unreported field is unknown until a new observation.
+- Extend the existing codec with validated authority/signer containers. Read old Account
+  and Balance cache shapes by filling only the known new optional fields as unknown.
+  Preserve original retrieval times, revision-4 cache keys and normal expiry. All other
+  unexpected/missing cache fields remain errors and use the existing live fallback.
+  Older readers use that fallback for newer cache payloads. SQLite schema and dependencies
+  require no changes.
+- The authority view clears with the account on new search, cancellation or network change.
+  Existing generation checks prevent late responses from repainting another network's view.
+- Size the explorer from its active page and allow vertical scrolling on compact displays.
+  Hidden forms no longer reserve the account pane's height, and the authority reader keeps
+  a usable minimum size. Navigation returns the explorer to the top of the selected page.
+
+### Documentation and validation
+
+- Align package metadata, lockfile, README and project scope at 0.0.29. Record completion of
+  the account-detail workstream from the V0.1 readiness review and move the next planned
+  stage to acceptance/UI hardening, followed by live endpoint and clean-machine qualification.
+- Source startup checks cover reported zero weights/thresholds, balance sponsorship and
+  readable authority alongside saved account/watchlist persistence.
+- This is a source update. Latest validated native bundles are 0.0.27.
+- Local validation passes all 632 tests, including 22 new cases for signer encodings,
+  malformed optional fields, unknown/duplicate types, exact zero/false values, sponsorship,
+  legacy codec/cache expiry, snapshot comparisons, normal lookup/save flows, compact
+  readability and late network responses. Ruff, version/lockfile, offline source startup
+  and Python source archive/wheel checks pass. Reviewed the authority view at 1180 × 760
+  and 800 × 520.
+
 ## [0.0.28] - 2026-11-21
 
 ### Added — saved expanded graph and timeline comparison
