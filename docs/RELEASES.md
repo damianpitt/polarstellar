@@ -82,6 +82,13 @@ Windows x86_64 and macOS Apple Silicon only. The completed 0.0.11 checks below r
 The latest validated native apps are 0.0.27. Packaging runs at selected development steps
 on Linux x86_64, Windows x86_64 and Apple Silicon.
 
+The [0.0.30 source run](https://github.com/damianpitt/polarstellar/actions/runs/45098254242)
+passed all 639 tests per platform, Ruff, locked dependency/version checks and Python source
+archive/wheel builds on Linux, macOS and Windows for source commit `fb75b0c`. Regressions
+cover unavailable exports, incomplete payment selection, stale case saves, deleted cases,
+concurrent appends, quota rollback and reads during uncommitted library edits. Local source
+startup checks also pass. No new portable native archives were built or uploaded in this slice.
+
 The [0.0.29 source run](https://github.com/damianpitt/polarstellar/actions/runs/45047855750)
 passed all 632 tests per platform, Ruff, locked dependency/version checks and Python source
 archive/wheel builds on Linux, macOS and Windows. Account authority, sponsorship, old-cache

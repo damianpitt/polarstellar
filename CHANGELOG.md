@@ -60,8 +60,11 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   **639 tests**. Ruff lint/format, aligned versions, offline lockfile check, all eight offline
   source startup checks and source archive/wheel builds pass. Archive inspection confirms
   local screenshots, capture helper and application databases are absent.
-- Cross-platform source CI is pending this version's push. Fresh live endpoint and
-  clean-machine checks remain release qualification work, not completed V0.1 acceptance.
+- [Source run 45098254242](https://github.com/damianpitt/polarstellar/actions/runs/45098254242)
+  passed all **639 tests per platform**, Ruff, locked dependency setup, version checks and
+  source archive/wheel builds on Linux (`ubuntu-24.04`), macOS (`macos-latest`) and Windows
+  (`windows-latest`) for source commit `fb75b0c`. Fresh live endpoint and clean-machine
+  checks remain release qualification work, not completed V0.1 acceptance.
 
 ## [0.0.29] - 2026-11-22
 

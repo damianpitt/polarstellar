@@ -57,7 +57,10 @@ investigations and watchlists can still be read without waiting for its write lo
 - All eight offline source startup checks pass with disposable storage and fixture
   transports. Source archive and wheel builds pass; archive inspection confirms they
   contain no local screenshots, capture helper or application databases.
-- Source CI for Linux, macOS and Windows: pending this version's push.
+- [Source run 45098254242](https://github.com/damianpitt/polarstellar/actions/runs/45098254242),
+  source commit `fb75b0c`: **639 tests passed on each platform** (Linux `ubuntu-24.04`,
+  macOS `macos-latest`, Windows `windows-latest`). Ruff, locked dependency setup, version
+  checks and source archive/wheel builds passed on all three.
 - Native builds/uploads: not run for this source slice. The validated 0.0.27 artifacts
   remain described in [release documentation](RELEASES.md).
 
