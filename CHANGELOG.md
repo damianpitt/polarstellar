@@ -10,6 +10,55 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.30] - 2026-11-23
+
+### Fixed — acceptance and local evidence safeguards
+
+- CSV/JSON export now contains failures that occur while preparing the selected snapshot,
+  before opening the destination picker. An unavailable selection shows **Export unavailable**
+  with instructions to select or reload evidence. Existing destination files are untouched;
+  the existing atomic writer and destination-permission error handling remain in use.
+- Saving investigation annotations now updates only the fields edited in that view. A view
+  opened before another save no longer replaces newer evidence or unchanged annotations.
+  Saving resource evidence and completing an explicit network refresh append to the latest
+  committed investigation under a SQLite write lock, avoiding a read/write gap between views.
+- A stale view cannot recreate an investigation deleted elsewhere. Saving reports that the
+  case no longer exists and keeps the draft available to copy. Failed or oversized targeted
+  updates roll back completely. The existing 20 MB per-investigation limit still applies.
+  Concurrent edits to the same annotation field use the last successful save; this is local
+  persistence protection, not a collaborative merge/history feature.
+- Selecting a short, incomplete cached Payments row keeps asset navigation disabled instead
+  of indexing a missing identity column. The available row data can still be read/exported.
+  No asset code, issuer or network is guessed from incomplete evidence.
+
+### Documentation, compatibility and local review
+
+- Add [V0.1 acceptance and release gates](docs/ACCEPTANCE.md): reproducible workflow coverage,
+  the concrete issues fixed in this slice, and outstanding live and clean-machine checks.
+  Update the README, specification, package metadata and lockfile to 0.0.30.
+- Review populated macOS Qt views using synthetic account, activity, transaction/result,
+  effects, graph/timeline, asset/SAC, contract/specification/storage, investigation and
+  watchlist examples. These are local fixture checks, not live network or clean-machine
+  acceptance. Layouts with long evidence remain scrollable; large tables retain tooltips
+  and full exported identities. Interactive accessibility and platform review remain open.
+- Explicitly exclude the local `Software GUI` screenshot folder from Git. The source archive
+  allowlist and wheel package selection also exclude that folder and its local capture helper.
+  No sample images, private application databases or screenshot tooling are shipped.
+- Preserve the investigation database schema, existing saved evidence, network separation,
+  source/retrieval metadata and default-off cache behavior. No dependency or endpoint change.
+  This is a source update; latest validated native bundles remain 0.0.27.
+
+### Validation
+
+- Five new regression checks cover export preparation errors, incomplete payment selection,
+  stale annotation/evidence saves, deleted cases, concurrent appends and quota rollback.
+  Focused investigation/export checks pass (45 tests), and the full local suite passes
+  **637 tests**. Ruff lint/format, aligned versions, offline lockfile check, all eight offline
+  source startup checks and source archive/wheel builds pass. Archive inspection confirms
+  local screenshots, capture helper and application databases are absent.
+- Cross-platform source CI is pending this version's push. Fresh live endpoint and
+  clean-machine checks remain release qualification work, not completed V0.1 acceptance.
+
 ## [0.0.29] - 2026-11-22
 
 ### Added — account authority and reserve sponsorship

@@ -78,6 +78,10 @@ class ActivityView(QWidget):
         row = self.table.currentRow()
         if self.kind != ActivityKind.PAYMENTS or not 0 <= row < len(self.records):
             return None
+        if len(self.records[row].values) < len(HEADERS[self.kind]):
+            # Older/incomplete records can still be read and exported. Navigation
+            # needs a complete asset identity rather than a guessed column value.
+            return None
         identity = self.records[row].values[7]
         if identity == "XLM":
             return "XLM", ""

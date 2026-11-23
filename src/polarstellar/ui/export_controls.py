@@ -25,11 +25,22 @@ class ExportControls(QWidget):
 
     def save(self, format_name):
         """Freeze current data, ask for a destination, then report success or failure."""
-        snapshot = self.snapshot()
+        try:
+            snapshot = self.snapshot()
+            kind = snapshot["kind"]
+        except (OSError, ValueError, TypeError, KeyError, AttributeError):
+            # Selection or loaded evidence can become unavailable before a click
+            # is handled. Keep that error inside the UI and leave existing files alone.
+            QMessageBox.warning(
+                self,
+                "Export unavailable",
+                "Unable to prepare this export. Select or reload the evidence and try again.",
+            )
+            return
         filename, _ = QFileDialog.getSaveFileName(
             self,
             "Export loaded investigation data",
-            f"polarstellar-{snapshot['kind']}.{format_name}",
+            f"polarstellar-{kind}.{format_name}",
             f"{format_name.upper()} files (*.{format_name})",
         )
         if not filename:

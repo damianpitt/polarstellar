@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.29 with account authority/sponsorship and activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction/graph/timeline comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.30 with acceptance safeguards for exports and local evidence saves, account authority/sponsorship and activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction/graph/timeline comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2392,3 +2392,32 @@ The next planned slice is V0.1 acceptance and UI hardening. Review loading/cance
 errors, unavailable and partial data, compact displays, graph interactions, export flows
 and larger saved investigations. Fix reproducible issues and record the actual checks
 before moving to interactive clean-machine testing and release qualification.
+
+## V0.0.30 implemented slice — acceptance and local evidence safeguards
+
+Export controls now report failures while preparing evidence before opening a destination
+picker. Existing files remain untouched when a selected snapshot is unavailable. Short
+cached payment rows remain readable but cannot enable asset navigation without a complete
+identity. Existing exact values, network separation and atomic export writes are retained.
+
+Investigation notes/name/labels use targeted updates to the latest committed case. Only
+fields edited in that view are changed. Evidence saves and explicit refresh completion
+append under a SQLite write lock, so another view's newer annotations and observations
+survive. Deleted investigations are not recreated by stale views. Failures retain drafts
+and roll back the update, including the existing 20 MB bound. Concurrent edits to the same
+annotation field retain the last successful save; versioned annotation merging is outside
+this local persistence safeguard. Database schema, dependencies and old evidence are unchanged.
+
+Regression coverage includes unavailable export preparation, short payment selection,
+two stale case views, deleted-case draft retention, four independent concurrent evidence
+appends, and a rejected oversized write with complete rollback. Populated macOS UI examples
+were reviewed using synthetic fixtures and temporary databases, without live requests.
+Local screenshots and their capture helper are excluded from Git and source/wheel packages.
+
+The [acceptance record](docs/ACCEPTANCE.md) separates automated source checks and fixture UI
+review from release gates that remain open. This source version does not declare V0.1 complete
+or imply new native bundles. Latest validated native applications remain 0.0.27.
+
+The next planned slice is release qualification: fresh read-only Horizon/RPC checks,
+interactive clean-machine testing on Linux, macOS Apple Silicon and Windows, fixes for
+verified findings, and a documented V0.1 candidate. No Mac Intel build is planned.

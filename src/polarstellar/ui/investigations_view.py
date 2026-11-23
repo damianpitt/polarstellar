@@ -348,9 +348,22 @@ class InvestigationsView(QWidget):
         if self.current is None:
             self.error("Create or select an investigation first.")
             return
-        item = copy.deepcopy(self.current)
-        item.update(self.draft_annotations())
-        self.commit(item)
+        self.amend(annotations=self.unsaved_annotations())
+
+    def amend(self, **changes):
+        """Apply a targeted edit to the latest saved case, preserving displayed drafts on failure."""
+        try:
+            item = self.store.amend(self.current["id"], **changes)
+            if item is None:
+                self.error(
+                    "This investigation no longer exists. Your draft remains available to copy."
+                )
+                return None
+        except (OSError, ValueError, sqlite3.Error) as exc:
+            self.error(str(exc))
+            return None
+        self.reload(item["id"], reveal=True)
+        return item
 
     def add_evidence(self, entry):
         """Append a frozen resource snapshot to the currently selected saved investigation."""
@@ -359,9 +372,8 @@ class InvestigationsView(QWidget):
                 "Create or select an investigation, then return to the resource and save it."
             )
             return
-        item = copy.deepcopy(self.current)
-        item["entries"].append(copy.deepcopy(entry))
-        if self.commit(item):
+        item = self.amend(evidence=copy.deepcopy(entry))
+        if item is not None:
             self.entries.setCurrentRow(len(item["entries"]) - 1)
 
     def show_entry(self, row):
@@ -457,12 +469,11 @@ class InvestigationsView(QWidget):
 
                 asset = await self.service.asset(entry["code"], entry["issuer"], network)
                 evidence = document("asset", plain(asset), [])
-            # Re-read persisted state after I/O so intervening notes or additions survive.
-            item = next((item for item in self.store.list() if item["id"] == identifier), None)
+            # Re-read and append under one write lock after network I/O. Another
+            # view's notes/evidence survive, and deleted cases cannot be recreated.
+            entry["evidence"] = [evidence]
+            item = self.store.amend(identifier, evidence=entry)
             if item is not None:
-                entry["evidence"] = [evidence]
-                item["entries"].append(entry)
-                self.store.save(item)
                 selected = self.current["id"] if self.current else None
                 self.reload(selected)
         except asyncio.CancelledError:

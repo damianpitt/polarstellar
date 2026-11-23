@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.29 · Pre-alpha**
+**Current version: 0.0.30 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.29 |
+| Area | Available in 0.0.30 |
 | --- | --- |
 | Account lookup | G-address validation, exact balances/trustlines, signers, thresholds, flags, and reserve sponsorship |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -60,8 +60,8 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source version: **0.0.29**. Latest validated native version: **0.0.27**.
-Account authority/sponsorship and saved graph/timeline comparison are available from source.
+Current source version: **0.0.30**. Latest validated native version: **0.0.27**.
+Account authority/sponsorship, saved graph/timeline comparison and acceptance fixes are available from source.
 Bundles include watchlist batch
 refresh, investigation search, and resource/transaction snapshot comparison.
 Download the Linux x86_64,
@@ -1124,7 +1124,7 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 Portable native packaging is implemented. Further planned areas include:
 
-- V0.1 acceptance and UI hardening, then live endpoint and clean-machine release qualification.
+- V0.1 release qualification: fresh live endpoint checks and interactive clean-machine review.
 - Broader asset metadata and additional contract-token discovery.
 - Additional result/effect payload interpretation.
 - Further SDK/address compatibility as supported formats evolve.
@@ -1134,9 +1134,11 @@ Portable native packaging is implemented. Further planned areas include:
 The project specification tracks planned capabilities, release boundaries, and acceptance criteria.
 
 The original V0.1 roadmap's 16 functional workflow areas have implementations, with documented
-data and decoding limits. Its polished cross-platform interface requirement still needs
-acceptance work. Account authority details are implemented in 0.0.29. Remaining release
-work includes UI/error-flow review, fresh live endpoint checks and interactive clean-machine testing.
+data and decoding limits. Account authority details are implemented in 0.0.29, and 0.0.30
+adds acceptance fixes for export preparation, incomplete payment rows and stale local
+investigation saves. Its polished cross-platform interface requirement still needs
+interactive acceptance. Remaining release work includes fresh live endpoint checks,
+clean-machine testing and resolution of any findings from those checks.
 The wider vision includes later trades/offers, monitoring, historical indexing and Hubble.
 See the V0.1 readiness review in the specification for the distinction between implemented
 capabilities and release qualification.
@@ -1145,6 +1147,7 @@ capabilities and release qualification.
 
 - [Full project specification](PolarStellar_Project_Spec.md) — vision, architecture, scope, and roadmap.
 - [Changelog](CHANGELOG.md) — versioned features, fixes, limitations, and validation notes.
+- [Acceptance and release gates](docs/ACCEPTANCE.md) — completed source checks and remaining V0.1 qualification.
 - [GitHub Actions](https://github.com/damianpitt/polarstellar/actions) — automated platform checks.
 
 Run the local checks:

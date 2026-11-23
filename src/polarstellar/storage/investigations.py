@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
+MAX_BYTES = 20_000_000
+
 
 class InvestigationStore:
     """Persist named investigations atomically; evidence is JSON, never executable objects."""
@@ -45,18 +47,48 @@ class InvestigationStore:
 
     def save(self, investigation):
         """Commit a complete investigation in one transaction, preserving the old row on failure."""
+        with closing(self.connect()) as connection, connection:
+            self.write(connection, investigation)
+
+    def write(self, connection, investigation):
+        """Validate and write bounded JSON in the caller's transaction, retaining existing ordering."""
         if not investigation["name"].strip():
             raise ValueError("Give the investigation a name.")
         payload = json.dumps(investigation, ensure_ascii=False, allow_nan=False)
-        if len(payload.encode("utf-8")) > 20_000_000:
+        if len(payload.encode("utf-8")) > MAX_BYTES:
             raise ValueError(
                 "Investigation exceeds the 20 MB limit. Create a separate investigation."
             )
+        connection.execute(
+            "INSERT OR REPLACE INTO investigations VALUES (?, ?)",
+            (investigation["id"], payload),
+        )
+
+    def amend(self, identifier, *, annotations=None, evidence=None):
+        """Apply targeted changes to committed state under a SQLite write lock.
+
+        Re-read before changing notes or appending evidence so a stale view cannot
+        replace newer observations. Missing/deleted cases return None, and write
+        failures roll back the whole change. Evidence documents remain unchanged.
+        """
+        if not self.path.exists():
+            return None
+        if annotations is not None and not set(annotations) <= {"name", "notes", "labels"}:
+            raise ValueError("Only investigation name, notes and labels can be edited.")
         with closing(self.connect()) as connection, connection:
-            connection.execute(
-                "INSERT OR REPLACE INTO investigations VALUES (?, ?)",
-                (investigation["id"], payload),
-            )
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                "SELECT payload FROM investigations WHERE id=?", (identifier,)
+            ).fetchone()
+            if row is None:
+                return None
+            item = json.loads(row[0])
+            if annotations is not None:
+                item.update(annotations)
+            if evidence is not None:
+                item["entries"].append(evidence)
+            self.write(connection, item)
+            return item
 
     def delete(self, identifier):
         """Delete only the selected investigation; cache files and exported files are untouched."""

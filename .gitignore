@@ -15,6 +15,9 @@
 !/docs/
 !/.github/
 
+# Local screenshot collection requested for desktop review.
+/Software GUI/
+
 # Python environments, caches, and generated artifacts (at any depth)
 __pycache__/
 *.py[cod]
