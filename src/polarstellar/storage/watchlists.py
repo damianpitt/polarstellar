@@ -64,7 +64,7 @@ class WatchlistStore:
         self.path = Path(path)
 
     def connect(self):
-        """Open schema 1, or fail without changing an unsupported database."""
+        """Initialize blank storage once; open existing schema 1 without writing its version again."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(self.path)
         version = connection.execute("PRAGMA user_version").fetchone()[0]
@@ -72,11 +72,15 @@ class WatchlistStore:
             connection.close()
             raise ValueError("Unsupported watchlist database version")
         connection.execute("PRAGMA secure_delete=ON")
-        connection.execute(
-            "CREATE TABLE IF NOT EXISTS watchlists (id TEXT PRIMARY KEY, payload TEXT NOT NULL)"
-        )
-        connection.execute("PRAGMA user_version=1")
-        connection.commit()
+        if version == 0:
+            # Repeating a schema-version assignment would take a write lock even
+            # for list/get_entry reads. Avoid that extra disk transaction and let
+            # readers inspect committed bookmarks during another local edit.
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS watchlists (id TEXT PRIMARY KEY, payload TEXT NOT NULL)"
+            )
+            connection.execute("PRAGMA user_version=1")
+            connection.commit()
         return connection
 
     def list(self):

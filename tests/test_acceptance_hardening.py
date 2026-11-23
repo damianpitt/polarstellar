@@ -1,6 +1,7 @@
 """Check reproducible acceptance failures around local exports, stale cases and incomplete rows."""
 
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from copy import deepcopy
 
 import pytest
@@ -11,6 +12,7 @@ from test_investigations import entry
 from polarstellar.stellar.activity import ActivityKind, ActivityRecord
 from polarstellar.stellar.models import Network
 from polarstellar.storage.investigations import InvestigationStore, new_investigation
+from polarstellar.storage.watchlists import WatchlistStore
 from polarstellar.ui.activity_view import ActivityView
 from polarstellar.ui.export_controls import ExportControls
 from polarstellar.ui.investigations_view import InvestigationsView
@@ -116,3 +118,23 @@ def test_concurrent_appends_and_quota_failure_are_atomic(tmp_path, monkeypatch):
     assert store.list() == [saved]
     with pytest.raises(ValueError, match="Only investigation"):
         store.amend(item["id"], annotations={"entries": []})
+
+
+@pytest.mark.parametrize("library", ["investigations", "watchlists"])
+def test_existing_library_reads_do_not_require_a_write_lock(tmp_path, library):
+    """Read committed cases/bookmarks while another connection has an uncommitted local edit."""
+    path = tmp_path / "library.sqlite3"
+    if library == "investigations":
+        store = InvestigationStore(path)
+        store.save(new_investigation("Committed case"))
+    else:
+        store = WatchlistStore(path)
+        store.create("Committed bookmarks")
+    previous = store.list()
+    with closing(store.connect()) as writer:
+        # BEGIN IMMEDIATE reserves the next write without blocking SQLite's
+        # normal readers. Opening a known schema must not turn a read into a write.
+        writer.execute("BEGIN IMMEDIATE")
+        writer.execute(f"UPDATE {library} SET payload=payload")
+        assert store.list() == previous
+        writer.rollback()

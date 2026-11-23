@@ -18,7 +18,7 @@ class InvestigationStore:
         self.path = Path(path)
 
     def connect(self):
-        """Open schema version 1 and refuse unknown future schemas rather than overwrite them."""
+        """Initialize a blank database once; read existing schema 1 without acquiring a write lock."""
         self.path.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(self.path)
         version = connection.execute("PRAGMA user_version").fetchone()[0]
@@ -26,11 +26,15 @@ class InvestigationStore:
             connection.close()
             raise ValueError("Unsupported investigation database version")
         connection.execute("PRAGMA secure_delete=ON")
-        connection.execute(
-            "CREATE TABLE IF NOT EXISTS investigations (id TEXT PRIMARY KEY, payload TEXT NOT NULL)"
-        )
-        connection.execute("PRAGMA user_version=1")
-        connection.commit()
+        if version == 0:
+            # Assigning user_version writes the database even when the value is
+            # unchanged. Only initialize new storage: a normal read must remain
+            # possible while another connection holds an uncommitted case edit.
+            connection.execute(
+                "CREATE TABLE IF NOT EXISTS investigations (id TEXT PRIMARY KEY, payload TEXT NOT NULL)"
+            )
+            connection.execute("PRAGMA user_version=1")
+            connection.commit()
         return connection
 
     def list(self):

@@ -39,15 +39,20 @@ chrome; they do not substitute for interactive clean-machine acceptance.
   save wins if the same annotation field is edited in two views.
 - An incomplete cached payment row could trigger an out-of-range asset-column lookup.
   Navigation stays disabled until a complete asset identity is available.
+- Existing library reads repeated the schema-version write on every connection. Initialize
+  unversioned storage once, then read committed cases/bookmarks without requesting a write
+  lock or committing the same version number again.
 
-Five regression tests exercise these failures, including simultaneous evidence appends
+Seven regression cases exercise these failures, including simultaneous evidence appends
 through independent database connections and rollback after a bounded-size rejection.
 The quota regression uses a reduced test limit; it is not a large-investigation benchmark.
+Two library-read cases keep a separate edit transaction open and verify that committed
+investigations and watchlists can still be read without waiting for its write lock.
 
 ## Validation record
 
-- Focused investigation/export regression checks: **45 passed** locally.
-- Full local suite: **637 passed** on macOS with Qt offscreen. Ruff lint and formatting
+- Focused investigation/watchlist/export regression checks: **78 passed** locally.
+- Full local suite: **639 passed** on macOS with Qt offscreen. Ruff lint and formatting
   pass; package/lockfile/changelog versions agree and the offline lockfile check passes.
 - All eight offline source startup checks pass with disposable storage and fixture
   transports. Source archive and wheel builds pass; archive inspection confirms they

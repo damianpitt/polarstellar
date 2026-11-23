@@ -30,6 +30,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 - Selecting a short, incomplete cached Payments row keeps asset navigation disabled instead
   of indexing a missing identity column. The available row data can still be read/exported.
   No asset code, issuer or network is guessed from incomplete evidence.
+- Opening an existing investigation or watchlist database no longer writes its schema
+  version again. Read-only library queries avoid an unnecessary disk transaction and can
+  read committed state while another connection has an uncommitted edit. Initialize schema
+  1 only for unversioned storage; unknown versions still fail without being overwritten.
 
 ### Documentation, compatibility and local review
 
@@ -50,10 +54,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 
 ### Validation
 
-- Five new regression checks cover export preparation errors, incomplete payment selection,
+- Seven new regression cases cover export preparation errors, incomplete payment selection,
   stale annotation/evidence saves, deleted cases, concurrent appends and quota rollback.
-  Focused investigation/export checks pass (45 tests), and the full local suite passes
-  **637 tests**. Ruff lint/format, aligned versions, offline lockfile check, all eight offline
+  Focused investigation/watchlist/export checks pass (78 tests), and the full local suite passes
+  **639 tests**. Ruff lint/format, aligned versions, offline lockfile check, all eight offline
   source startup checks and source archive/wheel builds pass. Archive inspection confirms
   local screenshots, capture helper and application databases are absent.
 - Cross-platform source CI is pending this version's push. Fresh live endpoint and

@@ -2407,6 +2407,10 @@ survive. Deleted investigations are not recreated by stale views. Failures retai
 and roll back the update, including the existing 20 MB bound. Concurrent edits to the same
 annotation field retain the last successful save; versioned annotation merging is outside
 this local persistence safeguard. Database schema, dependencies and old evidence are unchanged.
+Existing investigation/watchlist reads no longer assign the same schema version on every
+connection. Initialize unversioned storage once, avoiding repeated disk transactions and
+allowing reads of committed state during an uncommitted local edit. Unknown versions fail
+without being overwritten.
 
 Regression coverage includes unavailable export preparation, short payment selection,
 two stale case views, deleted-case draft retention, four independent concurrent evidence
