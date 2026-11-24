@@ -70,9 +70,9 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   fresh-runner qualification and interactive clean consumer-machine acceptance. V0.1 remains
   pending the latter; this version does not publish a stable release or claim OS signing,
   notarization or installers. Align package metadata, lockfile, README and scope at 0.0.31.
-- Initial local live checks passed both networks with real public provider observations;
-  the chosen contracts had built-in executables, so WASM specifications were not sampled.
-  Record exact final source/native/platform results after the qualification run completes.
+- Live samples selected built-in SACs, so WASM specifications were not sampled. Explicit
+  storage-key reads were not queried. The acceptance record distinguishes offline fixture
+  coverage from targeted live checks still needed during interactive review.
 - Regression tests cover successful provider workflows, network mismatch, pagination errors,
   RPC rate limits, timeout reporting, prohibited writes/origins, request budgets, altered
   checksums, wrong native identity/plugin/coverage, incomplete live reports and CLI opt-in.
@@ -80,7 +80,33 @@ and the uv lockfile in sync. The application header and `--version` show the pac
   source archive/wheel builds and all eleven offline checks with macOS Cocoa rendering.
   Final local live checks passed both networks with 29 public read requests each, including
   failed-transaction samples; WASM and explicitly supplied storage-key coverage remain limited
-  as described above. Source CI and native/fresh-runner results are pending this version's push.
+  as described above.
+- [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/45315580984) passed all
+  **661 tests on each platform**, Ruff, locked dependency/version checks and source archive/
+  wheel builds. [Native qualification](https://github.com/damianpitt/polarstellar/actions/runs/45315599985)
+  built and uploaded Linux x86_64, macOS arm64 and Windows x86_64 archives from clean commit
+  `6fd97686a644cc9eb252080e20462209d631e5ba`. Each package job also passed 661 tests and eleven
+  native offline checks. Reviewed final manifests and screenshots identify `xcb`, `cocoa`
+  and `windows` Qt plugins, with readable Windows tab labels.
+- Separate fresh-runner checks verified SHA-256 and source/version/architecture, absent
+  project/Qt/SDK launcher packages, macOS signatures, eleven frozen-app offline checks and
+  live Mainnet/Testnet workflows. Windows passed on attempt 1, Linux on attempt 2 and macOS
+  on attempt 3. Only failed qualification jobs were rerun, reusing unchanged archives.
+  No provider checks were skipped or failures converted to passes.
+- Preserve the initial Testnet payment-history timeouts: Linux/macOS attempt 1 failed on
+  the same sampled account, and macOS attempt 2 failed on another account. Later sampled
+  accounts passed without code changes. Reports do not establish the cause or reliable
+  availability for every account. Manual timeout/retry review remains pending. Successful
+  native runs used 25–29 read requests per network. Testnet failed transactions were sampled;
+  Mainnet failed transactions were not sampled in those final native observations. Available
+  second activity pages and two contract-event pages were checked; effects can be empty.
+- Record direct downloads, artifact sizes, success and failure evidence, UTC times and RPC
+  ledger ranges in release/acceptance documentation. Bundles total about 205 MB across three
+  targets; small evidence reports download separately. All are 30-day workflow artifacts,
+  stored outside source Git. Documentation-only result commits do not change bundle provenance.
+- Interactive OS approval prompts, native file dialogs, graph gestures, scaling/accessibility,
+  realistic interrupted workflows and targeted WASM/storage review remain the next planned
+  acceptance slice. V0.1 is not declared complete and no stable release is published.
 - The local `Software GUI` collection stays ignored and outside all source/native packages.
 
 ## [0.0.30] - 2026-11-23

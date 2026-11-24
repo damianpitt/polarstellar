@@ -21,6 +21,10 @@ PolarStellar is an open-source project, not affiliated with the Stellar Developm
 | Source/native/fresh-runner validation links | Not recorded |
 
 Targets are Linux x86_64, macOS Apple Silicon and Windows x86_64. Mac Intel is excluded.
+The current automated candidate is **0.0.31**, built from
+`6fd97686a644cc9eb252080e20462209d631e5ba`; [downloads and automated evidence](RELEASES.md#completed-0031-qualification)
+identify each platform archive and matching checksum. Fill the observed fields above yourself;
+these automated results do not mark any interactive row passed.
 Use a disposable OS user/VM where possible. Launch the extracted app without installing
 Python or project libraries. Preserve the bundled libraries beside the executable.
 

@@ -2454,8 +2454,22 @@ recovery. Runtime schemas/dependency versions are unchanged; Mac Intel remains e
 The acceptance record distinguishes automated hosted-runner checks from interactive
 clean consumer-machine acceptance. The manual record template leaves OS approval prompts,
 file dialogs, graph gestures, accessibility and other interactive checks explicitly pending.
-This source update does not declare V0.1 complete or publish a stable release. Final native
-and source run evidence is recorded after completion in docs/ACCEPTANCE.md and docs/RELEASES.md.
+The completed source run passed 661 tests per platform, lint, locked version/dependency checks
+and source archive/wheel builds. Native build and fresh-runner qualification passed on all
+three targets from clean source `6fd97686a644cc9eb252080e20462209d631e5ba`. Each frozen app
+passed eleven offline checks and bounded live workflows on both networks. Reviewing the
+initial Windows screenshot exposed unreadable native tabs; explicit dark tab styling fixes
+the contrast in the final reviewed build. Native binaries and local GUI captures remain outside Git.
+
+Testnet payment-history timeouts occurred in the first Linux/macOS qualification attempt
+and the second macOS attempt. Failed qualification jobs were rerun against unchanged archives;
+Linux then passed on attempt 2 and macOS on attempt 3, with Windows passing on attempt 1.
+Retain those failed observations as an availability limitation. Successful samples do not
+prove continuous provider health. Built-in SAC samples did not exercise live WASM
+specifications or explicit storage-key queries. Exact run links, artifacts, request counts,
+retained ledger ranges and outstanding checks are recorded in docs/ACCEPTANCE.md and
+docs/RELEASES.md. Interactive clean-machine acceptance remains Not run. This version does
+not declare V0.1 complete or publish a stable release.
 
 Next planned slice: interactive candidate acceptance on the three target desktops, fixing
 verified findings and closing the remaining V0.1 gates before release publication.

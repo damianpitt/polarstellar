@@ -50,10 +50,11 @@ X11 Qt plugin; macOS and Windows use their native Qt plugins. Validation checks:
 The matching `native-validation-<target>` workflow artifact contains `BUILD_INFO.json`,
 `validation.json` and `startup.png`; the `PolarStellar-<target>` artifact contains the archive
 and its checksum. Small reports can be reviewed separately from the application download.
-These checks do not make live
-network requests, test every feature, prove compatibility with every OS version, or replace
-interactive clean-machine release testing. Existing source tests and live provider checks
-have their own scope. A successful workflow is a pre-alpha packaging validation result.
+The build-stage startup checks use offline fixtures. Separate fresh-runner qualification
+jobs run the extracted app's eleven offline checks and then explicitly run live Mainnet/Testnet
+provider checks. Neither stage tests every feature, proves compatibility with every OS
+version, or replaces interactive clean-machine release testing. A successful workflow is
+a pre-alpha packaging and automated runtime qualification result.
 
 The bundle includes `BUILD_INFO.json` with source commit, version, platform, architecture
 and build-tool versions, plus project license and third-party license information. Adjacent
@@ -65,13 +66,13 @@ on a separate fresh runtime runner, without installing project/Qt/SDK packages. 
 archive integrity/provenance, eleven offline startup/desktop checks and opt-in live checks
 from the frozen executable against both networks. See [acceptance gates](ACCEPTANCE.md)
 and the [interactive acceptance record](MANUAL_ACCEPTANCE.md) for the distinction between
-automated qualification and remaining manual desktop review. Final run links will be
-recorded after completion; the latest historical native bundles described below are 0.0.27.
+automated qualification and remaining manual desktop review. The completed 0.0.31 evidence
+and downloads are recorded below; older version records remain historical.
 
 Source acceptance fixes contain export-preparation
 failures, prevent stale local investigation saves overwriting newer evidence, and disable
 asset navigation for incomplete payment rows. See [acceptance and release gates](ACCEPTANCE.md)
-for completed checks and outstanding live/clean-machine qualification.
+for completed checks, observed provider timeouts and outstanding interactive qualification.
 Source startup checks include account authority with
 reported zero weights/thresholds and reserve sponsors, plus saved graph/timeline
 comparison with independent filter/source coverage, saved investigation search
@@ -87,8 +88,57 @@ saved transaction/effects comparison through the offline dialog and JSON export,
 and navigation. These checks use local fixtures without network requests or contract execution.
 Native builds and workflow artifact uploads resumed successfully for 0.0.23 on Linux x86_64,
 Windows x86_64 and macOS Apple Silicon only. The completed 0.0.11 checks below remain historical.
-The latest validated native apps are 0.0.27. Packaging runs at selected development steps
+The latest validated native apps are 0.0.31. Packaging runs at selected development steps
 on Linux x86_64, Windows x86_64 and Apple Silicon.
+
+## Completed 0.0.31 qualification
+
+The [source run](https://github.com/damianpitt/polarstellar/actions/runs/45315580984) passed
+**661 tests per platform**, Ruff, locked dependencies, version checks and source archive/wheel
+builds on Linux, macOS and Windows. The [native run](https://github.com/damianpitt/polarstellar/actions/runs/45315599985)
+built all three archives from clean commit `6fd97686a644cc9eb252080e20462209d631e5ba`.
+Each package job passed the same 661 source tests and eleven frozen-app offline checks.
+Manifests and native startup screenshots were downloaded and reviewed; Windows tab contrast
+was corrected before producing these final archives.
+
+Separate fresh hosted runners downloaded and SHA-256-verified those exact archives, checked
+source/version/platform/architecture, and launched the frozen apps without installing project,
+Qt or SDK Python packages. All eleven offline checks and both networks' live Horizon/RPC
+workflows passed. Native plugins were `xcb`, `cocoa` and `windows`; macOS ad-hoc signatures
+were verified. Desktop fixtures and saved notes use disposable storage.
+
+| Target | Archive/checksum artifact | Uploaded artifact size | Build reports | Successful fresh-runner evidence |
+| --- | --- | --- | --- | --- |
+| Linux x86_64 | [Download](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14884709035) | 89,256,445 bytes (89.3 MB) | [Reports](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14884589310) | [Qualification](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14885621075), attempt 2 |
+| macOS arm64 | [Download](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14884798845) | 51,369,381 bytes (51.4 MB) | [Reports](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14884963722) | [Qualification](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14885289188), attempt 3 |
+| Windows x86_64 | [Download](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14885368046) | 64,627,653 bytes (64.6 MB) | [Reports](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14884544647) | [Qualification](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14884769181), attempt 1 |
+
+These are workflow artifact sizes, including the application archive and matching checksum.
+All downloads require GitHub access and expire after 30 days; binaries remain outside Git.
+Small build reports are 34–81 KB and successful qualification reports are 38–85 KB. Later
+documentation commits record results; bundled documents retain the exact build commit above.
+
+The first qualification attempt timed out loading the same sampled Testnet account's payments
+on Linux and macOS; the second macOS attempt timed out on another sampled account's payments.
+Those failed reports remain available: [Linux attempt 1](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14883824766),
+[macOS attempt 1](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14885685378)
+and [macOS attempt 2](https://github.com/damianpitt/polarstellar/actions/runs/45315599985/artifacts/14885750018).
+Only failed qualification jobs were rerun, reusing unchanged archives; no timeouts were
+converted to passes and no provider checks were skipped. Later sampled accounts passed.
+These observations establish bounded successful workflows, not reliable availability for
+every account or continuous endpoint health. Timeout/retry behavior remains part of manual review.
+
+All successful native live samples selected built-in SACs, so WASM specification checks were
+not sampled and explicit storage-key reads were not requested. Testnet failed transactions
+were sampled on each successful target; Mainnet failed transactions were not sampled in those
+final native observations. Activity second pages were exercised where available; some macOS
+sample histories ended on the first page. Effect pages can be empty. See
+[acceptance evidence and coverage](ACCEPTANCE.md) for request counts and retained ledger ranges.
+
+Interactive clean consumer-machine acceptance remains **Not run**, as recorded in the
+[manual template](MANUAL_ACCEPTANCE.md). OS approval prompts, native file dialogs, graph
+gestures, scaling/accessibility and realistic interrupted workflows remain release gates.
+This is automated pre-alpha qualification, without a V0.1 tag or published stable release.
 
 The [0.0.30 source run](https://github.com/damianpitt/polarstellar/actions/runs/45098254242)
 passed all 639 tests per platform, Ruff, locked dependency/version checks and Python source
@@ -221,8 +271,10 @@ they do not publish a GitHub release automatically.
 
 1. Align package version, lockfile, README, specification and changelog.
 2. Run source checks and the Native builds workflow for that exact commit.
-3. Review each build report and rendered screenshot, and record failed targets honestly.
-4. Download the successful archives and matching checksums; verify their integrity.
+3. Review build and fresh-runner qualification reports, live coverage and rendered screenshots;
+   record failed targets and unobserved workflows honestly.
+4. Download the successful archives and matching checksums; verify their integrity and exact
+   version/source commit against the reviewed candidate.
 5. Create a draft pre-release with those artifacts and the validation limits in its notes.
 6. Perform interactive startup/investigation/export checks on clean target machines before
    promoting a bundle to broader platform support or a stable release.

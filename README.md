@@ -61,18 +61,18 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source version: **0.0.31**. Latest completed native validation: **0.0.27**; the
-0.0.31 packaging and fresh-runner qualification results will be recorded after completion.
-Account authority/sponsorship, saved graph/timeline comparison and acceptance fixes are available from source.
-Bundles include watchlist batch
-refresh, investigation search, and resource/transaction snapshot comparison.
-Download the Linux x86_64,
+Current source and latest validated native version: **0.0.31**. Download the Linux x86_64,
 Windows x86_64 or macOS Apple Silicon archive/checksum artifact from the
-[successful native run](https://github.com/damianpitt/polarstellar/actions/runs/44838820941).
-Separate `native-validation-<target>` artifacts contain small manifests, reports and screenshots.
-All three extracted apps passed eight offline checks and their uploads completed. See
-[release documentation](docs/RELEASES.md) for sizes, tested commit and validation limits.
-Public release publication remains separate from these workflow artifacts.
+[successful native run](https://github.com/damianpitt/polarstellar/actions/runs/45315599985).
+Each extracted app passed eleven offline desktop checks on a separate fresh hosted runner,
+then passed bounded live Horizon/RPC checks against Mainnet and Testnet. Earlier Testnet
+payment-history timeouts remain documented; a later passing sample does not establish
+continuous provider availability.
+
+Separate `native-validation-<target>` and `qualification-<target>` artifacts contain small
+manifests, reports and screenshots. See [release documentation](docs/RELEASES.md) for direct
+downloads, sizes, tested commit, rerun history and coverage limits. Artifacts expire after
+30 days. Interactive clean-machine review and public release publication remain pending.
 
 Extract the complete archive, then launch the Linux executable, Windows `.exe`, or macOS
 `.app` inside `PolarStellar`. Runtime Python/uv installation is unnecessary. Keep the bundled
@@ -1126,21 +1126,22 @@ SQLite files, credentials, and local working files are excluded by `.gitignore`.
 
 Portable native packaging is implemented. Further planned areas include:
 
-- V0.1 release qualification: fresh live endpoint checks and interactive clean-machine review.
+- V0.1 interactive candidate acceptance on clean Linux, macOS and Windows desktops.
 - Broader asset metadata and additional contract-token discovery.
 - Additional result/effect payload interpretation.
 - Further SDK/address compatibility as supported formats evolve.
 - Optional historical analytics through Hubble.
-- Signed/notarized distributions, installers, and clean-machine release qualification.
+- Signed/notarized distributions and system installers.
 
 The project specification tracks planned capabilities, release boundaries, and acceptance criteria.
 
 The original V0.1 roadmap's 16 functional workflow areas have implementations, with documented
 data and decoding limits. Account authority details are implemented in 0.0.29, and 0.0.30
 adds acceptance fixes for export preparation, incomplete payment rows and stale local
-investigation saves. Its polished cross-platform interface requirement still needs
-interactive acceptance. Remaining release work includes fresh live endpoint checks,
-clean-machine testing and resolution of any findings from those checks.
+investigation saves. Version 0.0.31 adds completed automated native/fresh-runner checks and
+bounded live provider observations on both networks. The polished cross-platform interface
+requirement still needs interactive acceptance: OS approval prompts, native file dialogs,
+graph gestures, accessibility and any findings from clean-machine review remain pending.
 The wider vision includes later trades/offers, monitoring, historical indexing and Hubble.
 See the V0.1 readiness review in the specification for the distinction between implemented
 capabilities and release qualification.

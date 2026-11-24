@@ -1,7 +1,7 @@
 # V0.1 acceptance and release gates
 
 Review date: **2026-11-24**. Current source: **0.0.31, pre-alpha**.
-Latest validated portable native apps: **0.0.27**.
+Latest validated portable native apps: **0.0.31**.
 
 PolarStellar is an open-source project, not affiliated with the Stellar Development Foundation.
 
@@ -86,17 +86,61 @@ runtime behavior on fresh hosted systems; they do not establish interactive usab
 download/quarantine approval or universal OS/distribution compatibility. Use the
 [manual acceptance record](MANUAL_ACCEPTANCE.md) for those remaining checks.
 
-Final 0.0.31 source, live and native run results will be entered after completion. The earlier
-0.0.30 record above remains historical. No V0.1 completion or public stable release is implied.
+### Completed 0.0.31 evidence
+
+- [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/45315580984): **661 tests
+  passed on each platform**, with Ruff, locked dependency/version checks and source archive/
+  wheel builds. Local lint/format, 661 tests, lockfile and archive inspection also pass.
+- [Native build and qualification](https://github.com/damianpitt/polarstellar/actions/runs/45315599985):
+  all three package jobs passed 661 tests, built and extracted the archives, and passed eleven
+  offline checks. Exact clean build source: `6fd97686a644cc9eb252080e20462209d631e5ba`.
+- Fresh runtime jobs verified archive hashes/manifests, absent launcher runtime packages and
+  native Qt plugins, then passed eleven offline desktop checks and live workflows on both
+  networks. Linux passed on attempt 2, macOS on attempt 3 and Windows on attempt 1.
+  The same archives were reused; earlier provider failures remain recorded below.
+- Downloaded manifests, startup reports/screenshots and successful qualification reports
+  were reviewed. The [release record](RELEASES.md#completed-0031-qualification) links each archive,
+  checksum, successful report and failed-attempt report, with artifact sizes and 30-day retention.
+
+Successful frozen-app observations, all on 2026-11-24 UTC:
+
+| Target | Observation time | Mainnet / Testnet request count | Mainnet RPC retained ledgers | Testnet RPC retained ledgers |
+| --- | --- | --- | --- | --- |
+| Linux x86_64 | 02:59:02–02:59:07 | 27 / 29 | 65,519,659–65,640,618 | 5,772,141–5,893,100 |
+| macOS arm64 | 03:00:30–03:00:36 | 25 / 28 | 65,519,677–65,640,636 | 5,772,159–5,893,118 |
+| Windows x86_64 | 02:56:52–02:56:56 | 27 / 29 | 65,519,633–65,640,592 | 5,772,115–5,893,074 |
+
+Both Horizon endpoints reported 30.0.1 and the expected network passphrases; both RPC providers
+reported healthy retained ranges. Counts include discovery and every production-provider read,
+within the per-network 64-request ceiling. Each successful native run checked account/activity,
+successful transaction/result/effect queries, exact asset identity, both native SAC instances
+and two contract-event pages. Available second activity pages were fetched; macOS's sampled
+Mainnet operation/payment history and Testnet payment history ended on the first page.
+Testnet failed-transaction examples were observed on all targets. Mainnet failed examples
+were not in the final native sample pages; the local source live check sampled them separately.
+
+**Known limits and failed observations:** Linux/macOS attempt 1 timed out on the same Testnet
+account's payment history; macOS attempt 2 timed out on another Testnet account's payments.
+Mainnet and both RPC workflows passed in those attempts. No root cause is established by
+these reports. Later samples passed with unchanged code and archives; they do not erase
+the timeouts or establish reliability for every account. Keep timeout/retry behavior in the
+interactive acceptance review. Empty effects do not establish absence of historical changes.
+
+The selected contracts were built-in SACs, so pinned WASM specifications remain **not sampled
+live**. Explicit storage-key reads remain **not queried**, without an explicitly supplied key.
+Those paths have offline fixture coverage but require separate targeted live desktop review.
+The 50-ledger event discovery window and two event pages are bounded observations, not lifetime
+coverage. No personal cache, investigation or watchlist database was opened by live checks. The earlier 0.0.30 record
+remains historical. V0.1 and interactive clean consumer-machine acceptance remain pending.
 
 Review of the first Windows native screenshot found pale text on light native tab faces.
 Explicit dark tab/pane styling fixes the contrast for normal, selected, hover and disabled
 states. Rebuilt native screenshots provide the final rendering evidence. Interactive checks
-remain the documented next step; no interactive clean Linux/Windows machines were supplied.
+remain the documented next step and are not counted as automated passes.
 
 ## Remaining planned slice: interactive release acceptance
 
-1. Run bounded, read-only Horizon/RPC checks against the selected network. Record query
+1. Repeat bounded, read-only Horizon/RPC checks when reviewing the selected candidate. Record query
    identity, endpoint, retrieval time, available ledgers and history limits. Use only public
    identifiers; never request keys or sign/submit transactions.
 2. Exercise the release candidate interactively on clean Linux x86_64, macOS Apple Silicon
