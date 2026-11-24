@@ -60,7 +60,15 @@ and build-tool versions, plus project license and third-party license informatio
 `.sha256` files allow integrity verification. Checksums alone do not authenticate an unsigned
 publisher; obtain both archive and checksum from the same trusted repository release.
 
-Current source version: **0.0.30**. Source acceptance fixes contain export-preparation
+Current source version: **0.0.31**. The native workflow now verifies each downloaded bundle
+on a separate fresh runtime runner, without installing project/Qt/SDK packages. It verifies
+archive integrity/provenance, eleven offline startup/desktop checks and opt-in live checks
+from the frozen executable against both networks. See [acceptance gates](ACCEPTANCE.md)
+and the [interactive acceptance record](MANUAL_ACCEPTANCE.md) for the distinction between
+automated qualification and remaining manual desktop review. Final run links will be
+recorded after completion; the latest historical native bundles described below are 0.0.27.
+
+Source acceptance fixes contain export-preparation
 failures, prevent stale local investigation saves overwriting newer evidence, and disable
 asset navigation for incomplete payment rows. See [acceptance and release gates](ACCEPTANCE.md)
 for completed checks and outstanding live/clean-machine qualification.

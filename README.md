@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.30 · Pre-alpha**
+**Current version: 0.0.31 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.30 |
+| Area | Available in 0.0.31 |
 | --- | --- |
 | Account lookup | G-address validation, exact balances/trustlines, signers, thresholds, flags, and reserve sponsorship |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -46,6 +46,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Watchlists | Local lists, offline filters, portable JSON, annotations, manual batch refresh and snapshot-pair comparison |
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
+| Release checks | Opt-in bounded live checks and separate fresh-runner native qualification |
 
 > **Pre-alpha:** native portable builds are unsigned preview applications. System installers,
 > signing/notarization, storage-key discovery and source-code verification remain planned.
@@ -60,7 +61,8 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source version: **0.0.30**. Latest validated native version: **0.0.27**.
+Current source version: **0.0.31**. Latest completed native validation: **0.0.27**; the
+0.0.31 packaging and fresh-runner qualification results will be recorded after completion.
 Account authority/sponsorship, saved graph/timeline comparison and acceptance fixes are available from source.
 Bundles include watchlist batch
 refresh, investigation search, and resource/transaction snapshot comparison.
@@ -1148,9 +1150,17 @@ capabilities and release qualification.
 - [Full project specification](PolarStellar_Project_Spec.md) — vision, architecture, scope, and roadmap.
 - [Changelog](CHANGELOG.md) — versioned features, fixes, limitations, and validation notes.
 - [Acceptance and release gates](docs/ACCEPTANCE.md) — completed source checks and remaining V0.1 qualification.
+- [Interactive acceptance template](docs/MANUAL_ACCEPTANCE.md) — record checks on clean target machines.
 - [GitHub Actions](https://github.com/damianpitt/polarstellar/actions) — automated platform checks.
 
-Run the local checks:
+To explicitly check current public Mainnet/Testnet providers, run
+`uv run polarstellar --live-check --live-report dist/qualification/live.json`.
+This sends public sample identifiers to the fixed Horizon/RPC endpoints and writes a local
+JSON report without opening personal libraries. It does not sign or submit transactions.
+An empty history, unobserved WASM specification or unqueried storage key is recorded as
+limited coverage. Live availability is checked separately from the offline test suite.
+
+Run the offline local checks:
 
 ```sh
 uv run ruff check .

@@ -1,6 +1,6 @@
 # V0.1 acceptance and release gates
 
-Review date: **2026-11-23**. Current source: **0.0.30, pre-alpha**.
+Review date: **2026-11-24**. Current source: **0.0.31, pre-alpha**.
 Latest validated portable native apps: **0.0.27**.
 
 PolarStellar is an open-source project, not affiliated with the Stellar Development Foundation.
@@ -64,7 +64,32 @@ investigations and watchlists can still be read without waiting for its write lo
 - Native builds/uploads: not run for this source slice. The validated 0.0.27 artifacts
   remain described in [release documentation](RELEASES.md).
 
-## Next planned slice: release qualification
+## Qualification automation in 0.0.31
+
+`polarstellar --live-check --live-report <path.json>` explicitly runs bounded Mainnet and
+Testnet provider checks using production parsers. It selects public samples from one recent
+transaction page and one recent event page, with fixed origins, read-only request guards,
+64-request/150-second limits per network and independent failure reporting. Empty history
+does not establish absence. WASM specifications are checked only when sampled; arbitrary
+storage keys are not discovered or queried. No personal libraries are opened.
+
+The native workflow now has **separate fresh-runner jobs**. Each downloads a built archive,
+verifies its checksum and source/version/architecture manifest, extracts it and launches the
+frozen executable without installing the project's Python/Qt/SDK dependencies. Linux uses
+X11/Xvfb; macOS and Windows use their native Qt plugins. The disposable desktop check now
+includes clicks through all navigation pages at compact size, notes/labels reopening and
+invalid-search recovery. The same extracted executable runs live checks against both networks.
+Reports retain evidence and limitations in `qualification-<target>` artifacts.
+
+Hosted runners contain preinstalled OS tools. These jobs establish automated standalone
+runtime behavior on fresh hosted systems; they do not establish interactive usability,
+download/quarantine approval or universal OS/distribution compatibility. Use the
+[manual acceptance record](MANUAL_ACCEPTANCE.md) for those remaining checks.
+
+Final 0.0.31 source, live and native run results will be entered after completion. The earlier
+0.0.30 record above remains historical. No V0.1 completion or public stable release is implied.
+
+## Remaining planned slice: interactive release acceptance
 
 1. Run bounded, read-only Horizon/RPC checks against the selected network. Record query
    identity, endpoint, retrieval time, available ledgers and history limits. Use only public

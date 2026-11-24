@@ -22,7 +22,30 @@ def main() -> int:
     parser.add_argument(
         "--smoke-screenshot", type=Path, help="Save the checked window for release review"
     )
+    parser.add_argument(
+        "--live-check",
+        action="store_true",
+        help="Run explicit read-only Mainnet/Testnet release checks without opening the desktop",
+    )
+    parser.add_argument(
+        "--live-report", type=Path, help="Write the opt-in live qualification JSON report"
+    )
     args = parser.parse_args()
+    if args.live_check:
+        if args.live_report is None:
+            parser.error("--live-check requires --live-report")
+        if args.smoke_test or args.smoke_report or args.smoke_screenshot:
+            parser.error("Live checks and offline smoke checks are separate commands")
+        # This opt-in path has no QApplication or local storage. Windowed native
+        # apps must write a report because they may have no attached console.
+        from polarstellar.stellar.live_checks import qualify
+
+        report = asyncio.run(qualify())
+        args.live_report.parent.mkdir(parents=True, exist_ok=True)
+        args.live_report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        return 0 if report["status"] == "passed" else 1
+    if args.live_report:
+        parser.error("--live-report requires --live-check")
     if args.smoke_test and args.smoke_report is None:
         parser.error("--smoke-test requires --smoke-report")
     if not args.smoke_test and (args.smoke_report or args.smoke_screenshot):

@@ -10,6 +10,75 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.31] - 2026-11-24
+
+### Added — opt-in live release qualification
+
+- Run `polarstellar --live-check --live-report <path.json>` to check Mainnet and Testnet
+  through the application's production Horizon/RPC parsers without opening the desktop.
+  Normal startup performs no qualification requests. The report path is required, including
+  for windowed native applications that have no console. Offline smoke checks remain separate.
+- Verify Horizon's network passphrase before accepting recent public samples. Check account
+  balances, transactions/operations/payments and available second pages, one successful
+  transaction's ordered/result evidence and one operation's effects, and issued-asset discovery
+  with an exact issuer-bound lookup. A failed transaction is sampled only when present in
+  the single recent transaction page; its absence is recorded without inventing coverage.
+- Verify RPC network identity and reported health/retention. Discover at most 20 events in
+  the last 50 available ledgers, inspect one selected contract instance, exercise up to two
+  contract-filtered event pages, and check the network's derived native-XLM SAC identity.
+  Fetch a pinned specification only if the selected contract has a WASM executable. Mark
+  unobserved WASM interfaces explicitly. Storage-key reads remain unqueried without an
+  explicitly supplied key; this check does not enumerate contract storage.
+- Reports include exact public sample identifiers, endpoints, UTC times, cursors, available
+  ledger ranges, request outcomes and independent failed checks. A failed workflow gives a
+  failed overall result and nonzero exit code. Empty/partial history stays labelled. Reports
+  are provider observations, not proof of ownership or independently verified consensus.
+- Enforce a 64-request limit and 150-second deadline per network, fixed HTTPS origins,
+  GET-only Horizon access and the existing four read-only RPC methods. Refuse transaction
+  submission and foreign/redirect origins before transport access. Bound discovery JSON
+  replies to 5 MB. No cache, watchlist or investigation database is opened by the live check.
+
+### Native runtime and desktop acceptance automation
+
+- Extend offline native/source checks with actual Qt widget clicks through all nine pages
+  at 800 × 520, readable account authority, saving/reopening notes and labels without lost
+  evidence, and invalid-search recovery. Eleven named startup/desktop checks now run using
+  temporary fixture data. This does not automate system file dialogs or OS download prompts.
+- Add separate fresh-runner qualification jobs after native packaging. Download each exact
+  Linux x86_64, macOS Apple Silicon or Windows x86_64 artifact, verify SHA-256, expected
+  version/source commit/platform/architecture/clean manifest, and macOS bundle signatures.
+  Extract and run from a disposable directory with host Python/Qt path overrides removed.
+- The new jobs do not install PolarStellar, PySide6, HTTPX, NetworkX or stellar-sdk. An
+  isolated standard-library Python launcher verifies the frozen program's native Qt plugin,
+  required desktop workflows and independent live checks on both networks. Small
+  `qualification-<target>` artifacts retain JSON results, logs and a fixture desktop image.
+  Binary archives remain workflow artifacts outside Git; Mac Intel remains excluded.
+- Bundles include the public scope and acceptance documents under their repository-relative
+  paths, keeping the README's documentation links usable after extraction. Copies remain
+  an explicit allowlist; local project guidance, captures and databases are excluded.
+- Pin the artifact-download action to verified v8.0.2. Runtime application dependencies and
+  local database schemas are unchanged. The packaged runtime includes Qt's widget-testing
+  support for automated desktop clicks. Normal user navigation is unchanged.
+
+### Documentation and validation
+
+- Add a manual acceptance record template and explain the difference between automated
+  fresh-runner qualification and interactive clean consumer-machine acceptance. V0.1 remains
+  pending the latter; this version does not publish a stable release or claim OS signing,
+  notarization or installers. Align package metadata, lockfile, README and scope at 0.0.31.
+- Initial local live checks passed both networks with real public provider observations;
+  the chosen contracts had built-in executables, so WASM specifications were not sampled.
+  Record exact final source/native/platform results after the qualification run completes.
+- Regression tests cover successful provider workflows, network mismatch, pagination errors,
+  RPC rate limits, timeout reporting, prohibited writes/origins, request budgets, altered
+  checksums, wrong native identity/plugin/coverage, incomplete live reports and CLI opt-in.
+- Local validation passes all **661 tests**, Ruff lint/format, version/lockfile checks,
+  source archive/wheel builds and all eleven offline checks with macOS Cocoa rendering.
+  Final local live checks passed both networks with 29 public read requests each, including
+  failed-transaction samples; WASM and explicitly supplied storage-key coverage remain limited
+  as described above. Source CI and native/fresh-runner results are pending this version's push.
+- The local `Software GUI` collection stays ignored and outside all source/native packages.
+
 ## [0.0.30] - 2026-11-23
 
 ### Fixed — acceptance and local evidence safeguards

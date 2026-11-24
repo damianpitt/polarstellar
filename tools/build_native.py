@@ -253,9 +253,14 @@ def main():
         ROOT / "LICENSE",
         ROOT / "README.md",
         ROOT / "CHANGELOG.md",
-        ROOT / "docs" / "RELEASES.md",
+        ROOT / "PolarStellar_Project_Spec.md",
     ):
         shutil.copy2(path, staged / path.name)
+    # Preserve the repository's relative documentation links in the extracted app.
+    # Only explicitly named public documents are copied, never the whole checkout.
+    (staged / "docs").mkdir()
+    for name in ("RELEASES.md", "ACCEPTANCE.md", "MANUAL_ACCEPTANCE.md"):
+        shutil.copy2(ROOT / "docs" / name, staged / "docs" / name)
     notices(staged / "THIRD_PARTY_NOTICES.txt")
     commit = run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True

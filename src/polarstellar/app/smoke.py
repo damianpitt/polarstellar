@@ -10,8 +10,9 @@ from pathlib import Path
 import certifi
 import httpx
 import networkx as nx
-from PySide6.QtCore import QTimer, qVersion
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import Qt, QTimer, qVersion
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication, QPushButton
 from stellar_sdk import StrKey, scval
 
 from polarstellar import __version__
@@ -364,6 +365,70 @@ def validate_asset_contract_identity():
     assert result["status"].startswith("Confirmed")
 
 
+async def validate_desktop(window, root, address):
+    """Exercise actual widget clicks, compact navigation, saved notes and invalid-input recovery.
+
+    These are automated native-window checks using disposable evidence. System file
+    dialogs and operating-system download approval prompts still need interactive review.
+    """
+    window.resize(800, 520)
+    for index in range(9):
+        item = window.navigation.item(index)
+        window.navigation.scrollToItem(item)
+        QTest.mouseClick(
+            window.navigation.viewport(),
+            Qt.MouseButton.LeftButton,
+            pos=window.navigation.visualItemRect(item).center(),
+        )
+        await asyncio.sleep(0.03)
+        if 0 < index < 4:
+            task = window.activity_views[index - 1].task
+            if task:
+                await task
+        assert window.pages.currentIndex() == index
+    window.navigation.setCurrentRow(0)
+    window.overview_tabs.setCurrentIndex(1)
+    await asyncio.sleep(0.05)
+    assert window.authority.details.height() >= 140
+    assert window.explorer_scroll.horizontalScrollBar().maximum() == 0
+    window.overview_tabs.setCurrentIndex(0)
+    library = window.investigations
+    identity = library.current["id"]
+    count = len(library.current["entries"])
+    library.notes.setPlainText("Disposable qualification note; not a network fact.")
+    library.labels.setText("qualification, offline")
+    window.navigation.setCurrentRow(7)
+    save = next(
+        button
+        for button in library.findChildren(QPushButton)
+        if button.text() == "Save name / notes / labels"
+    )
+    QTest.mouseClick(save, Qt.MouseButton.LeftButton)
+    saved = next(
+        item
+        for item in InvestigationStore(root / "investigations.sqlite3").list()
+        if item["id"] == identity
+    )
+    assert saved["notes"] == library.notes.toPlainText()
+    assert saved["labels"] == "qualification, offline" and len(saved["entries"]) == count
+    library.reload(identity)
+    assert not library.unsaved_annotations()
+    window.navigation.setCurrentRow(0)
+    window.search.setText("invalid-release-check-address")
+    QTest.mouseClick(window.submit, Qt.MouseButton.LeftButton)
+    if window.task:
+        await window.task
+    assert window.account is None and "valid" in window.message.text().lower()
+    window.search.setText(address)
+    QTest.mouseClick(window.submit, Qt.MouseButton.LeftButton)
+    if window.task:
+        await window.task
+    assert window.account is not None and window.account.address == address
+    window.resize(1180, 760)
+    await asyncio.sleep(0.05)
+    return ["desktop_compact_navigation", "desktop_notes_reopen", "desktop_invalid_search_recovery"]
+
+
 async def validate(window, root, screenshot=None):
     """Exercise bundled dependencies and Qt navigation without contacting any public endpoint.
 
@@ -381,6 +446,25 @@ async def validate(window, root, screenshot=None):
 
     def respond(request):
         """Serve exact fixture balances; unexpected network paths fail instead of going live."""
+        if request.url.path in [
+            f"/accounts/{address}/{kind}" for kind in ("transactions", "operations", "payments")
+        ]:
+            row = {
+                "paging_token": "10",
+                "id": "10",
+                "created_at": "2026-11-24T00:00:00Z",
+                "source_account": address,
+                "type": "payment",
+                "transaction_successful": True,
+                "transaction_hash": "0" * 64,
+                "from": address,
+                "to": issuer,
+                "asset_type": "native",
+                "amount": "1.0000001",
+            }
+            if request.url.path.endswith("/transactions"):
+                row.update(hash="0" * 64, successful=True, operation_count=1, fee_charged="100")
+            return httpx.Response(200, json={"_embedded": {"records": [row]}})
         if request.url.path != f"/accounts/{address}":
             raise AssertionError("Unexpected smoke-test request")
         return httpx.Response(
@@ -605,6 +689,7 @@ async def validate(window, root, screenshot=None):
         await asyncio.sleep(0.01)
     assert window.pages.currentIndex() == 0 and ticks
     checks.append("qt_navigation_and_async_event_loop")
+    checks.extend(await validate_desktop(window, root, address))
     timer.stop()
     if screenshot:
         window.grab().save(str(screenshot))

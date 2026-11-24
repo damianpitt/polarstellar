@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.30 with acceptance safeguards for exports and local evidence saves, account authority/sponsorship and activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction/graph/timeline comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.31 with acceptance safeguards for exports and local evidence saves, account authority/sponsorship and activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction/graph/timeline comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2425,3 +2425,37 @@ or imply new native bundles. Latest validated native applications remain 0.0.27.
 The next planned slice is release qualification: fresh read-only Horizon/RPC checks,
 interactive clean-machine testing on Linux, macOS Apple Silicon and Windows, fixes for
 verified findings, and a documented V0.1 candidate. No Mac Intel build is planned.
+
+
+## V0.0.31 implemented slice — release qualification automation
+
+An explicit `--live-check --live-report <path.json>` mode uses production Horizon/RPC
+parsers without opening desktop libraries. Check both networks independently, verify
+passphrases/health, inspect public account/activity/transaction/effects/asset samples, and
+read an event-selected contract, available event pagination, native-XLM SAC and a pinned
+WASM specification only when sampled. Retain public identifiers, providers, UTC times,
+cursors, ledger ranges and independent failures. Never infer absent history or ownership.
+
+Qualification is bounded to 64 requests and 150 seconds per network. Discovery uses one
+recent transaction page and one 20-event page within 50 recent ledgers. Reject transaction
+writes and foreign origins before transport access. No arbitrary storage enumeration,
+user keys, wallet creation, signing or transaction submission is involved. A missing WASM
+sample or explicit storage key remains untested live coverage, with offline fixture coverage
+recorded separately. Normal launches do not run qualification requests.
+
+Native packaging now feeds separate fresh-runner qualification jobs for Linux x86_64,
+macOS Apple Silicon and Windows x86_64. Verify archive checksums and clean source/version/
+architecture manifests, extract and launch the frozen program in a disposable directory
+without installing project/Qt/SDK dependencies. Verify native Qt plugins, eleven offline
+startup/desktop workflows and read-only live checks from that executable. New Qt widget
+clicks cover nine-page compact navigation, saved notes/labels reopening and invalid-search
+recovery. Runtime schemas/dependency versions are unchanged; Mac Intel remains excluded.
+
+The acceptance record distinguishes automated hosted-runner checks from interactive
+clean consumer-machine acceptance. The manual record template leaves OS approval prompts,
+file dialogs, graph gestures, accessibility and other interactive checks explicitly pending.
+This source update does not declare V0.1 complete or publish a stable release. Final native
+and source run evidence is recorded after completion in docs/ACCEPTANCE.md and docs/RELEASES.md.
+
+Next planned slice: interactive candidate acceptance on the three target desktops, fixing
+verified findings and closing the remaining V0.1 gates before release publication.
