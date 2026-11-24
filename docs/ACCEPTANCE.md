@@ -89,6 +89,11 @@ download/quarantine approval or universal OS/distribution compatibility. Use the
 Final 0.0.31 source, live and native run results will be entered after completion. The earlier
 0.0.30 record above remains historical. No V0.1 completion or public stable release is implied.
 
+Review of the first Windows native screenshot found pale text on light native tab faces.
+Explicit dark tab/pane styling fixes the contrast for normal, selected, hover and disabled
+states. Rebuilt native screenshots provide the final rendering evidence. Interactive checks
+remain the documented next step; no interactive clean Linux/Windows machines were supplied.
+
 ## Remaining planned slice: interactive release acceptance
 
 1. Run bounded, read-only Horizon/RPC checks against the selected network. Record query

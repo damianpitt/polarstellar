@@ -56,6 +56,10 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 - Bundles include the public scope and acceptance documents under their repository-relative
   paths, keeping the README's documentation links usable after extraction. Copies remain
   an explicit allowlist; local project guidance, captures and databases are excluded.
+- Reviewing the first Windows native screenshot exposed pale tab text on light native tab
+  faces. Give normal, selected, hover and disabled tabs explicit dark backgrounds and readable
+  foregrounds, with a consistent pane border across platforms. This is a visual fix; the
+  available tabs, loaded evidence and selection behavior are unchanged.
 - Pin the artifact-download action to verified v8.0.2. Runtime application dependencies and
   local database schemas are unchanged. The packaged runtime includes Qt's widget-testing
   support for automated desktop clicks. Normal user navigation is unchanged.

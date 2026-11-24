@@ -263,6 +263,8 @@ class MainWindow(QMainWindow):
         # Native Windows/macOS styles can paint light table headers or dark selected
         # text despite the surrounding dark theme. Explicit foreground/background
         # pairs keep these important labels readable on every packaged platform.
+        # Style tabs too: Windows' classic native style otherwise paints a white
+        # tab face behind the inherited pale text, obscuring the selected section.
         self.setStyleSheet("""
             QWidget { background: #171b24; color: #e5e9f2; font-size: 14px; }
             QLineEdit, QComboBox, QListWidget {
@@ -275,6 +277,14 @@ class MainWindow(QMainWindow):
                 background: #202634; color: #e5e9f2;
                 border: 1px solid #343e52; padding: 5px;
             }
+            QTabWidget::pane { border: 1px solid #343e52; }
+            QTabBar::tab {
+                background: #202634; color: #e5e9f2;
+                border: 1px solid #343e52; padding: 6px 10px;
+            }
+            QTabBar::tab:selected { background: #34446a; color: #e5e9f2; }
+            QTabBar::tab:hover { background: #2b3448; color: #e5e9f2; }
+            QTabBar::tab:disabled { background: #202634; color: #a7b3cc; }
             QStatusBar { color: #a7b3cc; }
         """)
 
