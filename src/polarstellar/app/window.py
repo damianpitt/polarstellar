@@ -3,6 +3,7 @@
 import asyncio
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QActionGroup, QKeySequence
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -92,6 +93,7 @@ class MainWindow(QMainWindow):
         layout.setSpacing(20)
         header = QHBoxLayout()
         brand = QLabel(f"✦  POLARSTELLAR  {__version__}")
+        self.brand = brand
         brand.setStyleSheet("font-size: 22px; font-weight: 600;")
         header.addWidget(brand)
         header.addStretch()
@@ -122,6 +124,10 @@ class MainWindow(QMainWindow):
         content = QHBoxLayout()
         navigation = QListWidget()
         self.navigation = navigation
+        navigation.setAccessibleName("Explorer pages")
+        navigation.setAccessibleDescription(
+            "Choose a page with the arrow keys, or use the Navigate menu."
+        )
         navigation.addItems(
             [
                 "Overview",
@@ -265,7 +271,7 @@ class MainWindow(QMainWindow):
         # pairs keep these important labels readable on every packaged platform.
         # Style tabs too: Windows' classic native style otherwise paints a white
         # tab face behind the inherited pale text, obscuring the selected section.
-        self.setStyleSheet("""
+        self.base_style = """
             QWidget { background: #171b24; color: #e5e9f2; font-size: 14px; }
             QLineEdit, QComboBox, QListWidget {
                 background: #202634; border: 1px solid #343e52;
@@ -285,8 +291,73 @@ class MainWindow(QMainWindow):
             QTabBar::tab:selected { background: #34446a; color: #e5e9f2; }
             QTabBar::tab:hover { background: #2b3448; color: #e5e9f2; }
             QTabBar::tab:disabled { background: #202634; color: #a7b3cc; }
+            QLineEdit:focus, QComboBox:focus, QListWidget:focus,
+            QTableWidget:focus, QGraphicsView:focus, QPushButton:focus {
+                border: 2px solid #89b4fa;
+            }
             QStatusBar { color: #a7b3cc; }
-        """)
+        """
+        self.create_navigation_menus()
+        self.set_text_size(100)
+
+    def create_navigation_menus(self):
+        """Expose page/search navigation and session-only text sizing through native menus.
+
+        Menus provide an alternative to the sidebar for keyboard and accessibility
+        clients. Qt maps Ctrl shortcuts to Command on macOS. Disabled embedded
+        pages keep their menu actions disabled too; navigation never creates data.
+        """
+        navigate = self.menuBar().addMenu("&Navigate")
+        search = navigate.addAction("Focus investigation search")
+        search.setShortcut(QKeySequence.StandardKey.Find)
+        search.triggered.connect(self.focus_search)
+        navigate.addSeparator()
+        self.page_actions = []
+        for index in range(self.navigation.count()):
+            item = self.navigation.item(index)
+            action = navigate.addAction(item.text())
+            action.setEnabled(bool(item.flags() & Qt.ItemFlag.ItemIsEnabled))
+            action.setShortcut(QKeySequence(f"Ctrl+{index + 1}"))
+            action.triggered.connect(
+                lambda _checked=False, row=index: self.navigation.setCurrentRow(row)
+            )
+            self.page_actions.append(action)
+        view = self.menuBar().addMenu("&View")
+        text_size = view.addMenu("Text size")
+        self.text_size_actions = QActionGroup(self)
+        self.text_size_actions.setExclusive(True)
+        for percent in (100, 125, 150, 200):
+            action = text_size.addAction(f"{percent}%")
+            action.setCheckable(True)
+            action.setData(percent)
+            action.setChecked(percent == 100)
+            self.text_size_actions.addAction(action)
+            action.triggered.connect(lambda _checked=False, size=percent: self.set_text_size(size))
+
+    def focus_search(self):
+        """Focus and select the current search text without starting a request or losing evidence."""
+        self.search.setFocus(Qt.FocusReason.ShortcutFocusReason)
+        self.search.selectAll()
+
+    def set_text_size(self, percent):
+        """Resize interface text for this session while keeping Qt's native display scaling.
+
+        The old fixed pixel theme offered no in-app way to enlarge small text.
+        Only explicit menu sizes are accepted. Scrolling remains available when
+        enlarged controls exceed a compact window; saved data and OS settings
+        are unaffected, and a new session starts at 100 percent.
+        """
+        if percent not in (100, 125, 150, 200):
+            raise ValueError("Unsupported interface text size.")
+        self.text_size = percent
+        factor = percent / 100
+        self.setStyleSheet(
+            self.base_style.replace("font-size: 14px", f"font-size: {round(14 * factor)}px")
+        )
+        self.brand.setStyleSheet(f"font-size: {round(22 * factor)}px; font-weight: 600;")
+        self.navigation.setFixedWidth(round(180 * factor))
+        for action in self.text_size_actions.actions():
+            action.setChecked(action.data() == percent)
 
     def update_asset_actions(self, *_):
         """Prevent saving/bookmarking a previous inspector snapshot while viewing discovery rows."""

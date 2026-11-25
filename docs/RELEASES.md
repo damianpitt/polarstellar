@@ -61,7 +61,7 @@ and build-tool versions, plus project license and third-party license informatio
 `.sha256` files allow integrity verification. Checksums alone do not authenticate an unsigned
 publisher; obtain both archive and checksum from the same trusted repository release.
 
-Current source version: **0.0.31**. The native workflow now verifies each downloaded bundle
+Current source version: **0.0.32**; latest uploaded native candidate: **0.0.31**. The native workflow verifies each downloaded bundle
 on a separate fresh runtime runner, without installing project/Qt/SDK packages. It verifies
 archive integrity/provenance, eleven offline startup/desktop checks and opt-in live checks
 from the frozen executable against both networks. See [acceptance gates](ACCEPTANCE.md)
@@ -92,6 +92,10 @@ The latest validated native apps are 0.0.31. Packaging runs at selected developm
 on Linux x86_64, Windows x86_64 and Apple Silicon.
 
 ## Completed 0.0.31 qualification
+
+The later 0.0.32 source update adds desktop access improvements and records an
+[interactive macOS review](INTERACTIVE_ACCEPTANCE.md). It does not replace these uploaded
+archives or imply that Linux/Windows interactive checks have been completed.
 
 The [source run](https://github.com/damianpitt/polarstellar/actions/runs/45315580984) passed
 **661 tests per platform**, Ruff, locked dependencies, version checks and source archive/wheel

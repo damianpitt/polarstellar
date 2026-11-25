@@ -10,6 +10,53 @@ Add upcoming changes here as they are implemented. For each version update, move
 completed entries into a dated section and keep `pyproject.toml`, the package version,
 and the uv lockfile in sync. The application header and `--version` show the package version.
 
+## [0.0.32] - 2026-11-25
+
+### Desktop access and acceptance findings
+
+- Add a native **Navigate** menu for all nine explorer pages and **Focus investigation
+  search**. Use Ctrl+1 through Ctrl+9 on Linux/Windows or Command+1 through Command+9 on
+  macOS; the standard Find shortcut selects existing search text without issuing a request.
+  Embedded pages without storage remain disabled in both the sidebar and menu.
+- Add **View → Text size** with 100%, 125%, 150% and 200% options. Enlarge interface text,
+  the title and sidebar for the current session, preserving search, network and evidence.
+  Existing scrolling reaches controls in compact windows. This is separate from Qt's
+  native display-density scaling; it does not change OS settings or persist preferences.
+- Name the explorer sidebar, graph direction selector, relationship table and evidence
+  list for accessibility clients. Add a visible focus border to major input, table, graph
+  and button controls. These improvements do not constitute screen-reader certification.
+- Direct and expanded graph canvases accept **+ / =**, **−** and **0** while focused for
+  bounded zoom and fit. Arrow keys retain the graphics view's ordinary panning. Modified
+  application shortcuts and Tab are passed through; these keys do not request network data.
+- Fix a trackpad bug: horizontal-only gestures and zero-delta scroll boundaries previously
+  zoomed out. They now retain normal scrolling without changing zoom. Vertical pixel-delta
+  gestures zoom in the correct direction, with the same 0.1–5 scale limits as the keyboard.
+  Node dragging continues to update arrows without changing the underlying evidence.
+
+### Validation and release limits
+
+- Inspect the downloaded 0.0.31 macOS arm64 archive's SHA-256, clean source manifest and
+  ad-hoc signature before launching it on macOS 27.2.1. Perform a live public account lookup,
+  open/cancel the native save panel, save JSON and CSV, and observe recoverable save-error
+  feedback. Native overwrite confirmation can be declined without changing the existing
+  review export. Parsed outputs retain network, provider, retrieval time and exact amounts.
+- Add nine offline regression cases for menu/keyboard navigation, disabled destinations,
+  accessibility naming, three larger text sizes/reset, horizontal/zero/pixel wheel events,
+  keyboard zoom limits/fit and synthetic node dragging with retained arrow evidence.
+  The local full suite passes **670 tests**, with Ruff lint/format. Source CI and local
+  rebuilt-app review are recorded in the acceptance record when completed.
+- Distinguish actual native dialog observations from synthetic Qt gesture/key tests.
+  The available Mac is a development machine, not a clean consumer machine. Its connector
+  download has no quarantine flag, so Gatekeeper approval is **not tested**. Linux/Windows
+  interactive desktops, physical graph gestures, VoiceOver/Narrator/Orca, OS scaling and
+  permission-denied destinations remain pending. V0.1 is not declared complete.
+- Add a platform/check matrix and reproducible review steps in
+  [interactive acceptance](docs/INTERACTIVE_ACCEPTANCE.md). Keep local exports, screenshots
+  and build products outside Git; retain 0.0.31 as the latest uploaded native candidate.
+  No new three-platform binary uploads are required for this source acceptance update.
+- Package metadata, lockfile, README and specification advance to 0.0.32. Runtime dependencies,
+  database schemas, provider endpoints, network separation and export formats are unchanged.
+
 ## [0.0.31] - 2026-11-24
 
 ### Added — opt-in live release qualification

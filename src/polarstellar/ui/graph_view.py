@@ -29,13 +29,60 @@ from polarstellar.ui.export_controls import ExportControls
 
 
 class Canvas(QGraphicsView):
-    """A pannable relationship canvas with bounded mouse-wheel zoom."""
+    """A pannable relationship canvas with bounded pointer and keyboard zoom."""
+
+    def __init__(self, *args, **kwargs):
+        """Name the graph and describe keyboard alternatives without exposing node ownership claims."""
+        super().__init__(*args, **kwargs)
+        self.setAccessibleName("Relationship graph")
+        self.setAccessibleDescription(
+            "Use plus or minus to zoom, zero to fit, and arrow keys to pan. "
+            "The relationship table provides account identities and transaction evidence."
+        )
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+
+    def zoom_by(self, factor):
+        """Clamp a requested zoom so repeated keys or wheel events cannot make the canvas unusable."""
+        current = self.transform().m11()
+        if current > 0:
+            target = max(0.1, min(5.0, current * factor))
+            self.scale(target / current, target / current)
+
+    def fit_graph(self):
+        """Fit all drawn evidence with a margin; an empty graph keeps its current transform."""
+        if self.scene() is not None and self.scene().items():
+            self.fitInView(
+                self.scene().itemsBoundingRect().adjusted(-40, -40, 40, 40),
+                Qt.AspectRatioMode.KeepAspectRatio,
+            )
 
     def wheelEvent(self, event):
         """Zoom within a bounded scale so the graph cannot become unusably small or large."""
-        factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
-        if 0.1 <= self.transform().m11() * factor <= 5:
-            self.scale(factor, factor)
+        delta = event.angleDelta().y() or event.pixelDelta().y()
+        if not delta:
+            # A horizontal-only trackpad gesture is panning, not a request to
+            # zoom out. Keep the normal graphics-view scrolling behavior.
+            super().wheelEvent(event)
+            return
+        self.zoom_by(1.15 if delta > 0 else 1 / 1.15)
+        event.accept()
+
+    def keyPressEvent(self, event):
+        """Offer zoom/fit keys only while the canvas is focused; preserve ordinary pan and Tab keys."""
+        if event.modifiers() & (
+            Qt.KeyboardModifier.ControlModifier
+            | Qt.KeyboardModifier.AltModifier
+            | Qt.KeyboardModifier.MetaModifier
+        ):
+            super().keyPressEvent(event)
+            return
+        if event.key() in (Qt.Key.Key_Plus, Qt.Key.Key_Equal, Qt.Key.Key_Minus):
+            self.zoom_by(1 / 1.15 if event.key() == Qt.Key.Key_Minus else 1.15)
+        elif event.key() == Qt.Key.Key_0:
+            self.fit_graph()
+        else:
+            super().keyPressEvent(event)
+            return
         event.accept()
 
 
@@ -137,6 +184,7 @@ class GraphView(QWidget):
             QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
         )
         self.direction = QComboBox()
+        self.direction.setAccessibleName("Graph direction filter")
         self.direction.addItems(["Both directions", "Incoming", "Outgoing"])
         self.load = QPushButton("Load payments")
         self.load.clicked.connect(payments.start)
@@ -158,6 +206,7 @@ class GraphView(QWidget):
         self.canvas.setMinimumHeight(160)
         split.addWidget(self.canvas)
         self.table = QTableWidget(0, 5)
+        self.table.setAccessibleName("Counterparty relationships and exact totals")
         self.table.setHorizontalHeaderLabels(
             ["Counterparty", "Direction", "Asset / issuer", "Total", "Operations"]
         )
@@ -172,6 +221,7 @@ class GraphView(QWidget):
         split.setCollapsible(1, False)
         layout.addWidget(split, 1)
         self.evidence = QListWidget()
+        self.evidence.setAccessibleName("Selected relationship transaction evidence")
         self.evidence.setMaximumHeight(75)
         self.evidence.hide()
         self.evidence.setToolTip("Double-click evidence to open its transaction")
@@ -247,11 +297,7 @@ class GraphView(QWidget):
 
     def fit(self):
         """Fit all currently drawn graph items within the visible canvas."""
-        if self.scene.items():
-            self.canvas.fitInView(
-                self.scene.itemsBoundingRect().adjusted(-40, -40, 40, 40),
-                Qt.AspectRatioMode.KeepAspectRatio,
-            )
+        self.canvas.fit_graph()
 
     def render(self, *_):
         """Apply filters and render a bounded graph alongside the complete counterparty table."""

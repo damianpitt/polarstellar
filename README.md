@@ -6,7 +6,7 @@ An open-source desktop investigation toolkit for Stellar, with read-only Soroban
 Explore accounts, inspect transactions, and understand relationships between counterparties
 from a local desktop workspace.
 
-**Current version: 0.0.31 · Pre-alpha**
+**Current version: 0.0.32 · Pre-alpha**
 
 **Linux-first · Cross-platform Python / Qt application**
 
@@ -32,7 +32,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 
 ## At a glance
 
-| Area | Available in 0.0.31 |
+| Area | Available in 0.0.32 |
 | --- | --- |
 | Account lookup | G-address validation, exact balances/trustlines, signers, thresholds, flags, and reserve sponsorship |
 | Recent activity | Transactions, operations, and payments with independent pagination |
@@ -47,6 +47,7 @@ PolarStellar is an open-source project, **not affiliated with the Stellar Develo
 | Local export | CSV and JSON snapshots with source, coverage, and supporting evidence |
 | Networks | Separate Mainnet and Testnet investigations |
 | Release checks | Opt-in bounded live checks and separate fresh-runner native qualification |
+| Desktop access | Native page/search menus, keyboard graph zoom/fit and session text sizes up to 200% |
 
 > **Pre-alpha:** native portable builds are unsigned preview applications. System installers,
 > signing/notarization, storage-key discovery and source-code verification remain planned.
@@ -61,7 +62,7 @@ artifacts from a successful run while preview releases are being validated. Draf
 are visible only to repository maintainers; published downloads will appear on the
 [Releases page](https://github.com/damianpitt/polarstellar/releases).
 
-Current source and latest validated native version: **0.0.31**. Download the Linux x86_64,
+Current source version: **0.0.32**. Latest uploaded native candidate: **0.0.31**. Download the Linux x86_64,
 Windows x86_64 or macOS Apple Silicon archive/checksum artifact from the
 [successful native run](https://github.com/damianpitt/polarstellar/actions/runs/45315599985).
 Each extracted app passed eleven offline desktop checks on a separate fresh hosted runner,
@@ -1152,6 +1153,7 @@ capabilities and release qualification.
 - [Changelog](CHANGELOG.md) — versioned features, fixes, limitations, and validation notes.
 - [Acceptance and release gates](docs/ACCEPTANCE.md) — completed source checks and remaining V0.1 qualification.
 - [Interactive acceptance template](docs/MANUAL_ACCEPTANCE.md) — record checks on clean target machines.
+- [Interactive review results](docs/INTERACTIVE_ACCEPTANCE.md) — macOS observations, desktop access fixes and pending platform checks.
 - [GitHub Actions](https://github.com/damianpitt/polarstellar/actions) — automated platform checks.
 
 To explicitly check current public Mainnet/Testnet providers, run

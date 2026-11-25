@@ -8,7 +8,7 @@
 ## Project Status
 
 **Idea status:** Locked\
-**Implementation status:** Pre-alpha 0.0.31 with acceptance safeguards for exports and local evidence saves, account authority/sponsorship and activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction/graph/timeline comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
+**Implementation status:** Pre-alpha 0.0.32 with acceptance safeguards for exports and local evidence saves, account authority/sponsorship and activity inspection, bounded multi-hop graphs with local time/type filters and separate path-payment/merge evidence and chronological timelines, checked transaction-result enrichment and live operation effects, optional SQLite cache, CSV/JSON export, asset inspection/discovery with exact filters and pagination, searchable saved investigations with offline resource/transaction/graph/timeline comparison, read-only contract/RPC events with pinned specification declarations, candidate event interpretations with named unions/Results/errors and muxed account identity, explicit storage-key reads and deterministic/live-checked Stellar Asset Contract links, local account/asset/contract watchlists with bounded batch refresh, snapshot-pair comparison, filters and portable JSON transfer, and portable native build validation\
 **Project name:** PolarStellar\
 **Primary category:** Open-source desktop blockchain scanner / explorer / investigation toolkit\
 **Primary network:** Stellar\
@@ -2473,3 +2473,29 @@ not declare V0.1 complete or publish a stable release.
 
 Next planned slice: interactive candidate acceptance on the three target desktops, fixing
 verified findings and closing the remaining V0.1 gates before release publication.
+
+
+## V0.0.32 implemented slice — interactive review and desktop access
+
+Review the verified 0.0.31 macOS arm64 candidate on the available development host: normal
+launch, live public account lookup, native JSON/CSV destination panels, cancel, export
+parsing, declined overwrite and recoverable error feedback. This is partial native UI
+evidence; it does not establish clean-machine acceptance or Gatekeeper approval.
+
+Correct horizontal/zero-delta trackpad events that unintentionally zoomed out. Direct and
+expanded canvases gain bounded keyboard plus/minus zoom and zero-to-fit, retaining ordinary
+arrow panning. Add native Navigate page/search menus, Command/Ctrl+1–9 page shortcuts,
+important accessibility names and visible focus borders. View → Text size supplies session-only
+100/125/150/200-percent text enlargement while preserving loaded evidence and search/network.
+The system's display scaling, system dialog sizing and graph node labels retain their own scope.
+
+Nine new synthetic Qt cases cover navigation, trackpad boundaries, pixel scrolling, keyboard
+zoom/fit, text sizing and node dragging with retained arrows/evidence. Runtime dependencies,
+local schemas, provider endpoints, network separation and export formats are unchanged.
+The source version is 0.0.32; uploaded portable candidates remain 0.0.31. Detailed observed
+results and untested gates are in docs/INTERACTIVE_ACCEPTANCE.md.
+
+Next planned slice: complete remaining clean-machine interactive acceptance on Linux and
+Windows and macOS quarantine, physical gestures, scaling and screen-reader checks; resolve
+findings, repeat exact native candidate qualification and prepare a V0.1 release candidate.
+No V0.1 completion or stable release is implied.

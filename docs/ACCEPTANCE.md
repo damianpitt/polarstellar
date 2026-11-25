@@ -1,6 +1,6 @@
 # V0.1 acceptance and release gates
 
-Review date: **2026-11-24**. Current source: **0.0.31, pre-alpha**.
+Review date: **2026-11-25**. Current source: **0.0.32, pre-alpha**.
 Latest validated portable native apps: **0.0.31**.
 
 PolarStellar is an open-source project, not affiliated with the Stellar Development Foundation.
@@ -139,6 +139,11 @@ states. Rebuilt native screenshots provide the final rendering evidence. Interac
 remain the documented next step and are not counted as automated passes.
 
 ## Remaining planned slice: interactive release acceptance
+
+Version 0.0.32 begins this slice with actual macOS native export observations, keyboard/menu
+and text-size improvements, and trackpad regression fixes. See the
+[interactive review matrix](INTERACTIVE_ACCEPTANCE.md) for completed observations and explicit
+pending checks. A local Mac review does not complete three-platform clean-machine acceptance.
 
 1. Repeat bounded, read-only Horizon/RPC checks when reviewing the selected candidate. Record query
    identity, endpoint, retrieval time, available ledgers and history limits. Use only public

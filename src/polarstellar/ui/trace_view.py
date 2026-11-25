@@ -279,11 +279,7 @@ class TraceDialog(QDialog):
 
     def fit(self):
         """Fit after layout has established the visible canvas dimensions."""
-        if self.scene.items():
-            self.canvas.fitInView(
-                self.scene.itemsBoundingRect().adjusted(-40, -40, 40, 40),
-                Qt.AspectRatioMode.KeepAspectRatio,
-            )
+        self.canvas.fit_graph()
 
     def showEvent(self, event):
         """Defer initial fitting so all graph nodes are visible when the window first opens."""

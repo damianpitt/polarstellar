@@ -259,7 +259,12 @@ def main():
     # Preserve the repository's relative documentation links in the extracted app.
     # Only explicitly named public documents are copied, never the whole checkout.
     (staged / "docs").mkdir()
-    for name in ("RELEASES.md", "ACCEPTANCE.md", "MANUAL_ACCEPTANCE.md"):
+    for name in (
+        "RELEASES.md",
+        "ACCEPTANCE.md",
+        "MANUAL_ACCEPTANCE.md",
+        "INTERACTIVE_ACCEPTANCE.md",
+    ):
         shutil.copy2(ROOT / "docs" / name, staged / "docs" / name)
     notices(staged / "THIRD_PARTY_NOTICES.txt")
     commit = run(
