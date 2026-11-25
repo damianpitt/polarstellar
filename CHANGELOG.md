@@ -43,8 +43,18 @@ and the uv lockfile in sync. The application header and `--version` show the pac
 - Add nine offline regression cases for menu/keyboard navigation, disabled destinations,
   accessibility naming, three larger text sizes/reset, horizontal/zero/pixel wheel events,
   keyboard zoom limits/fit and synthetic node dragging with retained arrow evidence.
-  The local full suite passes **670 tests**, with Ruff lint/format. Source CI and local
-  rebuilt-app review are recorded in the acceptance record when completed.
+  The local full suite passes **670 tests**, with Ruff lint/format.
+- [Source CI](https://github.com/damianpitt/polarstellar/actions/runs/45714463842) passed all
+  **670 tests per platform** on Linux, macOS and Windows, plus Ruff, locked dependency/version
+  checks and source archive/wheel builds for source `4d1357d`. These are offline Qt/source
+  checks, not native dialog or screen-reader acceptance on all three operating systems.
+- Build a local macOS arm64 0.0.32 archive from clean source `4d1357d`, verify checksum and
+  ad-hoc signature, and pass eleven frozen-app checks with Cocoa and temporary storage.
+  Recheck native Graph/Overview menu navigation, 150%/200% text, scrolling and return to 100%
+  with retained account/evidence. Native accessibility exposes the named sidebar. A new
+  native JSON export saves and parses with version 0.0.32 and the exact expected amount.
+  The sampled graph page had only excluded operation types; populated physical graph
+  interactions remain pending. This local archive is not uploaded or a published release.
 - Distinguish actual native dialog observations from synthetic Qt gesture/key tests.
   The available Mac is a development machine, not a clean consumer machine. Its connector
   download has no quarantine flag, so Gatekeeper approval is **not tested**. Linux/Windows

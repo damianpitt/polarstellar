@@ -81,6 +81,14 @@ libraries with the executable. Check the matching `.sha256` file and validation 
 These are portable apps rather than system installers; Windows builds are unsigned and
 macOS builds are ad-hoc signed, without notarization.
 
+Version 0.0.32 source adds **Navigate** page/search menus, **View → Text size** (100–200%)
+and focused-graph **+ / − / 0** zoom/fit keys. Page shortcuts are Command+1–9 on macOS and
+Ctrl+1–9 on Linux/Windows; the standard Find shortcut focuses and selects investigation
+search. Text size applies to this session and preserves loaded context. At larger sizes,
+use the existing page/table scrolling. See the [interactive review](docs/INTERACTIVE_ACCEPTANCE.md)
+for macOS observations and pending three-platform acceptance; uploaded 0.0.31 apps retain
+their earlier controls.
+
 See [native builds and release validation](docs/RELEASES.md) for dependencies, architecture
 selection, platform approval prompts, local builds, and exact validation limits.
 

@@ -144,6 +144,11 @@ Version 0.0.32 begins this slice with actual macOS native export observations, k
 and text-size improvements, and trackpad regression fixes. See the
 [interactive review matrix](INTERACTIVE_ACCEPTANCE.md) for completed observations and explicit
 pending checks. A local Mac review does not complete three-platform clean-machine acceptance.
+Source run [45714463842](https://github.com/damianpitt/polarstellar/actions/runs/45714463842)
+passed 670 tests per platform and package checks. A local clean-source macOS 0.0.32 bundle
+passed eleven frozen-app checks and native menu/text-size/export review. Linux/Windows
+interactive approval/dialog checks and remaining macOS clean-machine/accessibility gates
+are still pending; synthetic gestures and source CI do not fill them.
 
 1. Repeat bounded, read-only Horizon/RPC checks when reviewing the selected candidate. Record query
    identity, endpoint, retrieval time, available ledgers and history limits. Use only public

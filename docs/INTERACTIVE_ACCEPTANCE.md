@@ -17,8 +17,13 @@ Use [the manual template](MANUAL_ACCEPTANCE.md) to complete the remaining target
   machine. Python/Qt are installed on this host. It is not a fresh consumer machine.
 - The download/extraction has no `com.apple.quarantine` attribute. Normal native launch
   succeeds, but this path does **not** exercise downloaded-app Gatekeeper approval.
-- Source corrections in this review: **0.0.32**. Local rebuilt-app and source CI outcomes
-  are recorded below after they complete. Uploaded three-platform archives remain 0.0.31.
+- Source corrections in this review: **0.0.32**, clean source
+  `4d1357d39be84ddc876172b7bedbf46bd60a2ccf`. The local macOS archive passes eleven extracted-app
+  checks with the native Cocoa plugin. Uploaded three-platform archives remain 0.0.31.
+- Local rebuilt archive: `PolarStellar-0.0.32-macos-arm64.zip`, 51,008,117 bytes, SHA-256
+  `ad2697647725289cb9b526e28665e67b7ae9bcd26e19d773139d6802bf0a9760`.
+  Checksum, clean manifest and deep/strict ad-hoc signature verification passed. This archive
+  was extracted for the native recheck and remains local, without a binary upload.
 
 ## Observations and pending checks
 
@@ -31,8 +36,8 @@ Use [the manual template](MANUAL_ACCEPTANCE.md) to complete the remaining target
 | JSON and CSV save / inspect exact metadata | Passed | Not run interactively | Not run interactively |
 | Decline native overwrite confirmation | Passed; existing export preserved | Not run | Not run |
 | Save-error feedback and return to explorer | Observed; permission-denied destination not isolated | Not run | Not run |
-| Pointer drag / pan / wheel gestures | Synthetic Qt checks only; physical gestures pending | Synthetic source checks pending CI | Synthetic source checks pending CI |
-| Native menu navigation / enlarged text | Rebuilt 0.0.32 review pending | Source checks pending CI | Source checks pending CI |
+| Pointer drag / pan / wheel gestures | Synthetic Qt checks passed; physical gestures pending | Synthetic source checks passed | Synthetic source checks passed |
+| Native menu navigation / enlarged text | Passed for rebuilt 0.0.32; Graph/Overview, 150%/200%/100%, scrolling | Source checks passed; native interactive review pending | Source checks passed; native interactive review pending |
 | Display scaling / assistive screen readers | Not run | Not run | Not run |
 | Full manual workflow and clean-machine acceptance | Pending | Pending | Pending |
 
@@ -45,8 +50,20 @@ submission was involved. Local review exports/screenshots are ignored and not pu
 
 The overwrite panel explicitly offered Cancel and Replace for the existing review export.
 Cancel returned to the save panel; cancelling that panel returned to the explorer. Compare
-the file hash before/after to verify preservation. Successful replacement and filesystem
+the file hash before/after to verify preservation; this review confirmed identical SHA-256
+before/after for the existing JSON export. Successful replacement and filesystem
 permission errors still need isolated destination checks on the target desktops.
+
+The rebuilt 0.0.32 app exposed Navigate and View in the native menu, and the named Explorer
+pages list in the accessibility tree. Graph and Overview navigation retained the account,
+network and loaded evidence. Text enlarged to 150% and 200%; scrolling reached lower graph/
+table content, with horizontal scrolling also needed at 200%. Restoring 100% retained the
+same account and graph coverage. The sampled page contained 20 unsupported direct-graph
+records, correctly reported as excluded with zero direct counterparties. This is not a
+manual review of populated relationship gestures. A second native JSON save in 0.0.32
+completed and parsed with the expected software version, network and exact XLM amount.
+Graph node labels and native system dialogs retain their own sizing. Physical gestures,
+hardware keyboard workflow and assistive screen-reader acceptance remain pending.
 
 ## Corrections in 0.0.32
 
@@ -70,8 +87,17 @@ Nine new offline cases and the full **670-test** suite pass locally with Qt offs
 Ruff lint/format. These are synthetic events, not physical pointer or screen-reader results.
 No new runtime dependencies, provider behavior, database schema or export format changes.
 
-Local rebuilt-app review: pending. Source CI: pending. Portable uploads: not requested for
-this source correction; repeat native qualification at the selected release-candidate step.
+[Source run 45714463842](https://github.com/damianpitt/polarstellar/actions/runs/45714463842)
+passed **670 tests on each platform** for source `4d1357d`, plus Ruff, locked dependency/version
+checks and source archive/wheel builds. Linux used `ubuntu-24.04`, macOS `macos-latest` and
+Windows `windows-latest`; Qt widget checks used offscreen rendering. This does not validate
+native file dialogs, OS approval, system display scaling or assistive readers on those runners.
+
+Local 0.0.32 extracted-app validation: **eleven checks passed**, frozen arm64, Qt 6.11.2,
+Cocoa, using temporary fixture storage. Native menu/text/export observations above were then
+performed on that extracted app. Portable uploads: not performed for this source correction;
+repeat three-platform native qualification at the selected release-candidate step. Local
+archives, review JSON/CSV and screenshots remain excluded from Git and source packages.
 
 ## Remaining release gate and next planned slice
 

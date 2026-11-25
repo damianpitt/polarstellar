@@ -96,6 +96,11 @@ on Linux x86_64, Windows x86_64 and Apple Silicon.
 The later 0.0.32 source update adds desktop access improvements and records an
 [interactive macOS review](INTERACTIVE_ACCEPTANCE.md). It does not replace these uploaded
 archives or imply that Linux/Windows interactive checks have been completed.
+Its [source run](https://github.com/damianpitt/polarstellar/actions/runs/45714463842) passed
+670 tests per platform and package checks. A local clean-source 0.0.32 macOS arm64 archive
+passed eleven frozen-app checks and native menu/text/export review; its exact identity and
+limits are in the interactive record. It was not uploaded and does not replace the public
+workflow downloads below.
 
 The [source run](https://github.com/damianpitt/polarstellar/actions/runs/45315580984) passed
 **661 tests per platform**, Ruff, locked dependencies, version checks and source archive/wheel

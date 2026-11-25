@@ -112,8 +112,8 @@ def test_horizontal_and_zero_wheel_do_not_zoom(app, angle, pixels):
     canvas.close()
 
 
-def test_pixel_trackpad_zoom_keys_bounds_fit_and_focus_escape(app):
-    """High-resolution scrolling and keyboard zoom share bounds; fit and Tab remain usable."""
+def test_pixel_trackpad_zoom_keys_bounds_fit_and_modifiers(app):
+    """High-resolution scrolling and keyboard zoom share bounds; modified keys retain their behavior."""
     scene = QGraphicsScene()
     scene.addRect(-400, -300, 800, 600)
     canvas = Canvas(scene)

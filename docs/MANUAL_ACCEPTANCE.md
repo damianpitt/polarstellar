@@ -25,6 +25,9 @@ The current automated candidate is **0.0.31**, built from
 `6fd97686a644cc9eb252080e20462209d631e5ba`; [downloads and automated evidence](RELEASES.md#completed-0031-qualification)
 identify each platform archive and matching checksum. Fill the observed fields above yourself;
 these automated results do not mark any interactive row passed.
+The later 0.0.32 source/local macOS review is recorded in
+[interactive acceptance](INTERACTIVE_ACCEPTANCE.md); it does not replace the uploaded 0.0.31
+archives or complete this template for unavailable platforms.
 Use a disposable OS user/VM where possible. Launch the extracted app without installing
 Python or project libraries. Preserve the bundled libraries beside the executable.
 

@@ -2492,8 +2492,10 @@ The system's display scaling, system dialog sizing and graph node labels retain 
 Nine new synthetic Qt cases cover navigation, trackpad boundaries, pixel scrolling, keyboard
 zoom/fit, text sizing and node dragging with retained arrows/evidence. Runtime dependencies,
 local schemas, provider endpoints, network separation and export formats are unchanged.
-The source version is 0.0.32; uploaded portable candidates remain 0.0.31. Detailed observed
-results and untested gates are in docs/INTERACTIVE_ACCEPTANCE.md.
+The source version is 0.0.32; uploaded portable candidates remain 0.0.31. Source CI passed
+670 tests per platform and package checks. A clean-source local macOS 0.0.32 archive passed
+eleven frozen-app checks and native menu/text/export review; it is not uploaded. Detailed
+source identity, observed results and untested gates are in docs/INTERACTIVE_ACCEPTANCE.md.
 
 Next planned slice: complete remaining clean-machine interactive acceptance on Linux and
 Windows and macOS quarantine, physical gestures, scaling and screen-reader checks; resolve
